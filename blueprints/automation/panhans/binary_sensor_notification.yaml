@@ -1,6 +1,7 @@
 blueprint:
   name: Binary Sensor Notification
-  description: 'Send a notification depending of the state switch of a binary_sensor'
+  description: 'Send a notification or trigger a custom action depending of the state switch of a binary_sensor'
+  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/binary_sensor_notification.yaml
   domain: automation
   input:
     sensor_entity:
