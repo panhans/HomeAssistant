@@ -85,10 +85,6 @@ trigger:
   to: !input to
   from: !input from
 
-condition:
-  condition: template
-  value_template: "{{ (now().strftime('%s') | int ) - (states[sensor_entity].last_changed.strftime('%s') | int ) >= (debounce_duration | int) }}"
-
 action:
   - choose:
     - conditions: "{{ not group_target }}"
@@ -114,3 +110,8 @@ action:
     - conditions:
       - '{{ custom_action is defined }}'
       sequence: !input 'custom_action'
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: "{{ (debounce_duration | int) }}"
+      milliseconds: 0
