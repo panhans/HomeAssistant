@@ -1,7 +1,7 @@
 blueprint:
   name: Intelligent Vacuum Cleaning
   description: This script starts a cleaning process of a vacuum cleaner robot depending on a device and its status. For this the device must remain in a defined status for a certain time. Furthermore a time period can be defined in which the process can start and the status must be fulfilled. In addition an air cleaner can be defined for the cleaning process.
-  # source_url: 
+  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/script/intelligent_vacuum_cleaning.yaml
   domain: script
 
   input:
