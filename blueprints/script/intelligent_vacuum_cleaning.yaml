@@ -76,7 +76,7 @@ blueprint:
           step: 1
           mode: slider
     fan_turn_off:
-      name: Turn of purifier after cleaning process
+      name: Turn off purifier after cleaning process
       description: If switched off the purifier will be set to mode auto. Otherwise it will be turned off after the cleaning process.
       default: true
       selector:
