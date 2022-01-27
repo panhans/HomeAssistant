@@ -75,6 +75,23 @@ blueprint:
           unit_of_measurement: Minutes
           step: 1
           mode: slider
+    fan_turn_off:
+      name: Turn of purifier after cleaning process
+      description: If switched off the purifier will be set to mode auto. Otherwise it will be turned off after the cleaning process.
+      default: true
+      selector:
+        boolean:
+    estimated_cleaning_time:
+      name: Estimated cleaning time
+      description: Time the air purifier waits for the end of the cleaning process until it switches itself off.
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 10
+          unit_of_measurement: Hours
+          step: 1
+          mode: slider
 
 mode: single
 
@@ -87,6 +104,8 @@ variables:
   fan: !input fan
   fan_speed: !input fan_speed
   fan_after_cleaning_time: !input fan_after_cleaning_time
+  estimated_cleaning_time: !input estimated_cleaning_time
+  fan_turn_off: !input fan_turn_off
 
 sequence:
   - wait_template: >-
@@ -109,7 +128,8 @@ sequence:
             preset_mode: Favorite
             entity_id: "{{ fan }}"
         - wait_template: '{{ states[trigger_device].state != "cleaning" }}'
-          timeout: '02:00:00'
+          timeout:
+            hours: "{{ estimated_cleaning_time }}"
           continue_on_timeout: true
         - delay:
             minutes: "{{ fan_after_cleaning_time }}"
@@ -118,6 +138,10 @@ sequence:
             preset_mode: Auto
           target:
             entity_id: "{{ fan }}"
-        - service: fan.turn_off
-          data:
-            entity_id: "{{ fan }}"
+        - choose:
+          - conditions:
+            - "{{ fan_turn_off == true }}"
+            sequence:
+            - service: fan.turn_off
+              data:
+                entity_id: "{{ fan }}"
