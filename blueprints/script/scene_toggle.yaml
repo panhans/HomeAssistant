@@ -1,7 +1,7 @@
 blueprint:
   name: Scene Toggle
   description: This script toggles through scenes of a certain area based on its last activated time stamp.
-  # source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/script/intelligent_vacuum_cleaning.yaml
+  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/script/scene_toggle.yaml
   domain: script
 
   input:    
