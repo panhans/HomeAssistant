@@ -1,0 +1,31 @@
+blueprint:
+  name: Scene Toggle
+  description: This script toggles through scenes of a certain area based on its last activated time stamp.
+  # source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/script/intelligent_vacuum_cleaning.yaml
+  domain: script
+
+  input:    
+    area:
+      name: Name of area
+      description: Name of the area where you want to toggle scenes.
+      selector:
+        area:
+
+mode: single
+
+variables:
+  area: !input area
+
+sequence:
+  - service: scene.turn_on
+    data_template:
+      entity_id: >
+        {%- set t = namespace(time = 0) %}
+        {%- set s = namespace(scene = '') %}
+        {%- for scene in states.scene if area_name(scene.entity_id) == 'Wohnzimmer' %}
+        {%- if ((as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
+          {%- set s.scene = scene.entity_id %}
+          {%- set t.time = as_timestamp(states[scene.entity_id].state) %}
+        {%- endif %}  
+        {%- endfor %}
+        {{ s.scene }}
