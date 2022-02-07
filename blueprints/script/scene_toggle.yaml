@@ -22,7 +22,7 @@ sequence:
       entity_id: >
         {%- set t = namespace(time = 0) %}
         {%- set s = namespace(scene = '') %}
-        {%- for scene in states.scene if area_name(scene.entity_id) == 'Wohnzimmer' %}
+        {%- for scene in states.scene if area_id(scene.entity_id) == area %}
         {%- if ((as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
           {%- set s.scene = scene.entity_id %}
           {%- set t.time = as_timestamp(states[scene.entity_id].state) %}
