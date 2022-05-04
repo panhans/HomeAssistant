@@ -62,6 +62,14 @@ blueprint:
     message:
       name: Message
       description: Message to be send
+      
+    status_bar_icon:
+      name: Status bar icon
+      description: '(Android only) Sets the status bar icon.
+      default: mdi:home-assistant
+      selector:
+        icon:
+          placeholder: mdi:home-assistant
     
     custom_action:
       name: Custom Action
@@ -102,6 +110,7 @@ action:
           data:
             ttl: 0
             priority: high
+            notification_icon: !input 'status_bar_icon'
     - conditions: "{{ group_target is defined }}"
       sequence:
       - service: notify.{{ group_target }}
@@ -111,6 +120,7 @@ action:
           data:
             ttl: 0
             priority: high
+            notification_icon: !input 'status_bar_icon'
   - choose:
     - conditions:
       - '{{ custom_action is defined }}'
