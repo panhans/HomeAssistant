@@ -1,19 +1,19 @@
 blueprint:
-  name: Binary Sensor Notification
+  name: "Binary Sensor Notification"
   description: 'Send a notification or trigger a custom action depending of the state switch of a binary_sensor'
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/binary_sensor_notification.yaml
   domain: automation
   input:
     sensor_entity:
-      name: Sensor
-      description: Sensor which triggers the notification.
+      name: "Sensor"
+      description: "Sensor which triggers the notification."
       selector:
         entity:
           domain: binary_sensor
 
     from:
-      name: From
-      description: State whitch triggers the notification
+      name: "From"
+      description: "State whitch triggers the notification"
       default: 'on'
       selector:
         select:
@@ -22,8 +22,8 @@ blueprint:
             - 'off'
           
     to:
-      name: To
-      description: State whitch triggers the notification
+      name: "To"
+      description: "State whitch triggers the notification"
       default: 'off'
       selector:
         select:
@@ -32,8 +32,8 @@ blueprint:
             - 'off'
     
     debounce_duration:
-      name: Debounce duration
-      description: Duration time the notification won't be send again after sensor changed its state.
+      name: "Debounce duration"
+      description: "Duration time the notification won't be send again after sensor changed its state."
       default: 10
       selector:
         number:
@@ -44,7 +44,7 @@ blueprint:
           step: 1
 
     notify_device:
-      name: Device to notify
+      name: "Device to notify"
       description: Device which gets a notification.
       default: false
       selector:
@@ -57,23 +57,23 @@ blueprint:
       default: ""
 
     title:
-      name: Title
-      description: Notification title
+      name: "Title"
+      description: "Notification title"
     message:
-      name: Message
-      description: Message to be send
+      name: "Message"
+      description: "Message to be send"
       
     status_bar_icon:
-      name: Status bar icon
-      description: '(Android only) Sets the status bar icon.
+      name: "Status bar icon"
+      description: "Sets the status bar icon. (Android only)"
       default: mdi:home-assistant
       selector:
         icon:
           placeholder: mdi:home-assistant
     
     custom_action:
-      name: Custom Action
-      description: An action which can be processed if notification is triggered
+      name: "Custom Action"
+      description: "An action which can be processed if notification is triggered"
       default: []
       selector:
         action: {}
