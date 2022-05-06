@@ -10,6 +10,16 @@ blueprint:
       description: Name of the area where you want to toggle scenes.
       selector:
         area:
+    
+    transition:
+      name: Transition time
+      description: Transition time when switching between scenes
+      default: 100
+      selector:
+        number:
+          min: 0
+          max: 10000
+          unit_of_measurement: ms
 
 mode: single
 
@@ -19,6 +29,7 @@ variables:
 sequence:
   - service: scene.turn_on
     data_template:
+      transition: !input transition
       entity_id: >
         {%- set t = namespace(time = 0) %}
         {%- set s = namespace(scene = '') %}
