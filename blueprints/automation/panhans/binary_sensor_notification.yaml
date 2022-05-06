@@ -96,7 +96,7 @@ trigger:
 condition:
   condition: template
   value_template: >-
-    {{ as_timestamp(now()) - (as_timestamp(this.attributes.last_triggered) | default(0)) >= (debounce_duration | int) }}
+    {{ iif(this.attributes.last_triggered == none, 9999, as_timestamp(now()) - as_timestamp(this.attributes.last_triggered) ) >= (debounce_duration | int) }}
 
 action:
   - choose:
