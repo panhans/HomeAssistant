@@ -1,15 +1,34 @@
 blueprint:
   name: Scene Toggle
-  description: This script toggles through scenes of a certain area based on its last activated time stamp.
+  description: This script toggles through scenes of a certain area based on its last activated timestamp.
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/script/scene_toggle.yaml
   domain: script
 
   input:    
     area:
       name: Name of area
-      description: Name of the area where you want to toggle scenes.
+      description: Name of the area where you want to toggle scenes
+      default: ''
       selector:
         area:
+        
+    included_scenes:
+      name: Included Scenes
+      description: Additional scenes to be included
+      default: []
+      selector:
+        entity:
+          domain: scene
+          multiple: true
+          
+    excluded_scenes:
+      name: Excluded Scenes
+      description: Scenes to be excluded
+      default: []
+      selector:
+        entity:
+          domain: scene
+          multiple: true
     
     transition:
       name: Transition time
@@ -24,7 +43,9 @@ blueprint:
 mode: single
 
 variables:
-  area: !input area
+  area: !input 'area'
+  included_scenes: !input 'included_scenes'
+  excluded_scenes: !input 'excluded_scenes'
 
 sequence:
   - service: scene.turn_on
@@ -33,7 +54,7 @@ sequence:
       entity_id: >
         {%- set t = namespace(time = 0) %}
         {%- set s = namespace(scene = '') %}
-        {%- for scene in states.scene if area_id(scene.entity_id) == area %}
+        {%- for scene in states.scene if ((area_id(scene.entity_id) == area or scene.entity_id in included_scenes) and scene.entity_id not in excluded_scenes) %}
         {%- if ((as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
           {%- set s.scene = scene.entity_id %}
           {%- set t.time = as_timestamp(states[scene.entity_id].state) %}
