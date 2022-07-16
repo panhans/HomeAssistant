@@ -55,7 +55,7 @@ sequence:
         {%- set t = namespace(time = 0) %}
         {%- set s = namespace(scene = '') %}
         {%- for scene in states.scene if ((area_id(scene.entity_id) == area or scene.entity_id in included_scenes) and scene.entity_id not in excluded_scenes) %}
-        {%- if ((as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
+        {%- if (states[scene.entity_id].state == 'unknown' or (as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
           {%- set s.scene = scene.entity_id %}
           {%- set t.time = as_timestamp(states[scene.entity_id].state) %}
         {%- endif %}  
