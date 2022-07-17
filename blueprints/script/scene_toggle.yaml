@@ -40,7 +40,7 @@ blueprint:
           max: 10000
           unit_of_measurement: ms
 
-mode: single
+mode: queued
 
 variables:
   area: !input 'area'
@@ -54,12 +54,17 @@ sequence:
       entity_id: >
         {%- set t = namespace(time = 0) %}
         {%- set s = namespace(scene = '') %}
+        
         {%- for scene in states.scene if ((area_id(scene.entity_id) == area or scene.entity_id in included_scenes) and scene.entity_id not in excluded_scenes) %}
-        {% if (states[scene.entity_id].state == 'unknown') %}
-          {%- set s.scene = scene.entity_id %}
-        {%- elif ((as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
-          {%- set s.scene = scene.entity_id %}
-          {%- set t.time = as_timestamp(states[scene.entity_id].state) %}
-        {%- endif %}  
+            {%- if (states[scene.entity_id].state == 'unknown' or (as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
+              {%- set s.scene = scene.entity_id %}
+              
+              {% if (states[scene.entity_id].state == 'unknown') %}
+                {%- set t.time = as_timestamp(now()) %}
+              {%- else %}
+                {%- set t.time = as_timestamp(states[scene.entity_id].state) %}
+              {%- endif %}
+            {%- endif %}  
         {%- endfor %}
+        
         {{ s.scene }}
