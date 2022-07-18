@@ -33,12 +33,13 @@ blueprint:
     transition:
       name: Transition time
       description: Transition time when switching between scenes
-      default: 100
+      default: 1
       selector:
         number:
           min: 0
-          max: 10000
-          unit_of_measurement: ms
+          max: 10
+          step: 0.1
+          unit_of_measurement: s
 
 mode: queued
 
