@@ -1,0 +1,148 @@
+blueprint:
+  name: "Persistent binary sensor notification"
+  description: 'Creates a persitent notification when sensor is in defined state. Notification will disapear when sensor leave this state.'
+  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/persistent_binary_sensor_notification.yaml
+  domain: automation
+  input:
+    sensor_entity:
+      name: "Sensors"
+      description: "Sensors which trigger the notification."
+      selector:
+        entity:
+          domain: binary_sensor
+          multiple: true
+          
+    active_state:
+      name: "Notification state"
+      description: "State whicht triggers notification"
+      default: 'on'
+      selector:
+        select:
+          options:
+            - 'on'
+            - 'off'
+
+    inactive_state:
+      name: "Canceling notification state"
+      description: "State which let notification disappear"
+      default: 'off'
+      selector:
+        select:
+          options:
+            - 'on'
+            - 'off'
+            
+    for_time_m:
+      name: For Time Minutes
+      description: Duration the sensor must be in state
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 59
+          step: 1
+          mode: slider
+
+    notify_device:
+      name: "Device to notify"
+      description: Device which gets a notification.
+      default: false
+      selector:
+        device:
+          integration: mobile_app
+
+    notify_group:
+      name: Notification Group
+      description: "The name of the notification group to call. ('notify' for all devices)"
+      default: ""
+
+    title:
+      name: "Title"
+      description: "Notification title"
+      default: "{{ trigger.from_state.attributes.friendly_name }} is open"
+
+    message:
+      name: "Message"
+      description: "Notification message"
+      default: "Keep in mind: {{ trigger.from_state.attributes.friendly_name }} is open"
+      
+    status_bar_icon:
+      name: "Status bar icon"
+      description: "Sets the status bar icon. (Android only)"
+      default: mdi:home-assistant
+      selector:
+        icon:
+          placeholder: mdi:home-assistant
+
+variables:
+  active_state: !input active_state
+  inactive_state: !input inactive_state
+  message: !input message
+  title: !input title
+  sensor_entity: !input sensor_entity
+  group_target: !input notify_group
+
+trigger:
+- platform: state
+  entity_id: !input 'sensor_entity'
+  to: !input active_state
+  for:
+    hours: 0
+    minutes: !input for_time_m
+    seconds: 0
+- platform: state
+  entity_id: !input 'sensor_entity'
+  to: !input inactive_state
+
+condition: []
+
+action:
+  - choose:
+    - conditions: 
+      - condition: template
+        value_template: "{{ trigger.to_state.state == active_state }}"
+      - condition: template
+        value_template: "{{ not group_target }}"
+      sequence:
+      - domain: mobile_app
+        type: notify
+        device_id: !input notify_device
+        title: "{{ title }}"
+        message: "{{ message }}"
+        data:
+          ttl: 0
+          priority: high
+          notification_icon: !input 'status_bar_icon'
+          tag: sensor-open-{{ trigger.entity_id }}
+          persistent: true
+          sticky: true
+        
+    - conditions: 
+      - condition: template
+        value_template: "{{ trigger.to_state.state == active_state }}"
+      - condition: template 
+        value_template: "{{ group_target is defined  }}"
+      sequence:
+      - service: notify.{{ group_target }}
+        data:
+          title: "{{ title }}"
+          message: "{{ message }}"
+          data:
+            ttl: 0
+            priority: high
+            notification_icon: !input 'status_bar_icon'
+            tag: sensor-open-{{ trigger.entity_id }}
+            persistent: true
+            sticky: true
+
+    - conditions: 
+      - condition: template
+        value_template: "{{ trigger.to_state.state == inactive_state }}"
+      sequence:
+      - service: notify.notify
+        data:
+          data:
+            tag: sensor-open-{{ trigger.entity_id }}
+            ttl: 0
+            priority: high
+          message: clear_notification
