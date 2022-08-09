@@ -1,36 +1,20 @@
 blueprint:
-  name: "Persistent binary sensor notification"
-  description: 'Creates a persitent notification when sensor is in defined state. Notification will disapear when sensor leave this state.'
-  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/persistent_binary_sensor_notification.yaml
+  name: "Persistent entity state notification"
+  description: 'Creates a persitent notification when an entity is in defined state. Notification will disapear when entity leave this state.'
+  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/binary_sensor_notification.yaml
   domain: automation
   input:
     sensor_entity:
-      name: "Sensors"
-      description: "Sensors which trigger the notification."
+      name: "Entities"
+      description: "Entities which trigger the notification."
       selector:
         entity:
-          domain: binary_sensor
           multiple: true
           
     active_state:
       name: "Notification state"
       description: "State whicht triggers notification"
       default: 'on'
-      selector:
-        select:
-          options:
-            - 'on'
-            - 'off'
-
-    inactive_state:
-      name: "Canceling notification state"
-      description: "State which let notification disappear"
-      default: 'off'
-      selector:
-        select:
-          options:
-            - 'on'
-            - 'off'
             
     for_time_m:
       name: For Time Minutes
@@ -76,7 +60,6 @@ blueprint:
 
 variables:
   active_state: !input active_state
-  inactive_state: !input inactive_state
   message: !input message
   title: !input title
   sensor_entity: !input sensor_entity
@@ -92,7 +75,7 @@ trigger:
     seconds: 0
 - platform: state
   entity_id: !input 'sensor_entity'
-  to: !input inactive_state
+  from: !input active_state
 
 condition: []
 
@@ -113,7 +96,7 @@ action:
           ttl: 0
           priority: high
           notification_icon: !input 'status_bar_icon'
-          tag: sensor-open-{{ trigger.entity_id }}
+          tag: sensor-open-{{ title }}-{{ message }}-{{ trigger.entity_id }}
           persistent: true
           sticky: true
         
@@ -131,18 +114,18 @@ action:
             ttl: 0
             priority: high
             notification_icon: !input 'status_bar_icon'
-            tag: sensor-open-{{ trigger.entity_id }}
+            tag: sensor-open-{{ title }}-{{ message }}-{{ trigger.entity_id }}
             persistent: true
             sticky: true
 
     - conditions: 
       - condition: template
-        value_template: "{{ trigger.to_state.state == inactive_state }}"
+        value_template: "{{ trigger.to_state.state != active_state }}"
       sequence:
       - service: notify.notify
         data:
           data:
-            tag: sensor-open-{{ trigger.entity_id }}
+            tag: sensor-open-{{ title }}-{{ message }}-{{ trigger.entity_id }}
             ttl: 0
             priority: high
           message: clear_notification
