@@ -1,8 +1,9 @@
 blueprint:
   name: "Persistent entity state notification"
   description: 'Creates a persitent notification when an entity is in defined state. Notification will disapear when entity leave this state.'
-  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/binary_sensor_notification.yaml
+  source_url: https://github.com/panhans/homeassistant/edit/main/blueprints/automation/panhans/entity_state_persistent_norification.yaml
   domain: automation
+  
   input:
     sensor_entity:
       name: "Entities"
@@ -96,7 +97,7 @@ action:
           ttl: 0
           priority: high
           notification_icon: !input 'status_bar_icon'
-          tag: sensor-open-{{ title }}-{{ message }}-{{ trigger.entity_id }}
+          tag: pesn-{{ trigger.entity_id }}
           persistent: true
           sticky: true
         
@@ -114,7 +115,7 @@ action:
             ttl: 0
             priority: high
             notification_icon: !input 'status_bar_icon'
-            tag: sensor-open-{{ title }}-{{ message }}-{{ trigger.entity_id }}
+            tag: pesn-{{ trigger.entity_id }}
             persistent: true
             sticky: true
 
@@ -125,7 +126,9 @@ action:
       - service: notify.notify
         data:
           data:
-            tag: sensor-open-{{ title }}-{{ message }}-{{ trigger.entity_id }}
+            tag: pesn-{{ trigger.entity_id }}
             ttl: 0
             priority: high
           message: clear_notification
+          
+mode: parallel
