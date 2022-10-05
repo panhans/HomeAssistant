@@ -68,7 +68,7 @@ blueprint:
           
     winter_mode:
       name: 'Winter mode (optional)'
-      description: 'Falls dieser Input boolean aus ist, wird niemals geheizt.'
+      description: 'If this input boolean is off, heating will never occur.'
       default:
       selector:
         entity:
