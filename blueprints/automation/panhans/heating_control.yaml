@@ -6,7 +6,7 @@ blueprint:
   input:
   
     heating:
-      name: 'Thermostats'
+      name: 'Thermostats / Valves'
       description: 'Thermostats to be controlled'
       selector:
         entity:
