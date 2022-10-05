@@ -1,6 +1,7 @@
 blueprint:
   name: 'Heating Control'
   description: 'Automatic heating based on a scheduler, presence of people and optional dependencies such as window opening, winter mode or party mode.'
+  source_url: 'https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml'
   domain: automation
   input:
   
