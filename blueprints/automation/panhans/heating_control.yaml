@@ -1,0 +1,186 @@
+blueprint:
+  name: 'Heating Control'
+  description: 'Automatic heating based on a scheduler, presence of people and optional dependencies such as window opening, winter mode or party mode.'
+  domain: automation
+  input:
+  
+    heating:
+      name: 'Thermostats'
+      description: 'Thermostats to be controlled'
+      selector:
+        entity:
+          domain: climate
+          multiple: true
+          
+    min_temp:
+      name: 'Minimum Temp'
+      description: 'If no one is at home, the minimum temperature is set.'
+      default: 19
+      selector:
+        number:
+          min: 12
+          max: 24
+          step: 0.5
+          mode: slider
+          
+    set_temp:
+      name: 'Comfort temperature'
+      description: 'If someone is at home, the comfort temperature is set.'
+      selector:
+        entity:
+          domain: input_number
+          
+    persons:
+      name: 'Persons'
+      description: 'If a person is at home, the comfort temperature is set.'
+      selector:
+        entity:
+          domain: person
+          multiple: true
+        
+    scheduler:
+      name: 'Scheduler'
+      description: 'Scheduler that specifies when the comfort temperature can be set.'
+      selector:
+        entity:
+          domain: schedule
+          multiple: false
+          
+    window:
+      name: 'Window (optional)'
+      description: 'Window that turns off the thermostats if it is open.'
+      default:
+      selector:
+        entity:
+          domain: binary_sensor
+          
+    window_reaction_time:
+      name: 'Window reaction time'
+      description: 'Duration that the window must be open for the thermostats to be turned off.'
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 60
+          step: 1
+          mode: slider
+          
+    winter_mode:
+      name: 'Winter mode (optional)'
+      description: 'Falls dieser Input boolean aus ist, wird niemals geheizt.'
+      default:
+      selector:
+        entity:
+          domain: input_boolean
+          
+    party_mode:
+      name: 'Party mode (optional)'
+      description: 'Overwrites winter mode and scheduler. If on, heating is activated.'
+      default:
+      selector:
+        entity:
+          domain: input_boolean
+
+variables:
+  set_temp: !input 'set_temp'
+  min_temp: !input 'min_temp'
+  scheduler: !input 'scheduler'
+  window: !input 'window'
+  winter_mode: !input 'winter_mode'
+  party_mode: !input 'party_mode'
+  persons: !input 'persons'
+
+  party_state: "{{ party_mode != none and is_state(party_mode, 'on') }}"
+  winter_state: "{{ winter_mode != none and is_state(winter_mode, 'on') }}"
+  window_state: "{{ window != none and is_state(window, 'on') }}"
+  mode: >
+    {% if (winter_state == true or party_state == true) and window_state == false %}
+      heat
+    {% else %}
+      off
+    {% endif %}
+
+  persons_home_count: "{{ expand(persons) | selectattr('state', 'eq', 'home') | list | count }}"
+  
+  temperatur: >
+    {% if (states(scheduler) == 'on' and persons_home_count | int > 0 ) %}
+      {{ states(set_temp) }}
+    {% else %}
+      {{ min_temp }}
+    {% endif %}
+  
+trigger_variables:
+  window_t: !input window
+  winter_mode_t: !input winter_mode
+  party_mode_t: !input party_mode
+
+trigger:
+  - platform: homeassistant
+    event: start
+
+  - platform: event
+    event_type: automation_reloaded
+
+  - platform: state
+    entity_id: !input 'scheduler'
+
+  - platform: state
+    entity_id: !input 'set_temp'
+    for:
+      seconds: 2
+
+  - platform: state
+    entity_id: !input 'persons'
+
+  - platform: template
+    value_template: >-
+       {{ window_t != none and is_state(window_t, 'on') }}
+    for:
+      seconds: !input 'window_reaction_time'
+
+  - platform: template
+    value_template: >-
+       {{ window_t != none and is_state(window_t, 'off') }}
+    for:
+      seconds: !input 'window_reaction_time'
+      
+  - platform: template
+    value_template: >-
+       {{ winter_mode_t != none and is_state(winter_mode_t, 'on') }}
+    for:
+      seconds: !input 'window_reaction_time'
+
+  - platform: template
+    value_template: >-
+       {{ winter_mode_t != none and is_state(winter_mode_t, 'off') }}
+    for:
+      seconds: !input 'window_reaction_time'
+      
+  - platform: template
+    value_template: >-
+       {{ party_mode_t != none and is_state(party_mode_t, 'off') }}
+    for:
+      seconds: !input 'window_reaction_time'
+      
+  - platform: template
+    value_template: >-
+       {{ party_mode_t != none and is_state(party_mode_t, 'off') }}
+    for:
+      seconds: !input 'window_reaction_time'
+    
+action:
+  - service: climate.set_hvac_mode
+    target:
+      entity_id: !input 'heating'
+    data:
+      hvac_mode: "{{ mode }}"
+
+  - condition: template
+    value_template: "{{ mode == 'heat' }}"
+  - delay: 3
+  - service: climate.set_temperature
+    data:
+      entity_id: !input 'heating'
+      temperature: "{{ temperatur | float }}"
+          
+mode: restart
