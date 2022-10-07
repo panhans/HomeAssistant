@@ -159,7 +159,7 @@ trigger:
       
   - platform: template
     value_template: >-
-       {{ party_mode_t != none and is_state(party_mode_t, 'off') }}
+       {{ party_mode_t != none and is_state(party_mode_t, 'on') }}
     for:
       seconds: !input 'window_reaction_time'
       
