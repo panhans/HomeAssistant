@@ -31,7 +31,7 @@ blueprint:
     notify_device:
       name: "Device to notify"
       description: Device which gets a notification.
-      default: false
+      default:
       selector:
         device:
           integration: mobile_app
@@ -73,6 +73,7 @@ variables:
   sensor_entity: !input sensor_entity
   group_target: !input notify_group
   ha_notification: !input ha_notification
+  notify_device: !input notify_device
 
 trigger:
 - platform: state
@@ -96,11 +97,11 @@ action:
   then:
     - if:
         - condition: template
-          value_template: "{{ notify_device is defined }}"
+          value_template: "{{ notify_device != none }}"
       then:
         - domain: mobile_app
           type: notify
-          device_id: !input notify_device
+          device_id: "{{ notify_device }}"
           title: "{{ title }}"
           message: "{{ message }}"
           data:
@@ -112,7 +113,7 @@ action:
             sticky: true
     - if:
         - condition: template
-          value_template: "{{ group_target is defined  }}"
+          value_template: "{{ group_target is defined and group_target != '' }}"
       then:
         - service: notify.{{ group_target }}
           data:
