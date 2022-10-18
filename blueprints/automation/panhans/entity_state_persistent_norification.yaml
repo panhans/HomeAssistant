@@ -1,7 +1,7 @@
 blueprint:
   name: "Persistent entity state notification"
   description: 'Creates a persitent notification when an entity is in defined state. Notification will disapear when entity leave this state.'
-  source_url: https://github.com/panhans/homeassistant/edit/main/blueprints/automation/panhans/entity_state_persistent_norification.yaml
+  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/entity_state_persistent_norification.yaml
   domain: automation
   
   input:
@@ -59,12 +59,20 @@ blueprint:
         icon:
           placeholder: mdi:home-assistant
 
+    ha_notification:
+      name: Persistent HomeAssistant Notification
+      description: Creates an notification in your home assistant frontend.
+      default: false
+      selector:
+        boolean:
+
 variables:
   active_state: !input active_state
   message: !input message
   title: !input title
   sensor_entity: !input sensor_entity
   group_target: !input notify_group
+  ha_notification: !input ha_notification
 
 trigger:
 - platform: state
@@ -81,34 +89,18 @@ trigger:
 condition: []
 
 action:
-  - choose:
-    - conditions: 
-      - condition: template
-        value_template: "{{ trigger.to_state.state == active_state }}"
-      - condition: template
-        value_template: "{{ not group_target }}"
-      sequence:
-      - domain: mobile_app
-        type: notify
-        device_id: !input notify_device
-        title: "{{ title }}"
-        message: "{{ message }}"
-        data:
-          ttl: 0
-          priority: high
-          notification_icon: !input 'status_bar_icon'
-          tag: pesn-{{ trigger.entity_id }}
-          persistent: true
-          sticky: true
-        
-    - conditions: 
-      - condition: template
-        value_template: "{{ trigger.to_state.state == active_state }}"
-      - condition: template 
-        value_template: "{{ group_target is defined  }}"
-      sequence:
-      - service: notify.{{ group_target }}
-        data:
+
+- if:
+    - condition: template
+      value_template: "{{ trigger.to_state.state == active_state }}"
+  then:
+    - if:
+        - condition: template
+          value_template: "{{ notify_device is defined }}"
+      then:
+        - domain: mobile_app
+          type: notify
+          device_id: !input notify_device
           title: "{{ title }}"
           message: "{{ message }}"
           data:
@@ -118,17 +110,40 @@ action:
             tag: pesn-{{ trigger.entity_id }}
             persistent: true
             sticky: true
-
-    - conditions: 
-      - condition: template
-        value_template: "{{ trigger.to_state.state != active_state }}"
-      sequence:
-      - service: notify.notify
-        data:
+    - if:
+        - condition: template
+          value_template: "{{ group_target is defined  }}"
+      then:
+        - service: notify.{{ group_target }}
           data:
-            tag: pesn-{{ trigger.entity_id }}
-            ttl: 0
-            priority: high
-          message: clear_notification
+            title: "{{ title }}"
+            message: "{{ message }}"
+            data:
+              ttl: 0
+              priority: high
+              notification_icon: !input 'status_bar_icon'
+              tag: pesn-{{ trigger.entity_id }}
+              persistent: true
+              sticky: true
+    - if:
+        - condition: template
+          value_template: "{{ ha_notification }}"
+      then:
+        - service: persistent_notification.create
+          data:
+            title: "{{ title }}"
+            message: "{{ message }}"
+            notification_id: pesn-{{ trigger.entity_id }}
+  else:
+    - service: notify.notify
+      data:
+        data:
+          tag: pesn-{{ trigger.entity_id }}
+          ttl: 0
+          priority: high
+        message: clear_notification
+    - service: persistent_notification.dismiss
+      data:
+        notification_id: pesn-{{ trigger.entity_id }}
           
 mode: parallel
