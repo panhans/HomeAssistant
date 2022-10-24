@@ -74,6 +74,10 @@ variables:
   group_target: !input notify_group
   ha_notification: !input ha_notification
   notify_device: !input notify_device
+  
+trigger_variables:
+  for_time_m: !input for_time_m
+  for_time_m_t: "{{ for_time_m | default(0) | int  }}"
 
 trigger:
 - platform: state
@@ -81,7 +85,7 @@ trigger:
   to: !input active_state
   for:
     hours: 0
-    minutes: !input for_time_m
+    minutes: "{{ for_time_m_t }}"
     seconds: 0
 - platform: state
   entity_id: !input 'sensor_entity'
