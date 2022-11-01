@@ -26,7 +26,7 @@ blueprint:
           
     set_temp:
       name: 'Comfort temperature'
-      description: 'If someone is at home, the comfort temperature is set.'
+      description: 'If someone is at home, the comfort temperature (input number) is set. An input number can be added in the helpers section in your home assistant settings.'
       selector:
         entity:
           domain: input_number
@@ -41,7 +41,7 @@ blueprint:
         
     scheduler:
       name: 'Scheduler'
-      description: 'Scheduler that specifies when the comfort temperature can be set.'
+      description: 'Scheduler that specifies when the comfort temperature can be set. Scheduler can be added in the helpers section in your home assistant settings.'
       selector:
         entity:
           domain: schedule
