@@ -100,11 +100,10 @@ variables:
     {% else %}
       off
     {% endif %}
-
   persons_home_count: "{{ expand(persons) | selectattr('state', 'eq', 'home') | list | count }}"
   
   temperatur: >
-    {% if (states(scheduler) == 'on' and persons_home_count | int > 0 ) %}
+    {% if ((states(scheduler) == 'on' or party_state == true) and persons_home_count | int > 0 ) %}
       {{ states(set_temp) }}
     {% else %}
       {{ min_temp }}
