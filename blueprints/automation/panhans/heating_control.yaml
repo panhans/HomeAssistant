@@ -176,7 +176,7 @@ action:
       hvac_mode: "{{ mode }}"
 
   - condition: template
-    value_template: "{{ mode == 'heat' }}"
+    value_template: "{{ mode == 'auto' }}"
   - delay: 3
   - service: climate.set_temperature
     data:
