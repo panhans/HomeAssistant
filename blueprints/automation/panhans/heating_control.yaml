@@ -96,7 +96,7 @@ variables:
   window_state: "{{ window != none and is_state(window, 'on') }}"
   mode: >
     {% if (winter_state == true or party_state == true) and window_state == false %}
-      auto
+      heat
     {% else %}
       off
     {% endif %}
@@ -176,7 +176,7 @@ action:
       hvac_mode: "{{ mode }}"
 
   - condition: template
-    value_template: "{{ mode == 'auto' }}"
+    value_template: "{{ mode == 'heat' }}"
   - delay: 3
   - service: climate.set_temperature
     data:
