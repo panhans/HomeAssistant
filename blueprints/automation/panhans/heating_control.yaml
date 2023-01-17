@@ -96,7 +96,7 @@ variables:
   window_state: "{{ window != none and is_state(window, 'on') }}"
   mode: >
     {% if (winter_state == true or party_state == true) and window_state == false %}
-      heat
+      auto
     {% else %}
       off
     {% endif %}
