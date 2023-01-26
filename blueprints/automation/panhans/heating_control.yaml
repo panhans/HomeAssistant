@@ -81,8 +81,19 @@ blueprint:
       selector:
         entity:
           domain: input_boolean
+          
+    external_temp_sensor:
+      name: 'External Temperatur Sensor (optional)'
+      description: 'Set this if you want temperature calibration for your thermostat. Be sure your valve has a calibration number entity that contains "calibration" or "offset" in its id.'
+      default:
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
 
 variables:
+  trvs: !input 'heating'
+  valves: "{{ expand(trvs) | map(attribute='entity_id') | list }}"
   set_temp: !input 'set_temp'
   min_temp: !input 'min_temp'
   scheduler: !input 'scheduler'
@@ -108,11 +119,15 @@ variables:
     {% else %}
       {{ min_temp }}
     {% endif %}
+    
+  actual_local_temperature: !input 'external_temp_sensor'
   
 trigger_variables:
   window_t: !input window
   winter_mode_t: !input winter_mode
   party_mode_t: !input party_mode
+  actual_local_temperature_t: !input 'external_temp_sensor'
+#  temperature_changed_t: "{{ actual_local_temperature_t != none and (as_timestamp(now()) - as_timestamp(states[actual_local_temperature_t].last_updated)) > 60  }}"
 
 trigger:
   - platform: homeassistant
@@ -168,19 +183,70 @@ trigger:
     for:
       seconds: !input 'window_reaction_time'
     
+  - platform: time_pattern
+    minutes: "/10"
+    
 action:
-  - service: climate.set_hvac_mode
-    target:
-      entity_id: !input 'heating'
-    data:
-      hvac_mode: "{{ mode }}"
+  - if:
+    - condition: template
+      value_template: "{{ trigger.platform == 'time_pattern' }}"
+    - condition: template
+      value_template: "{{ actual_local_temperature != none }}"
+    then:
+    - repeat:
+        count: "{{ valves | count | int }}"
+        sequence:
+        - service: number.set_value
+          data:
+            value: >
+              {% set current_valve = valves[repeat.index-1] %}
 
-  - condition: template
-    value_template: "{{ mode == 'heat' }}"
-  - delay: 3
-  - service: climate.set_temperature
-    data:
-      entity_id: !input 'heating'
-      temperature: "{{ temperatur | float }}"
+              {% set calibration_entity_id = namespace(id=[]) %}
+              {% set entities =  device_entities(device_id(current_valve)) %} 
+              {% for s in entities %}
+                {% if (('calibration' in s) or ('offset' in s))  %}
+                  {% set calibration_entity_id.id = s %}
+                {% endif %}
+              {% endfor %}
+              
+              {% set current_calibration_value = states[calibration_entity_id.id].state %}
+              {% set step = states[calibration_entity_id.id].attributes.step %}
+              
+              {% set local_temperature = states[current_valve].attributes.current_temperature %}
+              {% set actual_trv_temperature = (local_temperature | float(0) - current_calibration_value | float(0)) | round(1) %}
+              {% set actual_sensor_temperature = states[actual_local_temperature].state | float(0) | round(1) %}
+              {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
+              
+              {% set min_calibration_value = states[calibration_entity_id.id].attributes.min  %}
+              {% set max_calibration_value = states[calibration_entity_id.id].attributes.max  %}
+              {% if(new_calibration_value > max_calibration_value) %}
+                {% set new_calibration_value = max_calibration_value %}
+              {% elif (new_calibration_value < min_calibration_value)  %}
+                {% set new_calibration_value = min_calibration_value %}
+              {% endif %}
+              
+              {{ (new_calibration_value | float(0) / step) | round(0) * step }}
+          target:
+            entity_id: >
+              {% set entities =  device_entities(device_id(valves[repeat.index-1])) %} 
+              {% for s in entities %}
+                {% if (('calibration' in s) or ('offset' in s)) %}
+                  {{ s }}
+                {% endif %}
+              {% endfor %}
+    else:
+    - service: climate.set_hvac_mode
+      target:
+        entity_id: !input 'heating'
+      data:
+        hvac_mode: "{{ mode }}"
+
+    - condition: template
+      value_template: "{{ mode == 'heat' }}"
+    - delay: 3
+    - service: climate.set_temperature
+      data:
+        entity_id: !input 'heating'
+        temperature: "{{ temperatur | float }}"
           
 mode: restart
