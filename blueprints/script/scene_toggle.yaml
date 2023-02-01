@@ -53,19 +53,26 @@ sequence:
     data_template:
       transition: !input transition
       entity_id: >
-        {%- set t = namespace(time = 0) %}
-        {%- set s = namespace(scene = '') %}
+        {% set area_scenes = states.scene | selectattr('entity_id', 'in', area_entities(area)) | map(attribute='entity_id') | list %}
+        {% set all_scenes = (area_scenes | reject('in', excluded_scenes) | list) + included_scenes %}
         
-        {%- for scene in states.scene if ((area_id(scene.entity_id) == area or scene.entity_id in included_scenes) and scene.entity_id not in excluded_scenes) %}
-            {%- if (states[scene.entity_id].state == 'unknown' or (as_timestamp(states[scene.entity_id].state) < t.time) or t.time == 0) %}
-              {%- set s.scene = scene.entity_id %}
-              
-              {% if (states[scene.entity_id].state == 'unknown') %}
-                {%- set t.time = as_timestamp(now()) %}
-              {%- else %}
-                {%- set t.time = as_timestamp(states[scene.entity_id].state) %}
-              {%- endif %}
-            {%- endif %}  
-        {%- endfor %}
+        {%- set s = namespace(scene = '') %}
+        {% set unknown_scenes = expand(all_scenes) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
+        
+        {% if unknown_scenes | count > 0 %}
+        
+          {%- set s.scene = unknown_scenes[0] %}
+        
+          {% else %}
+            {% for scene in all_scenes %}
+              {% if s.scene == '' %}
+                {% set s.scene = scene %}
+              {% endif %}
+              {% if as_timestamp(states[scene].state) <  as_timestamp(states[s.scene].state) %}
+                {% set s.scene = scene %}
+              {% endif %}
+            {% endfor %}
+        
+        {% endif %}
         
         {{ s.scene }}
