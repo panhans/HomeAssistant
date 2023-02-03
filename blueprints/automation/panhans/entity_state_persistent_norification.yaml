@@ -105,7 +105,7 @@ action:
       then:
         - domain: mobile_app
           type: notify
-          device_id: "{{ notify_device }}"
+          device_id: !input notify_device
           title: "{{ title }}"
           message: "{{ message }}"
           data:
