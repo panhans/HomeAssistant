@@ -63,6 +63,11 @@ blueprint:
       name: "Message"
       description: "Message to be send"
       
+    tag:
+      name: "Tag"
+      description: "If you want to do something in another automation"
+      default: "tag-{{ trigger.entity_id }}"
+      
     status_bar_icon:
       name: "Status bar icon"
       description: "Sets the status bar icon. (Android only)"
@@ -102,14 +107,15 @@ action:
   - choose:
     - conditions: "{{ not group_target }}"
       sequence:
-      - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
-        data:
-          title: "{{ title }}"
-          message: "{{ message }}"
+        - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
           data:
-            ttl: 0
-            priority: high
-            notification_icon: !input 'status_bar_icon'
+            title: "{{ title }}"
+            message: "{{ message }}"
+            data:
+              ttl: 0
+              priority: high
+              notification_icon: !input 'status_bar_icon'
+              tag: !input tag
     - conditions: "{{ group_target is defined }}"
       sequence:
       - service: notify.{{ group_target }}
@@ -120,6 +126,7 @@ action:
             ttl: 0
             priority: high
             notification_icon: !input 'status_bar_icon'
+            tag: !input tag
   - choose:
     - conditions:
       - '{{ custom_action is defined }}'
