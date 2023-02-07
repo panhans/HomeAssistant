@@ -102,10 +102,9 @@ action:
   - choose:
     - conditions: "{{ not group_target }}"
       sequence:
-        - domain: mobile_app
-          type: notify
-          device_id: !input notify_device
-          title: "{{ title }} | {{ states('sensor.time') }}"
+      - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
+        data:
+          title: "{{ title }}"
           message: "{{ message }}"
           data:
             ttl: 0
