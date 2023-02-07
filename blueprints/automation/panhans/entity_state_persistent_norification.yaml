@@ -103,18 +103,17 @@ action:
         - condition: template
           value_template: "{{ notify_device != none }}"
       then:
-        - domain: mobile_app
-          type: notify
-          device_id: "{{ notify_device }}"
-          title: "{{ title }}"
-          message: "{{ message }}"
+        - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
           data:
-            ttl: 0
-            priority: high
-            notification_icon: !input 'status_bar_icon'
-            tag: pesn-{{ trigger.entity_id }}
-            persistent: true
-            sticky: true
+            title: "{{ title }}"
+            message: "{{ message }}"
+            data:
+              ttl: 0
+              priority: high
+              notification_icon: !input 'status_bar_icon'
+              tag: pesn-{{ trigger.entity_id }}
+              persistent: true
+              sticky: true
     - if:
         - condition: template
           value_template: "{{ group_target is defined and group_target != '' }}"
