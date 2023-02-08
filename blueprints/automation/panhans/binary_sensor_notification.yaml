@@ -91,6 +91,7 @@ variables:
   debounce_duration: !input debounce_duration
   group_target: !input notify_group
   custom_action: !input custom_action
+  notify_device: !input notify_device
 
 trigger:
 - platform: state
@@ -101,7 +102,7 @@ trigger:
 condition:
   condition: template
   value_template: >-
-    {{ iif(this.attributes.last_triggered == none, 9999, as_timestamp(now()) - as_timestamp(this.attributes.last_triggered) ) >= (debounce_duration | int) }}
+    {{ iif(this.attributes.last_triggered == None, 9999, as_timestamp(now()) - as_timestamp(this.attributes.last_triggered, default=0) ) >= (debounce_duration | int) }}
 
 action:
   - choose:
