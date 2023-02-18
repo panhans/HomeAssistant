@@ -13,9 +13,25 @@ blueprint:
           domain: climate
           multiple: true
           
+    persons:
+      name: 'Persons'
+      description: 'If a person is at home and the scheduler state is on, the comfort temperature will be set.'
+      selector:
+        entity:
+          domain: person
+          multiple: true
+          
+    scheduler:
+      name: 'Scheduler'
+      description: 'Scheduler that specifies when the comfort temperature can be set (scheduler state on). Scheduler can be added in the helpers section in your home assistant settings.'
+      selector:
+        entity:
+          domain: schedule
+          multiple: false
+          
     min_temp:
       name: 'Minimum Temp'
-      description: 'If no one is at home, the minimum temperature is set.'
+      description: 'If no one is at home or the scheduler state is off, the minimum temperature is set.'
       default: 19
       selector:
         number:
@@ -26,26 +42,18 @@ blueprint:
           
     set_temp:
       name: 'Comfort temperature'
-      description: 'If someone is at home, the comfort temperature (input number) is set. An input number can be added in the helpers section in your home assistant settings.'
+      description: 'If someone is at home and the scheduler / party mode is on, the comfort temperature (input number) is set. An input number can be added in the helpers section in your home assistant settings.'
       selector:
         entity:
           domain: input_number
           
-    persons:
-      name: 'Persons'
-      description: 'If a person is at home, the comfort temperature is set.'
+    party_mode:
+      name: 'Party mode (optional)'
+      description: 'Overwrites winter mode and scheduler. If on, heating is activated.'
+      default:
       selector:
         entity:
-          domain: person
-          multiple: true
-        
-    scheduler:
-      name: 'Scheduler'
-      description: 'Scheduler that specifies when the comfort temperature can be set. Scheduler can be added in the helpers section in your home assistant settings.'
-      selector:
-        entity:
-          domain: schedule
-          multiple: false
+          domain: input_boolean
           
     window:
       name: 'Window (optional)'
@@ -73,14 +81,53 @@ blueprint:
       selector:
         entity:
           domain: input_boolean
-          
-    party_mode:
-      name: 'Party mode (optional)'
-      description: 'Overwrites winter mode and scheduler. If on, heating is activated.'
+
+    holiday_scheduler:
+      name: 'Holiday scheduler (optional)'
+      description: 'Scheduler for holidays'
+      default:
+      selector:
+        entity:
+          domain: schedule
+          multiple: false
+      
+    holiday_mode:
+      name: 'Holiday mode (optional)'
+      description: 'If this input boolean is on, the holiday scheduler will be used instead of the regular one.'
       default:
       selector:
         entity:
           domain: input_boolean
+
+    presence_sensor:
+      name: 'Presence Sensor (optional)'
+      description: 'If no presence is detected before the scheduler switches to off the temperature will be turned down to minimum. This saves energy e.g. when you go to bed earlier. This could also be a binary sensor based on your lights.'
+      default:
+      selector:
+        entity:
+          domain: binary_sensor
+
+    presence_time_window:
+      name: 'Presence time window in h'
+      description: 'If a presence sensor is defined it will only be observed X hours before the scheduler turns off.'
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+          mode: slider
+
+    presence_reaction_time:
+      name: 'Presence reaction time in min'
+      description: 'Define how many minutes the presence sensor must be off so the temperature turns to minimum.'
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 10
+          step: 1
+          mode: slider
           
     external_temp_sensor:
       name: 'External Temperatur Sensor (optional)'
@@ -96,14 +143,18 @@ variables:
   valves: "{{ expand(trvs) | map(attribute='entity_id') | list }}"
   set_temp: !input 'set_temp'
   min_temp: !input 'min_temp'
-  scheduler: !input 'scheduler'
+
+  scheduler_regular: !input 'scheduler'
+  scheduler_holiday: !input 'holiday_scheduler'
+  holiday_mode: !input 'holiday_mode'
+
   window: !input 'window'
   winter_mode: !input 'winter_mode'
   party_mode: !input 'party_mode'
   persons: !input 'persons'
 
   party_state: "{{ party_mode != none and is_state(party_mode, 'on') }}"
-  winter_state: "{{ winter_mode != none and is_state(winter_mode, 'on') }}"
+  winter_state: "{{ winter_mode == none or (winter_mode != none and is_state(winter_mode, 'on')) }}"
   window_state: "{{ window != none and is_state(window, 'on') }}"
   mode: >
     {% if (winter_state == true or party_state == true) and window_state == false %}
@@ -113,11 +164,32 @@ variables:
     {% endif %}
   persons_home_count: "{{ expand(persons) | selectattr('state', 'eq', 'home') | list | count }}"
   
+  holiday_mode_state: "{{ scheduler_holiday != none and holiday_mode != none and is_state(holiday_mode, 'on') }}"
+  active_scheduler: "{{ iif(holiday_mode_state,scheduler_holiday,scheduler_regular) }}"
+
+  presence_sensor: !input presence_sensor
+  presence_reaction_time: !input presence_reaction_time
+  presence_detected: "{{ presence_sensor == none or (presence_sensor != none and is_state(presence_sensor,'on') and (as_timestamp(now()) - as_timestamp(states[presence_sensor].last_changed, default=as_timestamp(now()))) / 60 >= presence_reaction_time) }}"
+  presence_time_window: !input presence_time_window
+  is_presence_time_window: "{{ (as_timestamp(state_attr(active_scheduler,'next_event')) - as_timestamp(now())) / (60 * 60) <=  presence_time_window }}"
+
   temperatur: >
-    {% if ((states(scheduler) == 'on' or party_state == true) and persons_home_count | int > 0 ) %}
-      {{ states(set_temp) }}
+    {% if ( states(active_scheduler) == 'on' and persons_home_count | int > 0 ) %}
+
+      {% if ( presence_detected == false and is_presence_time_window == true ) %}
+        {{ min_temp }}
+      {% else %}
+        {{ states(set_temp) }}
+      {% endif %}
+
     {% else %}
-      {{ min_temp }}
+
+      {% if party_state == true %}
+        {{ states(set_temp) }}
+      {% else %}
+        {{ min_temp }}
+      {% endif %}
+
     {% endif %}
     
   actual_local_temperature: !input 'external_temp_sensor'
@@ -127,7 +199,14 @@ trigger_variables:
   winter_mode_t: !input winter_mode
   party_mode_t: !input party_mode
   actual_local_temperature_t: !input 'external_temp_sensor'
-#  temperature_changed_t: "{{ actual_local_temperature_t != none and (as_timestamp(now()) - as_timestamp(states[actual_local_temperature_t].last_updated)) > 60  }}"
+  
+  regular_scheduler_t: !input scheduler
+  holiday_scheduler_t: !input holiday_scheduler
+  holiday_mode_t: !input holiday_mode
+  holiday_mode_state_t: "{{ holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t, 'on') }}"
+  active_scheduler_t: "{{ iif(holiday_mode_state_t,holiday_scheduler_t,regular_scheduler_t) }}"
+
+  presence_sensor_t: !input presence_sensor
 
 trigger:
   - platform: homeassistant
@@ -136,8 +215,8 @@ trigger:
   - platform: event
     event_type: automation_reloaded
 
-  - platform: state
-    entity_id: !input 'scheduler'
+  - platform: template
+    value_template: "{{ is_state(active_scheduler_t, 'on') }}"
 
   - platform: state
     entity_id: !input 'set_temp'
@@ -146,6 +225,8 @@ trigger:
 
   - platform: state
     entity_id: !input 'persons'
+
+ # WINDOW TRIGGER    
 
   - platform: template
     value_template: >-
@@ -158,6 +239,22 @@ trigger:
        {{ window_t != none and is_state(window_t, 'off') }}
     for:
       seconds: !input 'window_reaction_time'
+
+  # HOLIDAY MODE TRIGGER   
+
+  - platform: template
+    value_template: >-
+       {{ holiday_mode_t != none and is_state(holiday_mode_t, 'on') }}
+    for:
+      seconds: !input 'window_reaction_time'
+
+  - platform: template
+    value_template: >-
+       {{ holiday_mode_t != none and is_state(holiday_mode_t, 'off') }}
+    for:
+      seconds: !input 'window_reaction_time'
+
+  # WINTER MODE TRIGGER    
       
   - platform: template
     value_template: >-
@@ -170,6 +267,8 @@ trigger:
        {{ winter_mode_t != none and is_state(winter_mode_t, 'off') }}
     for:
       seconds: !input 'window_reaction_time'
+
+  # PARTY MODE TRIGGER
       
   - platform: template
     value_template: >-
@@ -182,7 +281,25 @@ trigger:
        {{ party_mode_t != none and is_state(party_mode_t, 'off') }}
     for:
       seconds: !input 'window_reaction_time'
+
+
+# PRESENCE SENSOR TRIGGER
+
+  - platform: template
+    value_template: >-
+       {{ presence_sensor_t != none and is_state(presence_sensor_t, 'on') }}
+    for:
+      seconds: !input 'presence_reaction_time'
+
+  - platform: template
+    value_template: >-
+       {{ presence_sensor_t != none and is_state(presence_sensor_t, 'off') }}
+    for:
+      seconds: !input 'presence_reaction_time'
     
+
+ # TIME TRIGGER FOR CALIBRATION 
+
   - platform: time_pattern
     minutes: "/10"
     seconds: "30"
@@ -193,6 +310,10 @@ action:
       value_template: "{{ trigger.platform == 'time_pattern' }}"
     - condition: template
       value_template: "{{ actual_local_temperature != none }}"
+    - condition: template
+      value_template: "{{ winter_state }}"
+    - condition: template
+      value_template: "{{ mode == 'heat' }}"
     then:
     - repeat:
         count: "{{ valves | count | int }}"
