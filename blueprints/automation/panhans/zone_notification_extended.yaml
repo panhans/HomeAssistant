@@ -1,6 +1,7 @@
 blueprint:
   name: Zone Notification Extended
   description: "This blueprint let you generate a notifictaion automation when certain persons leave or arrive at specific zones."
+  source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
   
   input:
