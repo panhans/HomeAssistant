@@ -1,0 +1,148 @@
+blueprint:
+  name: Zone Notification Extended
+  description: "This blueprint let you generate a notifictaion automation when certain persons leave or arrive at specific zones."
+  domain: automation
+  
+  input:
+
+    persons:
+      name: Persons
+      description: "Observed persons."
+      selector:
+        entity:
+          domain: person
+          multiple: true
+          
+    zones:
+      name: Zones
+      description: "Observed zones."
+      selector:
+        entity:
+          domain: zone
+          multiple: true
+          
+    notify_device:
+      name: "Device to notify"
+      description: "Device which gets a notification."
+      default:
+      selector:
+        device:
+          integration: mobile_app
+
+    notify_group:
+      name: Notification Group
+      description: "The name of the notification group to call. ('notify' for all devices) If 'Notification Group' is defined 'Device to notify' will be ignored."
+      default: ""
+
+    title_arriving:
+      name: "Arriving Title"
+      description: "Notification title when someone arrives a zone."
+      default: "{{ person }} arrives"
+
+    message_arriving:
+      name: "Arriving Message"
+      description: "Notification message when someone arrives a zone."
+      default: "{{ person }} arrives at {{ zone }}."
+      
+    is_arriving_notification_enabled:
+      name: "Enable arriving notification"
+      description: "If on notification will send when a person arrives at a zone."
+      default: true
+      selector:
+        boolean:
+      
+    title_leaving:
+      name: "Leaving Title"
+      description: "Notification title when someone is leaving a zone."
+      default: "{{ person }} leaves"
+
+    message_leaving:
+      name: "Leaving Message"
+      description: "Notification message when someone is leaving a zone."
+      default: "{{ person }} leaves {{ zone }}."
+      
+    is_leaving_notification_enabled:
+      name: "Enable leaving notification"
+      description: "If on notification will send when a person leaves a zone."
+      default: true
+      selector:
+        boolean:
+      
+    status_bar_icon:
+      name: "Status bar icon"
+      description: "Sets the status bar icon. (Android only)"
+      default: mdi:map-marker
+      selector:
+        icon:
+          placeholder: mdi:map-marker
+          
+variables:
+  zones: !input zones
+  zone_names: |
+    {% set friendly = namespace(name=[]) %}
+    {% for zone in zones %}
+      {% set friendly.name = friendly.name + [states[zone].attributes.friendly_name] %}
+    {% endfor %}
+    
+    {{ friendly.name }}
+  notify_device: !input notify_device
+  notify_service: |
+    {% if(notify_group is defined) %}
+      notify.{{ notify_group }}
+    {% else %}
+      notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}
+    {% endif %}
+    
+  is_arriving_notification_enabled: !input is_arriving_notification_enabled
+  is_leaving_notification_enabled: !input is_leaving_notification_enabled
+  
+trigger:
+  platform: state
+  entity_id: !input persons
+
+condition:
+  - condition: template
+    value_template: "{{ trigger.to_state.state != trigger.from_state.state }}"
+  
+  - condition: template
+    value_template: "{{ states['zone.'+trigger.to_state.state].attributes.friendly_name in zone_names or states['zone.'+trigger.from_state.state].attributes.friendly_name in zone_names }}"
+
+action:
+  - variables:
+      person: "{{ state_attr(trigger.entity_id,'friendly_name') }}"
+      zone_from: "{{ states['zone.'+trigger.from_state.state].attributes.friendly_name }}"
+      zone_to: "{{ states['zone.'+trigger.to_state.state].attributes.friendly_name }}"
+  - if:
+      - condition: template
+        value_template: "{{ zone_to in zone_names }}"
+      - condition: template
+        value_template: "{{ is_arriving_notification_enabled }}"
+    then:
+      - variables:
+          zone: "{{ zone_to }}"
+      - service: '{{ notify_service }}'
+        data:
+          title: !input title_arriving
+          message: !input message_arriving
+          data:
+            ttl: 0
+            priority: high
+            notification_icon: !input 'status_bar_icon'
+  - if:
+      - condition: template
+        value_template: "{{ zone_from in zone_names }}"
+      - condition: template
+        value_template: "{{ is_leaving_notification_enabled }}"
+    then:
+      - variables:
+          zone: "{{ zone_from }}"
+      - service: '{{ notify_service }}'
+        data:
+          title: !input title_leaving
+          message: !input message_leaving
+          data:
+            ttl: 0
+            priority: high
+            notification_icon: !input 'status_bar_icon'
+            
+mode: single
