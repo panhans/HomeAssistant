@@ -1,7 +1,7 @@
 blueprint:
   name: "Persistent entity state notification"
   description: 'Creates a persitent notification when an entity is in defined state. Notification will disapear when entity leave this state.'
-  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/entity_state_persistent_norification.yaml
+  source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/entity_state_persistent_notification.yaml
   domain: automation
   
   input:
@@ -66,6 +66,13 @@ blueprint:
       selector:
         boolean:
 
+    persistent_notification:
+      name: Persistent Notification
+      description: Would you like a persistent or a closable notification?
+      default: true
+      selector:
+        boolean:
+
 variables:
   active_state: !input active_state
   message: !input message
@@ -112,8 +119,8 @@ action:
               priority: high
               notification_icon: !input 'status_bar_icon'
               tag: pesn-{{ trigger.entity_id }}
-              persistent: true
-              sticky: true
+              persistent: !input persistent_notification
+              sticky: !input persistent_notification
     - if:
         - condition: template
           value_template: "{{ group_target is defined and group_target != '' }}"
@@ -127,8 +134,8 @@ action:
               priority: high
               notification_icon: !input 'status_bar_icon'
               tag: pesn-{{ trigger.entity_id }}
-              persistent: true
-              sticky: true
+              persistent: !input persistent_notification
+              sticky: !input persistent_notification
     - if:
         - condition: template
           value_template: "{{ ha_notification }}"
