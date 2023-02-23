@@ -301,7 +301,7 @@ trigger:
  # TIME TRIGGER FOR CALIBRATION 
 
   - platform: time_pattern
-    minutes: "/1"
+    minutes: "/10"
     seconds: "30"
     
 action:
