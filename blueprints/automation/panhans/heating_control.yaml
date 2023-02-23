@@ -301,7 +301,7 @@ trigger:
  # TIME TRIGGER FOR CALIBRATION 
 
   - platform: time_pattern
-    minutes: "/10"
+    minutes: "/1"
     seconds: "30"
     
 action:
@@ -318,44 +318,43 @@ action:
     - repeat:
         count: "{{ valves | count | int }}"
         sequence:
-        - service: number.set_value
-          data:
-            value: >
-              {% set current_valve = valves[repeat.index-1] %}
-
-              {% set calibration_entity_id = namespace(id=[]) %}
+        - variables:
+            current_valve: "{{ valves[repeat.index-1] }}"
+            calibration_entity: > 
               {% set entities =  device_entities(device_id(current_valve)) %} 
+              {% set calibration_entity_id = namespace(id=[]) %}
               {% for s in entities %}
                 {% if (('calibration' in s) or ('offset' in s))  %}
                   {% set calibration_entity_id.id = s %}
                 {% endif %}
               {% endfor %}
-              
-              {% set current_calibration_value = states[calibration_entity_id.id].state %}
-              {% set step = states[calibration_entity_id.id].attributes.step %}
-              
-              {% set local_temperature = states[current_valve].attributes.current_temperature %}
-              {% set actual_trv_temperature = (local_temperature | float(0) - current_calibration_value | float(0)) | round(1) %}
-              {% set actual_sensor_temperature = states[actual_local_temperature].state | float(0) | round(1) %}
-              {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
-              
-              {% set min_calibration_value = states[calibration_entity_id.id].attributes.min  %}
-              {% set max_calibration_value = states[calibration_entity_id.id].attributes.max  %}
-              {% if(new_calibration_value > max_calibration_value) %}
-                {% set new_calibration_value = max_calibration_value %}
-              {% elif (new_calibration_value < min_calibration_value)  %}
-                {% set new_calibration_value = min_calibration_value %}
-              {% endif %}
-              
-              {{ (new_calibration_value | float(0) / step) | round(0) * step }}
-          target:
-            entity_id: >
-              {% set entities =  device_entities(device_id(valves[repeat.index-1])) %} 
-              {% for s in entities %}
-                {% if (('calibration' in s) or ('offset' in s)) %}
-                  {{ s }}
+              {{ iif (calibration_entity_id.id[0] is defined, calibration_entity_id.id, NULL)  }}
+        - if:
+          - condition: template
+            value_template: "{{ calibration_entity is defined }}"
+          then:
+          - service: number.set_value
+            data:
+              value: >                
+                {% set current_calibration_value = states[calibration_entity].state %}
+                {% set step = states[calibration_entity].attributes.step %}
+                
+                {% set local_temperature = states[current_valve].attributes.current_temperature %}
+                {% set actual_trv_temperature = (local_temperature | float(0) - current_calibration_value | float(0)) | round(1) %}
+                {% set actual_sensor_temperature = states[actual_local_temperature].state | float(0) | round(1) %}
+                {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
+                
+                {% set min_calibration_value = states[calibration_entity].attributes.min  %}
+                {% set max_calibration_value = states[calibration_entity].attributes.max  %}
+                {% if(new_calibration_value > max_calibration_value) %}
+                  {% set new_calibration_value = max_calibration_value %}
+                {% elif (new_calibration_value < min_calibration_value)  %}
+                  {% set new_calibration_value = min_calibration_value %}
                 {% endif %}
-              {% endfor %}
+                
+                {{ (new_calibration_value | float(0) / step) | round(0) * step }}
+            target:
+              entity_id: "{{ calibration_entity }}"
     else:
     - service: climate.set_hvac_mode
       target:
