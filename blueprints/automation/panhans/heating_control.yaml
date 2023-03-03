@@ -298,15 +298,19 @@ trigger:
   - platform: time_pattern
     minutes: "/10"
     seconds: "30"
+  
+condition:
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.platform == 'time_pattern' and actual_local_temperature != none and mode == 'heat' }}"
+      - condition: template
+        value_template: "{{ trigger.platform != 'time_pattern' }}"
     
 action:
   - if:
     - condition: template
       value_template: "{{ trigger.platform == 'time_pattern' }}"
-    - condition: template
-      value_template: "{{ actual_local_temperature != none }}"
-    - condition: template
-      value_template: "{{ mode == 'heat' }}"
     then:
     - repeat:
         count: "{{ valves | count | int }}"
