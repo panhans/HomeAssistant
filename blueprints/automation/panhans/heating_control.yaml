@@ -195,17 +195,22 @@ variables:
   actual_local_temperature: !input 'external_temp_sensor'
   
 trigger_variables:
-  window_t: !input window
-  winter_mode_t: !input winter_mode
+  # MODES
+  winter_mode_t: !input winter_mode  
   party_mode_t: !input party_mode
-  actual_local_temperature_t: !input 'external_temp_sensor'
-  
+  holiday_mode_t: !input holiday_mode
+  window_t: !input window
+
+  #SCHEDULER
   regular_scheduler_t: !input scheduler
   holiday_scheduler_t: !input holiday_scheduler
-  holiday_mode_t: !input holiday_mode
+
   holiday_mode_state_t: "{{ holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t, 'on') }}"
   active_scheduler_t: "{{ iif(holiday_mode_state_t,holiday_scheduler_t,regular_scheduler_t) }}"
 
+  persons_t: !input 'persons'
+  
+  #PRESENCE SENSOR
   presence_sensor_t: !input presence_sensor
 
 trigger:
@@ -223,83 +228,73 @@ trigger:
     for:
       seconds: 2
 
-  - platform: state
-    entity_id: !input 'persons'
+  # PERSONS HOME / NOT HOME
+  - platform: template
+    value_template: "{{ expand(persons_t) | selectattr('state', 'eq', 'home') | list | count > 0 }}"
+    for:
+      seconds: !input 'window_reaction_time'
+  
+  - platform: template
+    value_template: "{{ expand(persons_t) | selectattr('state', 'eq', 'home') | list | count == 0 }}"
+    for:
+      seconds: !input 'window_reaction_time'
 
  # WINDOW TRIGGER    
-
   - platform: template
-    value_template: >-
-       {{ window_t != none and is_state(window_t, 'on') }}
+    value_template: "{{ window_t != none and is_state(window_t, 'on') }}"
     for:
       seconds: !input 'window_reaction_time'
 
   - platform: template
-    value_template: >-
-       {{ window_t != none and is_state(window_t, 'off') }}
+    value_template: "{{ window_t != none and is_state(window_t, 'off') }}"
     for:
       seconds: !input 'window_reaction_time'
 
   # HOLIDAY MODE TRIGGER   
-
   - platform: template
-    value_template: >-
-       {{ holiday_mode_t != none and is_state(holiday_mode_t, 'on') }}
+    value_template: "{{ holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t, 'on') }}"
     for:
       seconds: !input 'window_reaction_time'
 
   - platform: template
-    value_template: >-
-       {{ holiday_mode_t != none and is_state(holiday_mode_t, 'off') }}
+    value_template: "{{ holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t, 'off') }}"
     for:
       seconds: !input 'window_reaction_time'
 
   # WINTER MODE TRIGGER    
-      
   - platform: template
-    value_template: >-
-       {{ winter_mode_t != none and is_state(winter_mode_t, 'on') }}
+    value_template: "{{ winter_mode_t != none and is_state(winter_mode_t, 'on') }}"
     for:
       seconds: !input 'window_reaction_time'
 
   - platform: template
-    value_template: >-
-       {{ winter_mode_t != none and is_state(winter_mode_t, 'off') }}
+    value_template: "{{ winter_mode_t != none and is_state(winter_mode_t, 'off') }}"
     for:
       seconds: !input 'window_reaction_time'
 
   # PARTY MODE TRIGGER
-      
   - platform: template
-    value_template: >-
-       {{ party_mode_t != none and is_state(party_mode_t, 'on') }}
+    value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'on') }}"
     for:
       seconds: !input 'window_reaction_time'
       
   - platform: template
-    value_template: >-
-       {{ party_mode_t != none and is_state(party_mode_t, 'off') }}
+    value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'off') }}"
     for:
       seconds: !input 'window_reaction_time'
-
 
 # PRESENCE SENSOR TRIGGER
-
   - platform: template
-    value_template: >-
-       {{ presence_sensor_t != none and is_state(presence_sensor_t, 'on') }}
+    value_template: "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'on') }}"
     for:
       seconds: !input 'presence_reaction_time'
 
   - platform: template
-    value_template: >-
-       {{ presence_sensor_t != none and is_state(presence_sensor_t, 'off') }}
+    value_template: "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'off') }}"
     for:
       seconds: !input 'presence_reaction_time'
     
-
  # TIME TRIGGER FOR CALIBRATION 
-
   - platform: time_pattern
     minutes: "/10"
     seconds: "30"
@@ -310,8 +305,6 @@ action:
       value_template: "{{ trigger.platform == 'time_pattern' }}"
     - condition: template
       value_template: "{{ actual_local_temperature != none }}"
-    - condition: template
-      value_template: "{{ winter_state }}"
     - condition: template
       value_template: "{{ mode == 'heat' }}"
     then:
@@ -333,9 +326,9 @@ action:
           - condition: template
             value_template: "{{ calibration_entity is defined }}"
           then:
-          - service: number.set_value
-            data:
-              value: >                
+          - variables:
+              offset_old: "{{ states(calibration_entity) }}"
+              offset_new: >
                 {% set current_calibration_value = states[calibration_entity].state %}
                 {% set step = states[calibration_entity].attributes.step %}
                 
@@ -353,8 +346,15 @@ action:
                 {% endif %}
                 
                 {{ (new_calibration_value | float(0) / step) | round(0) * step }}
-            target:
-              entity_id: "{{ calibration_entity }}"
+          - if:
+            - condition: template
+              value_template: "{{ float(offset_old) != float(offset_new) }}"
+            then:
+            - service: number.set_value
+              data:
+                value: "{{ float(offset_new) }}"
+              target:
+                entity_id: "{{ calibration_entity }}"
     else:
     - service: climate.set_hvac_mode
       target:
