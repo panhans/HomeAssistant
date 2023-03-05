@@ -220,13 +220,17 @@ trigger:
   - platform: event
     event_type: automation_reloaded
 
-  - platform: template
-    value_template: "{{ is_state(active_scheduler_t, 'on') }}"
-
   - platform: state
     entity_id: !input 'set_temp'
     for:
       seconds: 2
+   
+  # SCHEDULER
+  - platform: template
+    value_template: "{{ is_state(active_scheduler_t, 'on') }}"
+
+  - platform: template
+    value_template: "{{ is_state(active_scheduler_t, 'off') }}"
 
   # PERSONS HOME / NOT HOME
   - platform: template
