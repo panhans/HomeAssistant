@@ -141,6 +141,25 @@ blueprint:
 variables:
   trvs: !input 'heating'
   valves: "{{ expand(trvs) | map(attribute='entity_id') | list }}"
+
+  valves_off_mode: > 
+    {% set climates_off = namespace(name=[]) %}
+    {% for climate in valves %}
+      {% if state_attr(climate,'hvac_modes') | regex_search('off', ignorecase=True) %}
+        {% set climates_off.name = climates_off.name + [climate] %}
+      {% endif %}
+    {% endfor %}
+    {{ climates_off.name }}
+
+  valves_without_off_mode: >
+    {% set climates_not_off = namespace(name=[]) %}
+    {% for climate in valves %}
+      {% if climate not in valves_off_mode %}
+        {% set climates_not_off.name = climates_not_off.name + [climate] %}
+      {% endif %}
+    {% endfor %}
+    {{ climates_not_off.name }}
+
   set_temp: !input 'set_temp'
   min_temp: !input 'min_temp'
 
@@ -224,7 +243,7 @@ trigger:
     entity_id: !input 'set_temp'
     for:
       seconds: 2
-   
+
   # SCHEDULER
   - platform: template
     value_template: "{{ is_state(active_scheduler_t, 'on') }}"
@@ -364,18 +383,34 @@ action:
               target:
                 entity_id: "{{ calibration_entity }}"
     else:
-    - service: climate.set_hvac_mode
-      target:
-        entity_id: !input 'heating'
-      data:
-        hvac_mode: "{{ mode }}"
-
-    - condition: template
-      value_template: "{{ mode == 'heat' }}"
-    - delay: 3
-    - service: climate.set_temperature
-      data:
-        entity_id: !input 'heating'
-        temperature: "{{ temperatur | float }}"
+    - if:
+      - condition: template
+        value_template: "{{ mode == 'off' }}"
+      then:
+      - repeat:
+          count: "{{ valves_without_off_mode | count | int }}"
+          sequence:
+          - variables:
+              current_valve: "{{ valves_without_off_mode[repeat.index-1] }}"
+              off_temperature: "{{ states[current_valve].attributes.min_temp }}"
+          - service: climate.set_temperature
+            data:
+              entity_id: "{{ current_valve }}"
+              temperature: "{{ off_temperature | float }}"
+      - if:
+        - condition: template
+          value_template: "{{ valves_off_mode | count > 0 }}"
+        then:
+        - service: climate.set_hvac_mode
+          target:
+            entity_id: "{{ valves_off_mode }}"
+          data:
+            hvac_mode: "off"
+      else:
+      - service: climate.set_temperature
+        data:
+          entity_id: !input 'heating'
+          temperature: "{{ temperatur | float }}"
+          hvac_mode: heat
           
 mode: restart
