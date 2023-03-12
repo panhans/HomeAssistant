@@ -396,11 +396,13 @@ action:
       - condition: template
         value_template: "{{ mode == 'off' }}"
       then:
+      - variables: 
+          low_temp_valves: "{{ iif(force_minimum_temperature == true, valves, valves_without_off_mode) }} "
       - repeat:
-          count: "{{ iif(force_minimum_temperature, valves, valves_without_off_mode) | count | int }}"
+          count: "{{ low_temp_valves | count | int }}"
           sequence:
           - variables:
-              current_valve: "{{ valves_without_off_mode[repeat.index-1] }}"
+              current_valve: "{{ low_temp_valves[repeat.index-1] }}"
               off_temperature: "{{ state_attr(current_valve,'min_temp') }}"
           - service: climate.set_temperature
             data:
