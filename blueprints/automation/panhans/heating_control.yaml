@@ -73,6 +73,13 @@ blueprint:
           max: 60
           step: 1
           mode: slider
+
+    force_minimum_temperature:
+      name: "Force mimimum temperature"
+      description: "Activate this option if you have problems with your TRVs with off mode when window is open. All TRVs will be set to their minimum temperature if this option is enabled."
+      default: false
+      selector:
+        boolean:
           
     winter_mode:
       name: 'Winter mode (optional)'
@@ -159,6 +166,8 @@ variables:
       {% endif %}
     {% endfor %}
     {{ climates_not_off.name }}
+
+  force_minimum_temperature: !input force_minimum_temperature
 
   set_temp: !input 'set_temp'
   min_temp: !input 'min_temp'
@@ -356,16 +365,16 @@ action:
           - variables:
               offset_old: "{{ states(calibration_entity) }}"
               offset_new: >
-                {% set current_calibration_value = states[calibration_entity].state %}
-                {% set step = states[calibration_entity].attributes.step %}
+                {% set current_calibration_value = states(calibration_entity) %}
+                {% set step = state_attr(calibration_entity,'step') %}
                 
-                {% set local_temperature = states[current_valve].attributes.current_temperature %}
+                {% set local_temperature = state_attr(current_valve,'current_temperature') %}
                 {% set actual_trv_temperature = (local_temperature | float(0) - current_calibration_value | float(0)) | round(1) %}
-                {% set actual_sensor_temperature = states[actual_local_temperature].state | float(0) | round(1) %}
+                {% set actual_sensor_temperature = states(actual_local_temperature) | float(0) | round(1) %}
                 {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
                 
-                {% set min_calibration_value = states[calibration_entity].attributes.min  %}
-                {% set max_calibration_value = states[calibration_entity].attributes.max  %}
+                {% set min_calibration_value = state_attr(calibration_entity,'min')  %}
+                {% set max_calibration_value = state_attr(calibration_entity,'max')  %}
                 {% if(new_calibration_value > max_calibration_value) %}
                   {% set new_calibration_value = max_calibration_value %}
                 {% elif (new_calibration_value < min_calibration_value)  %}
@@ -388,11 +397,11 @@ action:
         value_template: "{{ mode == 'off' }}"
       then:
       - repeat:
-          count: "{{ valves_without_off_mode | count | int }}"
+          count: "{{ iif(force_minimum_temperature, valves, valves_without_off_mode) | count | int }}"
           sequence:
           - variables:
               current_valve: "{{ valves_without_off_mode[repeat.index-1] }}"
-              off_temperature: "{{ states[current_valve].attributes.min_temp }}"
+              off_temperature: "{{ state_attr(current_valve,'min_temp') }}"
           - service: climate.set_temperature
             data:
               entity_id: "{{ current_valve }}"
@@ -400,6 +409,8 @@ action:
       - if:
         - condition: template
           value_template: "{{ valves_off_mode | count > 0 }}"
+        - condition: template
+          value_template: "{{ force_minimum_temperature == false }}"
         then:
         - service: climate.set_hvac_mode
           target:
