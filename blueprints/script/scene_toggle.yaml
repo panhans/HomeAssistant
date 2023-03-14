@@ -40,6 +40,24 @@ blueprint:
           max: 10
           step: 0.1
           unit_of_measurement: s
+      
+    use_static_order:
+      name: "Alphabetical order"
+      description: "This automation is based on timestamps of the activation of the scenes. If this option is enabled a alphabetical order will be used instead of the dynamic one."
+      default: false
+      selector:
+        boolean:
+
+    reset_after:
+      name: Reset After
+      description: If the alphabetical order is activated, a timeout can be set after which the order is reset to the first scene. If 0 is set the timeout is disabled.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 120
+          step: 1
+          unit_of_measurement: s
 
 mode: queued
 
@@ -47,6 +65,9 @@ variables:
   area: !input 'area'
   included_scenes: !input 'included_scenes'
   excluded_scenes: !input 'excluded_scenes'
+  reset_after: !input 'reset_after'
+  use_static_order: !input use_static_order
+  last_triggered: "{{ as_timestamp(iif(state_attr(this.entity_id,'last_triggered') == none, now(), state_attr(this.entity_id,'last_triggered'))) }}"
 
 sequence:
   - service: scene.turn_on
@@ -56,23 +77,36 @@ sequence:
         {% set area_scenes = states.scene | selectattr('entity_id', 'in', area_entities(area)) | map(attribute='entity_id') | list %}
         {% set all_scenes = (area_scenes | reject('in', excluded_scenes) | list) + included_scenes %}
         
-        {%- set s = namespace(scene = '') %}
-        {% set unknown_scenes = expand(all_scenes) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
-        
-        {% if unknown_scenes | count > 0 %}
-        
-          {%- set s.scene = unknown_scenes[0] %}
-        
+        {% if use_static_order == true %}
+
+          {% set is_reset = reset_after > 0 and (as_timestamp(now()) - last_triggered >= reset_after) %}
+
+          {% set static_order = expand(all_scenes) | sort(attribute='entity_id', reverse = false) | map(attribute='entity_id') | list %}
+
+          {% if is_reset == true %}
+            {{ static_order[0] }}
           {% else %}
-            {% for scene in all_scenes %}
-              {% if s.scene == '' %}
-                {% set s.scene = scene %}
-              {% endif %}
-              {% if as_timestamp(states[scene].state) <  as_timestamp(states[s.scene].state) %}
-                {% set s.scene = scene %}
-              {% endif %}
-            {% endfor %}
-        
+            {% set scenes_sorted_by_activation = expand(all_scenes) | sort(attribute='state', reverse = true) | map(attribute='entity_id') | list %}
+            {% set last_activated_scene = scenes_sorted_by_activation[0] %}
+            {% set index_of_last_activated_scene = static_order.index(last_activated_scene) %}
+            {% set new_index = index_of_last_activated_scene + 1 %}
+
+            {% if new_index == static_order | count %}
+              {{ static_order[0] }}
+            {% else %}
+              {{ static_order[new_index] }}
+            {% endif %}
+          {% endif %}
+
+        {% else %}
+
+          {% set unknown_scenes = expand(all_scenes) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
+          
+          {% if unknown_scenes | count > 0 %}
+            {{ unknown_scenes[0] }}
+          {% else %}
+            {% set known_scenes = expand(all_scenes) | sort(attribute='state', reverse = false) | map(attribute='entity_id') | list %}
+            {{ known_scenes[0] }}
+          {% endif %}
+
         {% endif %}
-        
-        {{ s.scene }}
