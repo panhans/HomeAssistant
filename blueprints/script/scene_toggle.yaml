@@ -42,15 +42,15 @@ blueprint:
           unit_of_measurement: s
       
     use_static_order:
-      name: "Alphabetical order"
-      description: "This automation is based on timestamps of the activation of the scenes. If this option is enabled a alphabetical order will be used instead of the dynamic one."
+      name: "Static order"
+      description: "This automation is based on timestamps of the activation of the scenes. If this option is enabled a static order will be used instead of the dynamic one."
       default: false
       selector:
         boolean:
 
     reset_after:
-      name: Reset After
-      description: If the alphabetical order is activated, a timeout can be set after which the order is reset to the first scene. If 0 is set the timeout is disabled.
+      name: "Reset After"
+      description: "If the static order is activated, a timeout can be set after which the order is reset to the first scene. If 0 is set the timeout is disabled."
       default: 0
       selector:
         number:
@@ -81,20 +81,18 @@ sequence:
 
           {% set is_reset = reset_after > 0 and (as_timestamp(now()) - last_triggered >= reset_after) %}
 
-          {% set static_order = expand(all_scenes) | sort(attribute='entity_id', reverse = false) | map(attribute='entity_id') | list %}
-
           {% if is_reset == true %}
-            {{ static_order[0] }}
+            {{ all_scenes[0] }}
           {% else %}
             {% set scenes_sorted_by_activation = expand(all_scenes) | sort(attribute='state', reverse = true) | map(attribute='entity_id') | list %}
             {% set last_activated_scene = scenes_sorted_by_activation[0] %}
-            {% set index_of_last_activated_scene = static_order.index(last_activated_scene) %}
+            {% set index_of_last_activated_scene = all_scenes.index(last_activated_scene) %}
             {% set new_index = index_of_last_activated_scene + 1 %}
 
-            {% if new_index == static_order | count %}
-              {{ static_order[0] }}
+            {% if new_index == all_scenes | count %}
+              {{ all_scenes[0] }}
             {% else %}
-              {{ static_order[new_index] }}
+              {{ all_scenes[new_index] }}
             {% endif %}
           {% endif %}
 
