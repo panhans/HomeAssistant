@@ -83,11 +83,10 @@ blueprint:
           
     winter_mode:
       name: 'Winter mode (optional)'
-      description: 'If this input boolean is off, heating will never occur.'
+      description: 'If this entity is off, heating will never occur. Be sure the entity is a binary input or binary sensor.'
       default:
       selector:
         entity:
-          domain: input_boolean
 
     holiday_scheduler:
       name: 'Holiday scheduler (optional)'
@@ -223,22 +222,13 @@ variables:
   actual_local_temperature: !input 'external_temp_sensor'
   
 trigger_variables:
-  # MODES
   winter_mode_t: !input winter_mode  
   party_mode_t: !input party_mode
   holiday_mode_t: !input holiday_mode
   window_t: !input window
-
-  #SCHEDULER
   regular_scheduler_t: !input scheduler
   holiday_scheduler_t: !input holiday_scheduler
-
-  holiday_mode_state_t: "{{ holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t, 'on') }}"
-  active_scheduler_t: "{{ iif(holiday_mode_state_t,holiday_scheduler_t,regular_scheduler_t) }}"
-
   persons_t: !input 'persons'
-  
-  #PRESENCE SENSOR
   presence_sensor_t: !input presence_sensor
 
 trigger:
@@ -255,10 +245,14 @@ trigger:
 
   # SCHEDULER
   - platform: template
-    value_template: "{{ is_state(active_scheduler_t, 'on') }}"
+    value_template: >
+      {% set active_scheduler_t = iif(holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t,'on'), holiday_scheduler_t, regular_scheduler_t) %}
+      {{ is_state(active_scheduler_t, 'on') }}
 
   - platform: template
-    value_template: "{{ is_state(active_scheduler_t, 'off') }}"
+    value_template: >
+      {% set active_scheduler_t = iif(holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t,'on'), holiday_scheduler_t, regular_scheduler_t) %}
+      {{ is_state(active_scheduler_t, 'off') }}
 
   # PERSONS HOME / NOT HOME
   - platform: template
@@ -426,4 +420,4 @@ action:
           temperature: "{{ temperatur | float }}"
           hvac_mode: heat
           
-mode: restart
+mode: parallel
