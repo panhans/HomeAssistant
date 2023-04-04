@@ -198,7 +198,7 @@ variables:
   presence_reaction_time: !input presence_reaction_time
   presence_detected: "{{ presence_sensor == none or (presence_sensor != none and is_state(presence_sensor,'on') and (as_timestamp(now()) - as_timestamp(states[presence_sensor].last_changed, default=as_timestamp(now()))) / 60 >= presence_reaction_time) }}"
   presence_time_window: !input presence_time_window
-  is_presence_time_window: "{{ (as_timestamp(state_attr(active_scheduler,'next_event')) - as_timestamp(now())) / (60 * 60) <=  presence_time_window }}"
+  is_presence_time_window: "{{ (as_timestamp(state_attr(active_scheduler,'next_event'),as_timestamp(now())) - as_timestamp(now())) / (60 * 60) <=  presence_time_window }}"
 
   temperatur: >
     {% if ( states(active_scheduler) == 'on' and persons_home_count | int > 0 ) %}
