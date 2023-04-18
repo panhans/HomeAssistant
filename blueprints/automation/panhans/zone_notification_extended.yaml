@@ -106,13 +106,13 @@ condition:
     value_template: "{{ trigger.to_state.state != trigger.from_state.state }}"
   
   - condition: template
-    value_template: "{{ (trigger.to_state.state != 'not_home' and state_attr('zone.'+trigger.to_state.state,'friendly_name') in zone_names) or (trigger.from_state.state != 'not_home' and state_attr('zone.'+trigger.from_state.state,'friendly_name') in zone_names) }}"
+    value_template: "{{ (trigger.to_state.state != 'not_home' and trigger.to_state.state in zone_names) or (trigger.from_state.state != 'not_home' and trigger.from_state.state in zone_names) }}"
 
 action:
   - variables:
       person: "{{ state_attr(trigger.entity_id,'friendly_name') }}"
-      zone_from: "{{ iif(trigger.from_state.state != 'not_home',state_attr('zone.'+trigger.from_state.state,'friendly_name'),'not_home') }}"
-      zone_to: "{{ iif(trigger.to_state.state != 'not_home',state_attr('zone.'+trigger.to_state.state,'friendly_name'),'not_home') }}"
+      zone_from: "{{ iif(trigger.from_state.state != 'not_home',trigger.from_state.state,'not_home') }}"
+      zone_to: "{{ iif(trigger.to_state.state != 'not_home',trigger.to_state.state,'not_home') }}"
   - if:
       - condition: template
         value_template: "{{ zone_to in zone_names }}"
