@@ -82,7 +82,11 @@ variables:
   zone_names: |
     {% set friendly = namespace(name=[]) %}
     {% for zone in zones %}
-      {% set friendly.name = friendly.name + [states[zone].attributes.friendly_name] %}
+      {% set new_zone = state_attr(zone,'friendly_name') %}
+      {% if zone == 'zone.home' %}
+        { set new_zone = 'Home' }
+      {% endif %}
+      {% set friendly.name = friendly.name + [new_zone] %}
     {% endfor %}
     
     {{ friendly.name }}
@@ -111,8 +115,8 @@ condition:
 action:
   - variables:
       person: "{{ state_attr(trigger.entity_id,'friendly_name') }}"
-      zone_from: "{{ iif(trigger.from_state.state != 'not_home',trigger.from_state.state,'not_home') }}"
-      zone_to: "{{ iif(trigger.to_state.state != 'not_home',trigger.to_state.state,'not_home') }}"
+      zone_from: "{{ iif(trigger.from_state.state != 'not_home',iif(trigger.from_state.state == 'Home',state_attr('zone.home','friendly_name'),trigger.from_state.state),'not_home') }}"
+      zone_to: "{{ iif(trigger.to_state.state != 'not_home',iif(trigger.to_state.state == 'Home',state_attr('zone.home','friendly_name'),trigger.to_state.state),'not_home') }}"
   - if:
       - condition: template
         value_template: "{{ zone_to in zone_names }}"
