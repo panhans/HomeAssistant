@@ -55,6 +55,14 @@ blueprint:
         entity:
           domain: input_boolean
           
+    guest_mode:
+      name: 'Guest mode (optional)'
+      description: 'Activates the scheduler and ignores if anybody is at home or not.'
+      default:
+      selector:
+        entity:
+          domain: input_boolean
+          
     window:
       name: 'Window (optional)'
       description: 'Window that turns off the thermostats if it is open.'
@@ -178,9 +186,11 @@ variables:
   window: !input 'window'
   winter_mode: !input 'winter_mode'
   party_mode: !input 'party_mode'
+  guest_mode: !input 'guest_mode'
   persons: !input 'persons'
 
   party_state: "{{ party_mode != none and is_state(party_mode, 'on') }}"
+  guest_state: "{{ guest_mode != none and is_state(guest_mode, 'on') }}"
   winter_state: "{{ winter_mode == none or (winter_mode != none and is_state(winter_mode, 'on')) }}"
   window_state: "{{ window != none and is_state(window, 'on') }}"
   mode: >
@@ -201,7 +211,7 @@ variables:
   is_presence_time_window: "{{ (as_timestamp(state_attr(active_scheduler,'next_event'),as_timestamp(now())) - as_timestamp(now())) / (60 * 60) <=  presence_time_window }}"
 
   temperatur: >
-    {% if ( states(active_scheduler) == 'on' and persons_home_count | int > 0 ) %}
+    {% if ( states(active_scheduler) == 'on' and ( persons_home_count | int > 0 or guest_state == true)) %}
 
       {% if ( presence_detected == false and is_presence_time_window == true ) %}
         {{ min_temp }}
@@ -224,6 +234,7 @@ variables:
 trigger_variables:
   winter_mode_t: !input winter_mode  
   party_mode_t: !input party_mode
+  guest_mode_t: !input guest_mode
   holiday_mode_t: !input holiday_mode
   window_t: !input window
   regular_scheduler_t: !input scheduler
@@ -306,6 +317,17 @@ trigger:
       
   - platform: template
     value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'off') }}"
+    for:
+      seconds: !input 'window_reaction_time'
+      
+  # GUEST MODE TRIGGER
+  - platform: template
+    value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'on') }}"
+    for:
+      seconds: !input 'window_reaction_time'
+      
+  - platform: template
+    value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'off') }}"
     for:
       seconds: !input 'window_reaction_time'
 
