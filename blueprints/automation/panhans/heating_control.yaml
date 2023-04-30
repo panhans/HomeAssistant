@@ -436,10 +436,14 @@ action:
           data:
             hvac_mode: "off"
       else:
+      - service: climate.set_hvac_mode
+        target:
+          entity_id: !input 'heating'
+        data:
+          hvac_mode: "heat"
       - service: climate.set_temperature
         data:
           entity_id: !input 'heating'
           temperature: "{{ temperatur | float }}"
-          hvac_mode: heat
           
 mode: parallel
