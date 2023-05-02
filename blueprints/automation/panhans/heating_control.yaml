@@ -441,6 +441,8 @@ action:
           entity_id: !input 'heating'
         data:
           hvac_mode: "heat"
+      - delay:
+          seconds: 2
       - service: climate.set_temperature
         data:
           entity_id: !input 'heating'
