@@ -39,6 +39,7 @@ blueprint:
           max: 24
           step: 0.5
           mode: slider
+          unit_of_measurement: '°C'
           
     set_temp:
       name: 'Comfort temperature'
@@ -81,13 +82,7 @@ blueprint:
           max: 60
           step: 1
           mode: slider
-
-    force_minimum_temperature:
-      name: "Force mimimum temperature"
-      description: "Activate this option if you have problems with your TRVs with off mode when window is open. All TRVs will be set to their minimum temperature if this option is enabled."
-      default: false
-      selector:
-        boolean:
+          unit_of_measurement: 's'
           
     winter_mode:
       name: 'Winter mode (optional)'
@@ -122,7 +117,7 @@ blueprint:
           domain: binary_sensor
 
     presence_time_window:
-      name: 'Presence time window in h'
+      name: 'Presence time window'
       description: 'If a presence sensor is defined it will only be observed X hours before the scheduler turns off.'
       default: 1
       selector:
@@ -131,9 +126,10 @@ blueprint:
           max: 5
           step: 1
           mode: slider
+          unit_of_measurement: h
 
     presence_reaction_time:
-      name: 'Presence reaction time in min'
+      name: 'Presence reaction time'
       description: 'Define how many minutes the presence sensor must be off so the temperature turns to minimum.'
       default: 5
       selector:
@@ -142,6 +138,7 @@ blueprint:
           max: 10
           step: 1
           mode: slider
+          unit_of_measurement: min
           
     external_temp_sensor:
       name: 'External Temperatur Sensor (optional)'
@@ -151,6 +148,25 @@ blueprint:
         entity:
           domain: sensor
           device_class: temperature
+          
+    force_minimum_temperature:
+      name: "Force mimimum temperature"
+      description: "Activate this option if you have problems with your TRVs with off mode when window is open. All TRVs will be set to their minimum temperature if this option is enabled."
+      default: false
+      selector:
+        boolean:
+        
+    service_call_delay:
+      name: 'Service call delay'
+      description: 'Some TRVs have problems with setting temperature. You can add a delay between the service calls that control the mode and temperature of your TRVs. This could fix your problem.'
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 1
+          mode: slider
+          unit_of_measurement: s
 
 variables:
   trvs: !input 'heating'
@@ -442,7 +458,7 @@ action:
         data:
           hvac_mode: "heat"
       - delay:
-          seconds: 2
+          seconds: !input service_call_delay
       - service: climate.set_temperature
         data:
           entity_id: !input 'heating'
