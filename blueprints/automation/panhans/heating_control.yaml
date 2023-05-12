@@ -39,6 +39,7 @@ blueprint:
           max: 24
           step: 0.5
           mode: slider
+          unit_of_measurement: '°C'
           
     set_temp:
       name: 'Comfort temperature'
@@ -50,6 +51,14 @@ blueprint:
     party_mode:
       name: 'Party mode (optional)'
       description: 'Overwrites winter mode and scheduler. If on, heating is activated.'
+      default:
+      selector:
+        entity:
+          domain: input_boolean
+          
+    guest_mode:
+      name: 'Guest mode (optional)'
+      description: 'Activates the scheduler and ignores if anybody is at home or not.'
       default:
       selector:
         entity:
@@ -73,13 +82,7 @@ blueprint:
           max: 60
           step: 1
           mode: slider
-
-    force_minimum_temperature:
-      name: "Force mimimum temperature"
-      description: "Activate this option if you have problems with your TRVs with off mode when window is open. All TRVs will be set to their minimum temperature if this option is enabled."
-      default: false
-      selector:
-        boolean:
+          unit_of_measurement: 's'
           
     winter_mode:
       name: 'Winter mode (optional)'
@@ -114,7 +117,7 @@ blueprint:
           domain: binary_sensor
 
     presence_time_window:
-      name: 'Presence time window in h'
+      name: 'Presence time window'
       description: 'If a presence sensor is defined it will only be observed X hours before the scheduler turns off.'
       default: 1
       selector:
@@ -123,9 +126,10 @@ blueprint:
           max: 5
           step: 1
           mode: slider
+          unit_of_measurement: h
 
     presence_reaction_time:
-      name: 'Presence reaction time in min'
+      name: 'Presence reaction time'
       description: 'Define how many minutes the presence sensor must be off so the temperature turns to minimum.'
       default: 5
       selector:
@@ -134,6 +138,7 @@ blueprint:
           max: 10
           step: 1
           mode: slider
+          unit_of_measurement: min
           
     external_temp_sensor:
       name: 'External Temperatur Sensor (optional)'
@@ -143,6 +148,25 @@ blueprint:
         entity:
           domain: sensor
           device_class: temperature
+          
+    force_minimum_temperature:
+      name: "Force mimimum temperature"
+      description: "Activate this option if you have problems with your TRVs with off mode when window is open. All TRVs will be set to their minimum temperature if this option is enabled."
+      default: false
+      selector:
+        boolean:
+        
+    service_call_delay:
+      name: 'Service call delay'
+      description: 'Some TRVs have problems with setting temperature. You can add a delay between the service calls that control the mode and temperature of your TRVs. This could fix your problem.'
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 1
+          mode: slider
+          unit_of_measurement: s
 
 variables:
   trvs: !input 'heating'
@@ -178,9 +202,11 @@ variables:
   window: !input 'window'
   winter_mode: !input 'winter_mode'
   party_mode: !input 'party_mode'
+  guest_mode: !input 'guest_mode'
   persons: !input 'persons'
 
   party_state: "{{ party_mode != none and is_state(party_mode, 'on') }}"
+  guest_state: "{{ guest_mode != none and is_state(guest_mode, 'on') }}"
   winter_state: "{{ winter_mode == none or (winter_mode != none and is_state(winter_mode, 'on')) }}"
   window_state: "{{ window != none and is_state(window, 'on') }}"
   mode: >
@@ -201,7 +227,7 @@ variables:
   is_presence_time_window: "{{ (as_timestamp(state_attr(active_scheduler,'next_event'),as_timestamp(now())) - as_timestamp(now())) / (60 * 60) <=  presence_time_window }}"
 
   temperatur: >
-    {% if ( states(active_scheduler) == 'on' and persons_home_count | int > 0 ) %}
+    {% if ( states(active_scheduler) == 'on' and ( persons_home_count | int > 0 or guest_state == true)) %}
 
       {% if ( presence_detected == false and is_presence_time_window == true ) %}
         {{ min_temp }}
@@ -224,6 +250,7 @@ variables:
 trigger_variables:
   winter_mode_t: !input winter_mode  
   party_mode_t: !input party_mode
+  guest_mode_t: !input guest_mode
   holiday_mode_t: !input holiday_mode
   window_t: !input window
   regular_scheduler_t: !input scheduler
@@ -306,6 +333,17 @@ trigger:
       
   - platform: template
     value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'off') }}"
+    for:
+      seconds: !input 'window_reaction_time'
+      
+  # GUEST MODE TRIGGER
+  - platform: template
+    value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'on') }}"
+    for:
+      seconds: !input 'window_reaction_time'
+      
+  - platform: template
+    value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'off') }}"
     for:
       seconds: !input 'window_reaction_time'
 
@@ -414,10 +452,16 @@ action:
           data:
             hvac_mode: "off"
       else:
+      - service: climate.set_hvac_mode
+        target:
+          entity_id: !input 'heating'
+        data:
+          hvac_mode: "heat"
+      - delay:
+          seconds: !input service_call_delay
       - service: climate.set_temperature
         data:
           entity_id: !input 'heating'
           temperature: "{{ temperatur | float }}"
-          hvac_mode: heat
           
 mode: parallel
