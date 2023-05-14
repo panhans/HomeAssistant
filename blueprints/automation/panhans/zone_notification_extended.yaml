@@ -77,6 +77,20 @@ blueprint:
         icon:
           placeholder: mdi:map-marker
           
+    custom_action_arriving:
+      name: "Custom Action on arriving"
+      description: "An action which can be processed when a person arraives at a zone."
+      default: []
+      selector:
+        action: {}
+        
+    custom_action_leaving:
+      name: "Custom Action on leaving"
+      description: "An action which can be processed when a person leaves a zone"
+      default: []
+      selector:
+        action: {}
+          
 variables:
   zones: !input zones
   home_zone_name: "{{ 'home' | lower }}"
@@ -103,6 +117,10 @@ variables:
     
   is_arriving_notification_enabled: !input is_arriving_notification_enabled
   is_leaving_notification_enabled: !input is_leaving_notification_enabled
+  
+  custom_action_arriving: !input custom_action_arriving
+  custom_action_leaving: !input custom_action_leaving
+  
   
 trigger:
   platform: state
@@ -152,5 +170,19 @@ action:
             ttl: 0
             priority: high
             notification_icon: !input 'status_bar_icon'
+            
+  - if:
+      - condition: template
+        value_template: "{{ zone_to in zone_names }}"
+      - condition: template
+        value_template: '{{ custom_action_arriving is defined }}'
+    then: !input 'custom_action_arriving'
+      
+  - if:
+      - condition: template
+        value_template: "{{ zone_from in zone_names }}"
+      - condition: template
+        value_template: '{{ custom_action_leaving is defined }}'
+    then: !input 'custom_action_leaving'
             
 mode: single
