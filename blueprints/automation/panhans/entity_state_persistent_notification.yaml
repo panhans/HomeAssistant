@@ -44,12 +44,12 @@ blueprint:
     title:
       name: "Title"
       description: "Notification title"
-      default: "{{ trigger.from_state.attributes.friendly_name }} is open"
+      default: "{{ entity_name }} is {{ avtive_state }}"
 
     message:
       name: "Message"
       description: "Notification message"
-      default: "Keep in mind: {{ trigger.from_state.attributes.friendly_name }} is open"
+      default: "Keep in mind: {{ entity_name }} is {{ active_state }}"
       
     status_bar_icon:
       name: "Status bar icon"
@@ -72,15 +72,32 @@ blueprint:
       default: true
       selector:
         boolean:
+        
+    period:
+      name: Periodical Notification
+      description: Sends notification periodically
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 30
+          step: 1
+          mode: slider
+          unit_of_measurement: min
+          
+    stop_button_text:
+      name: "Stop button text"
+      description: "Text for stop button in notification to interrupt the periodical send notifications."
+      default: "Stop notifying"
 
 variables:
   active_state: !input active_state
-  message: !input message
-  title: !input title
   sensor_entity: !input sensor_entity
   group_target: !input notify_group
   ha_notification: !input ha_notification
   notify_device: !input notify_device
+  period: !input period
+  action_prefix: "STOP_{{this.entity_id}}"
   
 trigger_variables:
   for_time_m: !input for_time_m
@@ -91,49 +108,110 @@ trigger:
   entity_id: !input 'sensor_entity'
   to: !input active_state
   for:
-    hours: 0
     minutes: "{{ for_time_m_t }}"
-    seconds: 0
+  id: 'on'
 - platform: state
   entity_id: !input 'sensor_entity'
   from: !input active_state
-
-condition: []
+  id: 'off'
+- platform: event
+  event_type: pntc_event
+  id: 'period'
+  
+condition:
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.id == 'on' }}"
+      - condition: template
+        value_template: "{{ trigger.id == 'off' }}"
+      - condition: template
+        value_template: "{{ trigger.id == 'period' and trigger.event.data.automation == this.entity_id }}"
 
 action:
 
+- variables:
+    is_period_trigger: "{{ trigger.id == 'period' }}"
+    sensor: |
+      {% if is_period_trigger %}
+        {{ trigger.event.data.s_entity }}
+      {% else %}
+        {{ trigger.from_state.entity_id }}
+      {% endif %}
+    entity_name: "{{ state_attr(sensor,'friendly_name') }}"
+    tag: "{{ this.entity_id }}-pesn-{{ sensor }}"
+    action_tag: "{{ action_prefix }}_{{ sensor }}"
+
 - if:
     - condition: template
-      value_template: "{{ trigger.to_state.state == active_state }}"
+      value_template: "{{ is_period_trigger or trigger.to_state.state == active_state }}"
   then:
     - if:
         - condition: template
           value_template: "{{ notify_device != none }}"
       then:
+      - if:
+        - condition: template
+          value_template: "{{ period > 0 }}"
+        then:
         - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
           data:
-            title: "{{ title }}"
-            message: "{{ message }}"
+            title: !input title
+            message: !input message
             data:
               ttl: 0
               priority: high
               notification_icon: !input 'status_bar_icon'
-              tag: pesn-{{ trigger.entity_id }}
+              tag: "{{ tag }}"
+              persistent: !input persistent_notification
+              sticky: !input persistent_notification
+              actions:
+              - action: "{{ action_tag }}"
+                title: !input stop_button_text
+        else:
+        - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
+          data:
+            title: !input title
+            message: !input message
+            data:
+              ttl: 0
+              priority: high
+              notification_icon: !input 'status_bar_icon'
+              tag: "{{ tag }}"
               persistent: !input persistent_notification
               sticky: !input persistent_notification
     - if:
         - condition: template
           value_template: "{{ group_target is defined and group_target != '' }}"
       then:
+      - if:
+        - condition: template
+          value_template: "{{ period > 0 }}"
+        then:
         - service: notify.{{ group_target }}
           data:
-            title: "{{ title }}"
-            message: "{{ message }}"
+            title: !input title
+            message: !input message
             data:
               ttl: 0
               priority: high
               notification_icon: !input 'status_bar_icon'
-              tag: pesn-{{ trigger.entity_id }}
+              tag: "{{ tag }}"
+              persistent: !input persistent_notification
+              sticky: !input persistent_notification
+              actions:
+              - action: "{{ action_tag }}"
+                title: !input stop_button_text
+        else:
+        - service: notify.{{ group_target }}
+          data:
+            title: !input title
+            message: !input message
+            data:
+              ttl: 0
+              priority: high
+              notification_icon: !input 'status_bar_icon'
+              tag: "{{ tag }}"
               persistent: !input persistent_notification
               sticky: !input persistent_notification
     - if:
@@ -142,19 +220,41 @@ action:
       then:
         - service: persistent_notification.create
           data:
-            title: "{{ title }}"
-            message: "{{ message }}"
-            notification_id: pesn-{{ trigger.entity_id }}
+            title: !input title
+            message: !input message
+            notification_id: "{{ tag }}"
   else:
     - service: notify.notify
       data:
         data:
-          tag: pesn-{{ trigger.entity_id }}
+          tag: "{{ tag }}"
           ttl: 0
           priority: high
         message: clear_notification
     - service: persistent_notification.dismiss
       data:
         notification_id: pesn-{{ trigger.entity_id }}
+        
+- if:
+  - condition: template
+    value_template: "{{ period > 0 }}"
+  then:
+  - wait_for_trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: "{{ action_tag }}"
+    timeout:
+      minutes: "{{ period }}"
+  - if:
+    - condition: template
+      value_template: "{{ states(sensor) == active_state }}"
+    - condition: template
+      value_template: "{{ wait.trigger == none }}"
+    then:
+    - event: pntc_event
+      event_data:
+        s_entity: "{{ sensor }}"
+        automation: "{{ this.entity_id }}"
           
 mode: parallel
