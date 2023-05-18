@@ -233,7 +233,7 @@ action:
         message: clear_notification
     - service: persistent_notification.dismiss
       data:
-        notification_id: pesn-{{ trigger.entity_id }}
+        notification_id: "{{ tag }}"
         
 - if:
   - condition: template
