@@ -1,0 +1,37 @@
+pill:
+  show_label: true
+  show_icon: false
+  show_name: true
+  size: 100%
+  name: "[[[ return entity == null ? '' : states[entity.entity_id].state; ]]]"
+  label: >
+    [[[ 
+      return (entity == null || states[entity.entity_id].attributes.unit_of_measurement == '' || states[entity.entity_id].attributes.unit_of_measurement == null ? '' : '' + states[entity.entity_id].attributes.unit_of_measurement);
+    ]]]
+  tap_action:
+    action: more-info
+    haptic: medium
+  styles:
+    grid:
+      - grid-template-areas: '"i n gutter l"'
+      - grid-template-columns:  min-content min-content 4px min-content
+      - grid-template-rows: min-content
+    card:
+      - padding: 6px 10px
+      - font-size: 12px
+      - line-height: 18px
+      - font-weight: 500
+      - background: var(--contrast20)
+      - width: auto
+    img_cell:
+      - place-self: center
+      - width: 18px
+      - height: 18px
+      - margin-right: 4px
+      - transform: translateY(-1px)
+    icon:
+      - color: var(--contrast1)
+    name:
+      - color: var(--contrast1)
+    label:
+      - color: var(--contrast12)

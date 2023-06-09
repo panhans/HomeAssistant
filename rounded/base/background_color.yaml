@@ -1,0 +1,22 @@
+background_color:
+  styles:
+    card:
+    - background: >
+        [[[
+          if(variables.background_color) {
+            return 'var(--'+variables.background_color+')';
+          }
+
+          let colors = ['purple','red', 'blue', 'green', 'yellow','orange'];
+          let colorCount = Math.floor(Math.random() * colors.length);
+          return 'var(--'+colors[colorCount]+')';
+        ]]]
+    icon:
+      - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--contrast2)'; ]]] "
+    name:
+      - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--black)'; ]]] "
+    custom_fields:
+      cs:
+        - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--black)'; ]]] "
+      es:
+        - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--black)'; ]]] "

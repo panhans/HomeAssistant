@@ -1,0 +1,14 @@
+de-de:
+  state:
+    - value: 'not_home'
+      custom_fields:
+        cs: 'Unterwegs'
+    - value: 'home'
+      custom_fields:
+        cs: 'Zu Haus'
+    - value: 'on'
+      custom_fields:
+        cs: 'An'
+    - value: 'off'
+      custom_fields:
+        cs: 'Aus'

@@ -1,0 +1,134 @@
+base:
+    show_state: false
+    template:
+    - de-de
+    variables:
+        active_color: orange
+        show_last_changed: false
+    custom_fields:
+      cs: >
+        [[[ 
+          let has_time = states[entity.entity_id].attributes.has_time != null && states[entity.entity_id].attributes.has_time;
+          let has_date = states[entity.entity_id].attributes.has_date != null && states[entity.entity_id].attributes.has_date;
+
+          let state = states[entity.entity_id].state;
+
+          if ((has_time || has_date) || variables.show_last_changed || variables.force_date) {
+            let d = new Date(variables.show_last_changed ? states[entity.entity_id].last_changed : state);
+
+            d = variables.force_date ? new Date(d) : d;
+
+            if (!has_date && has_time) {
+              return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 'Uhr';
+            } else if (!has_time && has_date) {
+              return d.toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
+            } else {
+              let d_date = d.toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
+              let today = (new Date()).toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
+              
+              if(d_date == today) {
+                let time = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                return time + ' Uhr';
+              }
+
+              return d_date;
+            }
+          }
+
+          let unit = states[entity.entity_id].attributes.unit_of_measurement;
+
+          state = state == null ? '-' : state;
+
+          state = variables.round != null && !isNaN(state) ? Math.round(state,variables.round) : state;
+
+          if (unit == null) {
+            return state;
+          }
+
+          return state + ' ' + unit;
+        ]]]
+      es: >
+        [[[ 
+          let state = states[entity.entity_id].state;
+
+          let has_time = states[entity.entity_id].attributes.has_time != null && states[entity.entity_id].attributes.has_time;
+          let has_date = states[entity.entity_id].attributes.has_date != null && states[entity.entity_id].attributes.has_date;
+
+          if ((has_time && has_date) || variables.show_last_changed || variables.force_date) {
+            let d = new Date(variables.show_last_changed ? states[entity.entity_id].last_changed : state);
+
+            d = variables.force_date ? new Date(d) : d;
+
+            let d_date = d.toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
+            let today = (new Date()).toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
+              
+            if(d_date != today) {
+              let time = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+              return time + ' Uhr';
+            }
+          }
+        ]]]
+    styles:
+        grid:
+        - grid-template-areas: '"i es" "n n" "cs cs"'
+        - grid-template-columns: 1fr min-content
+        - grid-template-rows: 1fr min-content min-content
+        card:
+        - background: var(--contrast2)
+        - padding: 16px
+        - '--mdc-ripple-press-opacity': 0
+        img_cell:
+        - justify-self: start
+        - width: 24px
+        - border-radius: 8px
+        icon:
+        - width: 24px
+        - height: 24px
+        - color: var(--contrast18)
+        name:
+        - text-align: start
+        - white-space: no-wrap
+        - justify-self: start
+        - font-size: 14px
+        - margin: 6px 0 2px 0
+        - color: var(--contrast18)
+        - text-overflow: ellipsis
+        custom_fields:
+            cs:
+            - justify-self: start
+            - font-size: 12px
+            - height: "16px"
+            - color: var(--contrast10)
+            es:
+            - justify-self: end
+            - font-size: 12px
+            - height: "16px"
+            - color: var(--contrast10)
+    state:
+    - value: 'home'
+      styles:
+        card:
+          - background: "[[[ return 'var(--' + variables.active_color + ')';]]]"
+        icon:
+          - color: var(--black)
+        name:
+          - color: var(--black)
+        custom_fields:
+          cs:
+            - color: var(--black)
+          es:
+            - color: var(--black)
+    - value: 'on'
+      styles:
+        card:
+          - background: "[[[ return 'var(--' + variables.active_color + ')';]]]"
+        icon:
+          - color: var(--black)
+        name:
+          - color: var(--black)
+        custom_fields:
+          cs:
+            - color: var(--black)
+          es:
+            - color: var(--black)
+
