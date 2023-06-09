@@ -1,0 +1,26 @@
+person:
+  template: base
+  show_entity_picture: true
+  styles:
+    grid:
+    - grid-template-areas: '"i space0" "i n" "i cs" "i space1"'
+    - grid-template-columns: min-content 1fr
+    - grid-template-rows: 1fr min-content min-content 1fr
+    img_cell:
+    - justify-self: start
+    - width: 64px
+    - border-radius: 16px
+    icon:
+    - width: 64px
+    - height: 64px
+    - color: var(--contrast18)
+    name:
+    - padding-left: 8px
+    - justify-self: start
+    - height: auto
+    - margin: 0px
+    custom_fields:
+      cs:
+      - margin: 0px 0px 2px 0px
+      - padding-left: 8px
+      - height: auto

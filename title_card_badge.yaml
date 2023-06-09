@@ -1,0 +1,45 @@
+title_card_badge:
+  #name: Title here
+  show_icon: false
+  custom_fields:
+    badge:
+      card:
+        type: custom:button-card
+        name: '[[[ return variables.badge_name; ]]]'
+        label: >-
+          [[[ return variables.badge_label; ]]]
+        show_label: true
+        show_icon: false
+        entity: '[[[ return entity.entity_id; ]]]'
+        tap_action:
+          action: more-info
+          haptic: medium
+        styles:
+          grid:
+            - grid-template-areas: '"n gutter l"'
+            - grid-template-columns: min-content 5px min-content
+            - grid-template-rows: min-content
+          card:
+            - padding: 6px 10px
+            - font-size: 12px
+            - line-height: 18px
+            - font-weight: 500
+            - background: var(--contrast20)
+          name:
+            - color: var(--contrast1)
+          label:
+            - color: var(--contrast12)
+  styles:
+    grid:
+      - grid-template-areas: '"n" "badge"'
+    card:
+      - background: none
+      - padding: 16px 0
+      - '--mdc-ripple-press-opacity': 0
+    name:
+      - font-size: 32px
+      - color: var(--contrast20)
+    custom_fields:
+      badge:
+        - margin: 16px auto 0 auto
+        - '--mdc-ripple-press-opacity': 0.5

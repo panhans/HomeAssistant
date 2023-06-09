@@ -1,0 +1,4 @@
+input_boolean:
+  template: sensor
+  tap_action:
+    action: toggle

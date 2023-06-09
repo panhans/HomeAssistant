@@ -1,0 +1,67 @@
+sensor_battery:
+  template: base
+  variables:
+    active_color: orange
+    unit: ''
+  tap_action:
+    action: none
+  hold_action:
+    action: more-info
+    haptic: medium
+  state:
+    - value: 15
+      operator: <=
+      styles:
+        card:
+        - background: var(--red)
+        icon:
+          - color: var(--black)
+        name:
+          - color: var(--black)
+        custom_fields:
+          cs:
+            - color: var(--black)
+          es:
+            - color: var(--black)
+    - value: 30
+      operator: <=
+      styles:
+        card:
+        - background: var(--orange)
+        icon:
+          - color: var(--black)
+        name:
+          - color: var(--black)
+        custom_fields:
+          cs:
+            - color: var(--black)
+          es:
+            - color: var(--black)
+    - value: 50
+      operator: <=
+      styles:
+        card:
+        - background: var(--yellow)
+        icon:
+          - color: var(--black)
+        name:
+          - color: var(--black)
+        custom_fields:
+          cs:
+            - color: var(--black)
+          es:
+            - color: var(--black)
+    - value: 50
+      operator: <=
+      styles:
+        card:
+        - background: var(--green)
+        icon:
+          - color: var(--black)
+        name:
+          - color: var(--black)
+        custom_fields:
+          cs:
+            - color: var(--black)
+          es:
+            - color: var(--black)

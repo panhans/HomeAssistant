@@ -1,0 +1,87 @@
+party_mode:
+  template: input_number
+  triggers_update: all
+  custom_fields:
+    cs: >
+      [[[
+          if (states[entity.entity_id].state == 'on') {
+            let minutes = states[variables.party_input_number].state * 60;
+            let last_changed = new Date(states[entity.entity_id].last_changed);
+            let party_off_date = new Date(last_changed.getTime() + minutes*60000);
+
+            return "bis " + party_off_date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' Uhr';
+          }
+
+          return "Aus";
+      ]]]
+    party:
+      card:
+        type: "custom:button-card"
+        template: button_single
+        entity: "[[[ return entity.entity_id; ]]]"
+        show_name: false
+        icon: mdi:power
+        styles:
+          grid:
+          - grid-template-areas: '"i"'
+          card:
+          - padding: 0px
+          - margin: 0px
+          - border-radius: 8px
+        tap_action:
+          action: toggle
+          haptic: medium
+    inc:
+      card:
+        type: "custom:button-card"
+        icon: 'mdi:plus'
+        template: button_single
+        show_name: false
+        styles:
+          grid:
+          - grid-template-areas: '"i"'
+          card:
+          - padding: 0px
+          - margin: 0px
+          - border-radius: 8px
+        tap_action:
+          action: "call-service"
+          service: "input_number.increment"
+          service_data:
+            entity_id: "[[[ return variables.party_input_number; ]]]"
+    dec:
+      card:
+        type: "custom:button-card"
+        entity: "[[[ return variables.party_input_number; ]]]"
+        icon: 'mdi:minus'
+        template: button_single
+        show_name: false
+        styles:
+          grid:
+          - grid-template-areas: '"i"'
+          card:
+          - padding: 0px
+          - margin: 0px
+          - border-radius: 8px
+        tap_action:
+          action: "call-service"
+          service: "input_number.decrement"
+          service_data:
+            entity_id: "[[[ return variables.party_input_number ]]]"
+  styles:
+    custom_fields:
+      party:
+        - width: 32px
+        - width: 32px
+        - margin-right: 24px
+      inc:
+        - width: 32px
+        - width: 32px
+        - margin-right: 24px
+      dec:
+        - width: 32px
+        - width: 32px
+    grid:
+      - grid-template-areas: '"i i i i" "n party inc dec" "cs party inc dec"'
+      - grid-template-columns: 1fr min-content min-content min-content
+      - grid-template-rows: 1fr min-content min-content

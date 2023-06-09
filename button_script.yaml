@@ -1,0 +1,32 @@
+button_script:
+  template: base
+  show_state: false
+  variables:
+    active_color: orange
+    show_time: false
+  tap_action:
+    action: toggle
+    haptic: medium
+  hold_action:
+    action: more-info
+    haptic: medium
+  custom_fields:
+    cs: >
+      [[[ 
+        let lt = new Date(states[entity.entity_id].attributes.last_triggered);
+        let lt_date = lt.toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
+
+        if(!variables.show_time) {
+          return lt_date;
+        }
+
+        let today = (new Date()).toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
+        let lt_time = lt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        if(today == lt_date) {
+          return lt_time + ' Uhr';
+        }
+
+        return lt_date + ' - ' + lt_time + ' Uhr'; 
+      ]]]
+  

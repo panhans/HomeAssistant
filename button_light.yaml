@@ -1,0 +1,8 @@
+button_light:
+  template: base
+  tap_action:
+    action: toggle
+    haptic: medium
+  hold_action:
+    action: more-info
+    haptic: medium

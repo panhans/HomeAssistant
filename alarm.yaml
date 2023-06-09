@@ -1,0 +1,106 @@
+alarm:
+  template: base
+  icon: 'mdi:shield-lock'
+  variables:
+    active_color: red
+  state:
+    - value: 'disarmed'
+      icon: 'mdi:shield-home'
+      custom_fields: 
+        cs: Inaktiv
+      styles:
+        card:
+          - background: "var(--contrast2)"
+        icon:
+          - color: "var(--contrast18)"
+        name:
+          - color: "var(--contrast18)"
+        custom_fields:
+          cs:
+            - color: "var(--contrast18)"
+          es:
+            - color: "var(--contrast18)"
+    - value: 'armed_night'
+      custom_fields: 
+        cs: Nacht
+    - value: 'armed_custom_bypass'
+      custom_fields: 
+        cs: Stiller Alarm
+    - value: 'arming'
+      styles:
+        icon:
+          - animation: blink 2s ease infinite
+      custom_fields: 
+        cs: Aktiviere Alarm
+    - value: 'armed_away'
+      custom_fields: 
+        cs: Außer Haus
+    - value: 'disarmed'
+      custom_fields: 
+        cs: Aus
+  styles:
+    grid:
+    - grid-template-areas: '"i i" "n ec" "cs ec"'
+    - grid-template-columns: 1fr min-content
+    - grid-template-rows: 1fr min-content min-content min-content
+    custom_fields:
+      ec:
+      - justify-self: start
+      - justify-content: center
+      cs:
+        - color: var(--black)
+      es:
+        - color: var(--black)
+    card:
+    - background: "[[[ return 'var(--' + variables.active_color + ')';]]]"
+    icon:
+    - color: var(--black)
+    name:
+    - color: var(--black)
+  custom_fields:
+    ec:
+      card:
+        type: tile
+        entity: "[[[ return entity.entity_id; ]]]"
+        color: red
+        features:
+        - type: "alarm-modes"
+          modes:
+            - armed_away
+            - armed_night
+            - armed_custom_bypass
+            - disarmed
+        card_mod:
+          style:
+            .: >
+              .tile { 
+                display: none;
+              }
+              ha-card {
+                width: 200px;
+                background: transparent;
+                border-radius: 0px;
+              }
+              ha-card.active {
+                height: 40px;
+              }
+              .features hui-alarm-modes-tile-feature .container::before div.option-armed_custom_bypass.option.selected::before {
+                background: transparent;
+                display: none !important;
+              }
+              #option-armed_custom_bypass.option.selected::before : {
+                background: transparent;
+                display: none !important;
+              }
+            .features hui-alarm-modes-tile-feature $: |
+              .container {
+                padding-left: 0px !important;
+                padding-right: 0px !important;
+                padding-top: 0px !important;
+                padding-bottom: 0px !important;
+              }
+            .features hui-alarm-modes-tile-feature $ .container ha-control-select $ .container: |
+              .option.selected {
+                --control-select-color: var(--yellow) !important;
+              }
+              

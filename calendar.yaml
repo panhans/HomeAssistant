@@ -1,0 +1,73 @@
+calendar:
+  template: title_card
+  variables:
+    active_color: 'red'
+  show_label: true
+  name: '[[[ return entity.attributes.message ]]]'
+  label: |
+      [[[ 
+        const startDate = new Date(states[entity.entity_id].attributes.start_time);
+        const endDate = new Date(states[entity.entity_id].attributes.end_time);
+        
+        const startDay = startDate.toLocaleDateString();
+        const endDay = endDate.toLocaleDateString();
+        const today = (new Date()).toLocaleDateString();
+
+        if (states[entity.entity_id].attributes.all_day) {
+          if(startDay == endDay) {
+            return startDay;
+          }
+
+          return startDay +' - '+ endDay;
+        }
+
+        const startTime = startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const endTime = endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        if(startDay == endDay) {
+          if (startDay == today) {
+            return startTime + ' - ' + endTime;
+          }
+        }
+
+        return startDay + ' ' + startTime + ' - ' + endDay + ' ' + endTime;
+      ]]]
+  styles:
+    grid:
+      - grid-template-areas: '"n" "l"'
+      - grid-template-columns: "1fr"
+      - grid-template-rows: "min-content min-content"
+    name:
+      - color: var(--contrast20)
+      - font-size: "1.5rem"
+      - color: >
+          [[[
+            const startDate = new Date(states[entity.entity_id].attributes.start_time);
+            const endDate = new Date(states[entity.entity_id].attributes.end_time);
+            const today = new Date();
+
+            if (startDate <= today && today <= endDate) {
+              return 'var(--' + variables.active_color + ')';
+            }
+
+            return 'var(--contrast20)';
+          ]]]
+    label:
+      - font-weight: "bold"
+      - font-size: "1rem"
+      - opacity: "0.4"
+  tap_action:
+    action: fire-dom-event
+    browser_mod:
+      service: browser_mod.popup
+      data:
+        title: "[[[ return states[entity.entity_id].attributes.friendly_name; ]]]"
+        content:
+          type: "custom:atomic-calendar-revive"
+          maxDaysToShow: 14
+          showMonth: true
+          showWeekDay: true
+          entities:
+          - entity: calendar.familie
+            name: "[[[ return states[entity.entity_id].attributes.friendly_name; ]]]"
+  

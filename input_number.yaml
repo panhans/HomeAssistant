@@ -1,0 +1,62 @@
+input_number:
+  template: base
+  tap_action:
+    action: none
+    haptic: medium
+  hold_action:
+    action: more-info
+    haptic: medium
+  custom_fields:
+    cs: "[[[ return states[entity.entity_id].state ]]]"
+    inc:
+      card:
+        type: "custom:button-card"
+        entity: "[[[ return entity.entity_id ]]]"
+        icon: 'mdi:plus'
+        template: button_single
+        show_name: false
+        styles:
+          grid:
+          - grid-template-areas: '"i"'
+          card:
+          - padding: 0px
+          - margin: 0px
+          - border-radius: 8px
+        tap_action:
+          action: "call-service"
+          service: "input_number.increment"
+          service_data:
+            entity_id: "[[[ return entity.entity_id ]]]"
+    dec:
+      card:
+        type: "custom:button-card"
+        entity: "[[[ return entity.entity_id ]]]"
+        icon: 'mdi:minus'
+        template: button_single
+        show_name: false
+        styles:
+          grid:
+          - grid-template-areas: '"i"'
+          card:
+          - padding: 0px
+          - margin: 0px
+          - border-radius: 8px
+        tap_action:
+          action: "call-service"
+          service: "input_number.decrement"
+          service_data:
+            entity_id: "[[[ return entity.entity_id ]]]"
+  styles:
+    custom_fields:
+      inc:
+        - width: 32px
+        - width: 32px
+        - margin-right: 24px
+      dec:
+        - width: 32px
+        - width: 32px
+    grid:
+      - grid-template-areas: '"i i i" "n inc dec" "cs inc dec"'
+      - grid-template-columns: 1fr min-content min-content
+      - grid-template-rows: 1fr min-content min-content
+    

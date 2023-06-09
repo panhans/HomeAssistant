@@ -1,0 +1,10 @@
+sensor:
+  template: base
+  variables:
+    active_color: orange
+    unit: ''
+  tap_action:
+    action: none
+  hold_action:
+    action: more-info
+    haptic: medium
