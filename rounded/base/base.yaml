@@ -1,7 +1,5 @@
 base:
     show_state: false
-    template:
-    - de-de
     variables:
         active_color: orange
         show_last_changed: false
@@ -42,7 +40,15 @@ base:
           state = variables.round != null && !isNaN(state) ? Math.round(state,variables.round) : state;
 
           if (unit == null) {
-            return state;
+            var dict = new Object();
+            dict['on'] = 'An';
+            dict['off'] = 'Aus';
+            dict['home'] = 'Zu Haus';
+            dict['away'] = 'Unterwegs';
+
+            if (dict[state] == undefined) return state;
+
+            return dict[state];
           }
 
           return state + ' ' + unit;
@@ -105,19 +111,6 @@ base:
             - height: "16px"
             - color: var(--contrast10)
     state:
-    - value: 'home'
-      styles:
-        card:
-          - background: "[[[ return 'var(--' + variables.active_color + ')';]]]"
-        icon:
-          - color: var(--black)
-        name:
-          - color: var(--black)
-        custom_fields:
-          cs:
-            - color: var(--black)
-          es:
-            - color: var(--black)
     - value: 'on'
       styles:
         card:
