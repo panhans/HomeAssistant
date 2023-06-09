@@ -1,5 +1,7 @@
 base:
     show_state: false
+    template:
+    - de-de
     variables:
         active_color: orange
         show_last_changed: false
@@ -41,10 +43,10 @@ base:
 
           if (unit == null) {
             var dict = new Object();
-            dict['on'] = 'An';
-            dict['off'] = 'Aus';
-            dict['home'] = 'Zu Haus';
-            dict['away'] = 'Unterwegs';
+            dict['on'] = variables.lang_on;
+            dict['off'] = variables.lang_off;
+            dict['home'] = variables.lang_home;
+            dict['away'] = variables.lang_away;
 
             if (dict[state] == undefined) return state;
 
