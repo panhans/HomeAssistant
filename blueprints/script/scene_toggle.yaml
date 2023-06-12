@@ -42,15 +42,15 @@ blueprint:
           unit_of_measurement: s
       
     use_static_order:
-      name: "Alphabetical order"
-      description: "This automation is based on timestamps of the activation of the scenes. If this option is enabled a alphabetical order will be used instead of the dynamic one."
+      name: "Static order"
+      description: "This automation is based on timestamps of the activation of the scenes. If this option is enabled a static order will be used instead of the dynamic one."
       default: false
       selector:
         boolean:
 
     reset_after:
       name: Reset After
-      description: If the alphabetical order is activated, a timeout can be set after which the order is reset to the first scene. If 0 is set the timeout is disabled.
+      description: If the static order is activated, a timeout can be set after which the order is reset to the first scene. If 0 is set the timeout is disabled.
       default: 0
       selector:
         number:
