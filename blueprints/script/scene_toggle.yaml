@@ -76,37 +76,38 @@ sequence:
       entity_id: >
         {% set area_scenes = states.scene | selectattr('entity_id', 'in', area_entities(area)) | map(attribute='entity_id') | list %}
         {% set all_scenes = (area_scenes | reject('in', excluded_scenes) | list) + included_scenes %}
-        {% set unknown_scenes = expand(all_scenes) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
+        
+        {% if use_static_order == true %}
 
-        {% if unknown_scenes | count > 0 %}
-          {{ unknown_scenes[0] }}
-        {% else %}
-          {% if use_static_order == true %}
+          {% set is_reset = reset_after > 0 and (as_timestamp(now()) - last_triggered >= reset_after) %}
 
-            {% set is_reset = reset_after > 0 and (as_timestamp(now()) - last_triggered >= reset_after) %}
+          {% set static_order = expand(all_scenes) | sort(attribute='entity_id', reverse = false) | map(attribute='entity_id') | list %}
 
-            {% set static_order = expand(all_scenes) | sort(attribute='entity_id', reverse = false) | map(attribute='entity_id') | list %}
-
-            {% if is_reset == true %}
-              {{ static_order[0] }}
+          {% if is_reset == true %}
+            {{ static_order[0] }}
+          {% else %}
+            {% set unknown_scenes = expand(static_order) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
+            
+            {% if unknown_scenes | count > 0 %}
+              {{ unknown_scenes[0] }}
             {% else %}
+              {% set last_activated_scene = static_order[0] %}
+              {% set index_of_last_activated_scene = static_order.index(last_activated_scene) %}
+              {% set new_index = index_of_last_activated_scene + 1 %}
 
-              {% if unknown_scenes | count > 0 %}
-                {{ unknown_scenes[0] }}
+              {% if new_index == static_order | count %}
+                {{ static_order[0] }}
               {% else %}
-                {% set last_activated_scene = static_order[0] %}
-                {% set index_of_last_activated_scene = static_order.index(last_activated_scene) %}
-                {% set new_index = index_of_last_activated_scene + 1 %}
-
-                {% if new_index == static_order | count %}
-                  {{ static_order[0] }}
-                {% else %}
-                  {{ static_order[new_index] }}
-                {% endif %}
+                {{ static_order[new_index] }}
               {% endif %}
             {% endif %}
+          {% endif %}
 
-          {% else %}          
+        {% else %}     
+          {% set unknown_scenes = expand(all_scenes) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
+          {% if unknown_scenes | count > 0 %}
+            {{ unknown_scenes[0] }}     
+          {% else %}
             {% set known_scenes = expand(all_scenes) | sort(attribute='state', reverse = false) | map(attribute='entity_id') | list %}
             {{ known_scenes[0] }}
           {% endif %}
