@@ -86,12 +86,10 @@ sequence:
           {% if is_reset == true %}
             {{ static_order[0] }}
           {% else %}
-            {% set unknown_scenes = expand(static_order) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
             
-            {% if unknown_scenes | count > 0 %}
-              {{ unknown_scenes[0] }}
-            {% else %}
-              {% set last_activated_scene = static_order[0] %}
+              {% set unknown_scenes = expand(static_order) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
+              {% set scenes_sorted_by_activation = expand(static_order) | sort(attribute='state', reverse = true) | map(attribute='entity_id') | reject('in', unknown_scenes) | list %}
+              {% set last_activated_scene = scenes_sorted_by_activation[0] %}
               {% set index_of_last_activated_scene = static_order.index(last_activated_scene) %}
               {% set new_index = index_of_last_activated_scene + 1 %}
 
@@ -101,7 +99,7 @@ sequence:
                 {{ static_order[new_index] }}
               {% endif %}
             {% endif %}
-          {% endif %}
+          
 
         {% else %}     
           {% set unknown_scenes = expand(all_scenes) | selectattr('state', 'eq', 'unknown') | map(attribute='entity_id') | list %}
