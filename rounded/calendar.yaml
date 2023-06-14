@@ -39,7 +39,7 @@ calendar:
       - grid-template-rows: "min-content min-content"
     name:
       - color: var(--contrast20)
-      - font-size: "1.5rem"
+      - font-size: "32px"
       - color: >
           [[[
             const startDate = new Date(states[entity.entity_id].attributes.start_time);

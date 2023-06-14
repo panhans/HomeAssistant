@@ -4,7 +4,7 @@ button_single:
   aspect_ratio: 1/1
   styles:
     card:
-      - border-radius: 24px
+      - border-radius: 30%
       - background-color: "[[[ return 'var(--' + variables.color + ')'; ]]]"
     icon:
       - color: var(--black)

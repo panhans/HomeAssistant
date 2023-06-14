@@ -1,0 +1,122 @@
+conditions:
+  variables:
+    color: blue
+    extra_status: "[[[ return entity.entity_id; ]]]"
+  template: 
+  - base
+  - extra_status
+  show_name: true
+  show_icon: true
+  styles:
+    grid:
+    - grid-template-areas: '"i es" "n n" "cs cs"'
+    - grid-template-columns: 1fr min-content
+    - grid-template-rows: 1fr min-content min-content
+    card:
+    - margin: 0px
+    - padding: 0px
+    name:
+    - padding-left: 16px
+    img_cell:
+    - padding-left: 16px
+    - padding-top: 16px
+    custom_fields:
+      cs:
+      - height: 100%
+      - width: 100%
+      es:
+      - margin-right: 14px
+      - margin-top: 12px
+  custom_fields: 
+    cs:
+      card:
+        type: custom:mini-graph-card
+        card_mod:
+          style: |
+            ha-card {
+              background-color: var(--ha-card-background) !important;
+              border-radius: 0px;
+              padding: 0px !important;
+              margin: 0px !important;
+            }
+            ha-card .graph {
+              background: var(--contrast6) !important;
+            }
+        show:
+          icon: false
+          name: false
+          state: false
+          legend: false
+          fill: true
+          labels: false
+          points: false
+          graph: line
+        entities: 
+          - entity: "[[[ return entity.entity_id; ]]]"
+          # - entity: "[[[ return variables.humidity_sensor ? variables.humidity_sensor : 'none'; ]]]"
+        line_color: "[[[ return 'var(--'+variables.color+')']]]"
+        # line_width: 8
+        # font_size: 75
+        # type: custom:apexcharts-card
+        # card_mod:
+        #   style: |
+        #     ha-card {
+        #       background-color: transparent !important;
+        #       border-radius: 0px;
+        #       padding: 0px !important;
+        #       margin: 0px !important;
+              
+        #     }
+        # header:
+        #   show: false
+        # apex_config:
+        #   forceNiceScale: true
+        #   legend:
+        #     show: false
+        #   title:
+        #     floating: false
+        #     align: "top"
+        #     style:
+        #       fontSize: "2px"
+        #       fontWeight: "bold"
+        #   # plotOptions:
+        #     # bar:
+        #     #   borderRadius: 5
+        #     #   borderRadiusApplication: "around"
+        #   chart:
+        #     height: 96px
+        #     fontFamily: Poppins
+        #     # parentHeightOffset: 20px
+        #     # offsetY: -30
+        #   yaxis:
+        #     forceNiceScale: true
+        #     reversed: false
+        #     opposite: true
+        #   dataLabels:
+        #     background: false
+        #     offsetY: -10
+        #     style:
+        #       colors:
+        #       - 'var(--contrast20)'
+        # graph_span: 24h
+        # update_interval: 60sec
+        # layout: minimal
+        # span:
+        #   end: hour
+        # all_series_config:
+        #   stroke_width: 2
+        #   opacity: 0.3
+        #   type: area
+        #   curve: smooth
+        #   show:
+        #     legend_value: false
+        #     datalabels: false
+        # series:
+        #   - entity: "[[[ return entity.entity_id; ]]]"
+        #     unit: "[[[ return states[entity.entity_id].attributes.unit_of_measurement; ]]]"
+        #     # name: Stromverbrauch
+        #     # transform: "return x / 2;"
+        #     color: "var(--green)"
+        #     # group_by:
+        #     #   duration: 2h
+        #     #   func: avg

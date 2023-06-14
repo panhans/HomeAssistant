@@ -10,7 +10,7 @@ alarm:
         cs: Inaktiv
       styles:
         card:
-          - background: "var(--contrast2)"
+          - background: "var(--contrast6)"
         icon:
           - color: "var(--contrast18)"
         name:

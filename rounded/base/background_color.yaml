@@ -12,9 +12,11 @@ background_color:
           return 'var(--'+colors[colorCount]+')';
         ]]]
     icon:
-      - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--contrast2)'; ]]] "
+      - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--black)'; ]]] "
     name:
       - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--black)'; ]]] "
+    label:
+      - color: "var(--darker60)"
     custom_fields:
       cs:
         - color: "[[[ return variables.background_color && variables.background_color.includes('tint') ? 'var(--white5)' : 'var(--black)'; ]]] "

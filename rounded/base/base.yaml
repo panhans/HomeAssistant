@@ -46,7 +46,7 @@ base:
             dict['on'] = variables.lang_on;
             dict['off'] = variables.lang_off;
             dict['home'] = variables.lang_home;
-            dict['away'] = variables.lang_away;
+            dict['not_home'] = variables.lang_away;
 
             if (dict[state] == undefined) return state;
 
@@ -82,7 +82,7 @@ base:
         - grid-template-columns: 1fr min-content
         - grid-template-rows: 1fr min-content min-content
         card:
-        - background: var(--contrast2)
+        - background: var(--contrast6)
         - padding: 16px
         - '--mdc-ripple-press-opacity': 0
         img_cell:
@@ -96,15 +96,17 @@ base:
         name:
         - text-align: start
         - white-space: no-wrap
+        - font-weight: 50
         - justify-self: start
-        - font-size: 14px
+        - font-size: 12px
         - margin: 6px 0 2px 0
         - color: var(--contrast18)
         - text-overflow: ellipsis
         custom_fields:
             cs:
             - justify-self: start
-            - font-size: 12px
+            - font-size: 14px
+            - font-weight: 900
             - height: "16px"
             - color: var(--contrast10)
             es:
@@ -112,6 +114,9 @@ base:
             - font-size: 12px
             - height: "16px"
             - color: var(--contrast10)
+            - border-radius: 16px
+            - padding: 2px 4px 2px 4px
+            - background: var(--darker)
     state:
     - value: 'on'
       styles:

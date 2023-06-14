@@ -10,7 +10,8 @@ caption:
       - margin-left: "6px"
       - margin-bottom: "0px"
       - background: none
-      - padding: 16px 0
+      - border-radius: 0px
+      - padding: 0px 0
       - '--mdc-ripple-press-opacity': 0
     grid:
       - grid-template-areas: "'n' 'l'"
