@@ -205,7 +205,7 @@ show:
   points: false
   graph: line
 entities:
-          - sensor.wohnzimmer_temperatur
+  - sensor.wohnzimmer_temperatur
 ```
 
 ### Input Number
