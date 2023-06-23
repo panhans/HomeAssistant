@@ -14,7 +14,7 @@ This templates and theme is inspired by [rounded](https://community.home-assista
   - [Base](#base)
   - [Calendar](#calendar)
   - [Input Number](#input-number)
-  - [Ligt](#light)
+  - [Light](#light)
   - [Dimmable Light](#dimmable-light)
   - [Person](#person)
   - [Radial info](#radial-info)
