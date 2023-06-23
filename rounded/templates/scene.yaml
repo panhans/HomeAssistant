@@ -1,4 +1,4 @@
-button_single_scene:
+scene:
   template: button_single
   icon: "[[[ return states[variables.scene].attributes.icon; ]]]"
   tap_action:
