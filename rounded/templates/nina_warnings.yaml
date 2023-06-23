@@ -1,28 +1,31 @@
 nina_warning:
   template: base
   name: '[[[ return entity.attributes.headline ]]]'
+  variables:
+    active_color: red
   show_name: true
+  show_label: false
   custom_fields:
     cs: '[[[ return entity.attributes.sender ]]]'
   styles:
-    grid:
-      - grid-template-areas: "'i n' 'i l'"
-      - grid-template-columns: "min-content auto"
-      - grid-template-rows: "min-content"
-    name:
-      - align-self: "end"
-      - justify-self: "start"
-      - font-weight: "bold"
-      - font-size: "14px"
-      - margin-left: "12px"
+    # grid:
+    #   - grid-template-areas: "'i n' 'i l'"
+    #   - grid-template-columns: "min-content auto"
+    #   - grid-template-rows: "min-content"
+    # name:
+    #   - align-self: "start"
+    #   - justify-self: "start"
+    #   - font-weight: "bold"
+    #   - font-size: "14px"
+    #   - margin-left: "12px"
     card:
-      - background: var(--red)
+      - background: "var(--white)"
   tap_action:
     action: fire-dom-event
     browser_mod:
       service: browser_mod.popup
       data:
-        title: "[[[ return entity.attributes.friendly_name; ]]]"
+        title: " "
         content: >
           [[[ 
             const head = entity.attributes.headline;

@@ -1,134 +1,67 @@
 base:
     show_state: false
     template:
-    - de-de
+    - state_engine
     variables:
         active_color: orange
-        show_last_changed: false
-    custom_fields:
-      cs: >
-        [[[ 
-          let has_time = states[entity.entity_id].attributes.has_time != null && states[entity.entity_id].attributes.has_time;
-          let has_date = states[entity.entity_id].attributes.has_date != null && states[entity.entity_id].attributes.has_date;
-
-          let state = states[entity.entity_id].state;
-
-          if ((has_time || has_date) || variables.show_last_changed || variables.force_date) {
-            let d = new Date(variables.show_last_changed ? states[entity.entity_id].last_changed : state);
-
-            d = variables.force_date ? new Date(d) : d;
-
-            if (!has_date && has_time) {
-              return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + 'Uhr';
-            } else if (!has_time && has_date) {
-              return d.toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
-            } else {
-              let d_date = d.toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
-              let today = (new Date()).toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
-              
-              if(d_date == today) {
-                let time = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                return time + ' Uhr';
-              }
-
-              return d_date;
-            }
-          }
-
-          let unit = states[entity.entity_id].attributes.unit_of_measurement;
-
-          state = state == null ? '-' : state;
-
-          state = variables.round != null && !isNaN(state) ? Math.round(state,variables.round) : state;
-
-          if (unit == null) {
-            var dict = new Object();
-            dict['on'] = variables.lang_on;
-            dict['off'] = variables.lang_off;
-            dict['home'] = variables.lang_home;
-            dict['not_home'] = variables.lang_away;
-
-            if (dict[state] == undefined) return state;
-
-            return dict[state];
-          }
-
-          return state + ' ' + unit;
-        ]]]
-      es: >
-        [[[ 
-          let state = states[entity.entity_id].state;
-
-          let has_time = states[entity.entity_id].attributes.has_time != null && states[entity.entity_id].attributes.has_time;
-          let has_date = states[entity.entity_id].attributes.has_date != null && states[entity.entity_id].attributes.has_date;
-
-          if ((has_time && has_date) || variables.show_last_changed || variables.force_date) {
-            let d = new Date(variables.show_last_changed ? states[entity.entity_id].last_changed : state);
-
-            d = variables.force_date ? new Date(d) : d;
-
-            let d_date = d.toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
-            let today = (new Date()).toLocaleString('de-de',{day:'numeric', month:'short', year:'numeric'});
-              
-            if(d_date != today) {
-              let time = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-              return time + ' Uhr';
-            }
-          }
-        ]]]
+        max_height: false
+        on_state: ''
     styles:
-        grid:
-        - grid-template-areas: '"i es" "n n" "cs cs"'
-        - grid-template-columns: 1fr min-content
-        - grid-template-rows: 1fr min-content min-content
-        card:
-        - background: var(--contrast6)
-        - padding: 16px
-        - '--mdc-ripple-press-opacity': 0
-        img_cell:
-        - justify-self: start
-        - width: 24px
-        - border-radius: 8px
-        icon:
-        - width: 24px
-        - height: 24px
-        - color: var(--contrast18)
-        name:
-        - text-align: start
-        - white-space: no-wrap
-        - font-weight: 50
+      grid:
+      - grid-template-areas: '"i es" "n n" "space space" "cs cs"'
+      - grid-template-columns: 1fr min-content
+      - grid-template-rows: min-content min-content 1fr min-content
+      card:
+      - z-index: 0
+      - background: "[[[ return states[entity.entity_id].state == 'on' || states[entity.entity_id].state == variables.on_state ? 'var(--' + variables.active_color + ')' : 'var(--contrast6)'; ]]]"
+      - padding: 16px
+      - '--mdc-ripple-press-opacity': 0
+      - height: "[[[ return variables.max_height ? '100%' : '100px'; ]]]"
+      img_cell:
+      - z-index: 1
+      - justify-self: start
+      - width: 24px
+      - height: 24px
+      - line-height: 24px
+      - border-radius: 8px
+      icon:
+      - z-index: 2
+      - width: 24px
+      - height: 24px
+      - line-height: 24px
+      - color: "[[[ return states[entity.entity_id].state == 'on' || states[entity.entity_id].state == variables.on_state ? 'var(--black)' : 'var(--contrast18)'; ]]]"
+      name:
+      - z-index: 3
+      - text-align: start
+      - white-space: no-wrap
+      - font-weight: 50
+      - justify-self: start
+      - font-size: 12px
+      - margin: 6px 0 2px 0
+      - color: "[[[ return states[entity.entity_id].state == 'on' || states[entity.entity_id].state == variables.on_state ? 'var(--black)' : 'var(--contrast18)'; ]]]"
+      - text-overflow: ellipsis
+      custom_fields:
+        cs:
+        - text-align: left
+        - white-space: "[[[ return variables.max_height ? 'normal' : 'no_wrap'; ]]]"
+        - z-index: 4
         - justify-self: start
         - font-size: 12px
-        - margin: 6px 0 2px 0
-        - color: var(--contrast18)
-        - text-overflow: ellipsis
-        custom_fields:
-            cs:
-            - justify-self: start
-            - font-size: 14px
-            - font-weight: 900
-            - height: "16px"
-            - color: var(--contrast10)
-            es:
-            - justify-self: end
-            - font-size: 12px
-            - height: "16px"
-            - color: var(--contrast10)
-            - border-radius: 16px
-            - padding: 2px 4px 2px 4px
-            - background: var(--darker)
-    state:
-    - value: 'on'
-      styles:
-        card:
-          - background: "[[[ return 'var(--' + variables.active_color + ')';]]]"
-        icon:
-          - color: var(--black)
-        name:
-          - color: var(--black)
-        custom_fields:
-          cs:
-            - color: var(--black)
-          es:
-            - color: var(--black)
-
+        - font-weight: 900
+        - line-height: 16px
+        - width: 100%
+        - color: "[[[ return states[entity.entity_id].state == 'on' || states[entity.entity_id].state == variables.on_state ? 'var(--black)' : 'var(--contrast10)'; ]]]"
+        es:
+        - min-width: 12px
+        - z-index: 5
+        - justify-self: end
+        - font-size: 12px
+        - height: "16px"
+        - border-radius: 16px
+        - padding: 2px 4px 2px 4px
+        - background: var(--darker)
+        - color: "[[[ return states[entity.entity_id].state == 'on' || states[entity.entity_id].state == variables.on_state ? 'var(--black)' : 'var(--contrast10)'; ]]]"
+    style: |
+      ha-card {
+        transition: 300ms !important;
+      }

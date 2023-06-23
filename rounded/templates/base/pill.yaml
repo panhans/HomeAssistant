@@ -1,4 +1,7 @@
 pill:
+  variables:
+    warning: false
+    icon_color: contrast1
   show_label: true
   show_icon: false
   show_name: true
@@ -11,14 +14,20 @@ pill:
   tap_action:
     action: more-info
     haptic: medium
+  custom_fields:
+    alert: >
+      [[[     
+        return '<ha-icon icon=\"mdi:alert-circle\";></ha-icon>';
+      ]]]
+    # - opacity: "[[[ return variables.ulm_card_card_panhans_room_entity_4 ? (variables.ulm_card_card_panhans_room_entity_4_on == true ? '100%' : '20%') : '0%'; ]]]"
   styles:
     grid:
-      - grid-template-areas: '"i n gutter l"'
-      - grid-template-columns:  min-content min-content 4px min-content
+      - grid-template-areas: '"i n l"'
+      - grid-template-columns:  min-content min-content min-content
       - grid-template-rows: min-content
     card:
       - padding: 6px 10px
-      - font-size: 12px
+      - font-size: 18px
       - line-height: 18px
       - font-weight: 500
       - background: var(--contrast20)
@@ -27,11 +36,39 @@ pill:
       - place-self: center
       - width: 18px
       - height: 18px
+      - line-height: 18px
+      - margin-top: -2px
       - margin-right: 4px
-      - transform: translateY(-1px)
+      # - transform: translateY(-1px)
+      - border-radius: 0%
     icon:
-      - color: var(--contrast1)
+    - line-height: 16px
+    - color: "[[[return 'var(--'+variables.icon_color+')';]]]"
+    - animation: "[[[ return variables.flash_warning ? 'blink 2s ease infinite' : 'none'; ]]]"
     name:
-      - color: var(--contrast1)
+    - line-height: 18px
+    - font-size: 12px
+    - color: var(--contrast1)
+    - animation: "[[[ return variables.flash_warning ? 'blink 2s ease infinite' : 'none'; ]]]"
     label:
-      - color: var(--contrast12)
+    - line-height: 18px
+    - font-size: 12px
+    - margin-left: "[[[ return '4px'; ]]]"
+    - color: var(--contrast12)
+    - animation: "[[[ return variables.flash_warning ? 'blink 2s ease infinite' : 'none'; ]]]"
+    custom_fields:
+      alert:
+      - border-radius: 50%
+      - position: absolute
+      - height: 14px
+      - width: 14px
+      - line-height: 14px
+      - margin-left: 8px
+      - margin-top: -4px
+      - justify-self: start
+      - align-self: start
+      - border-radius: "50%"
+      - background-color: "var(--white)"
+      - color:  "var(--red)"
+      - display: "[[[ return variables.alert ? 'block' : 'none'; ]]]"
+      - animation: blink 2s ease infinite

@@ -1,7 +1,5 @@
 weather_pill:
   template: pill
-  variables:
-    flash_warning: false
   show_icon: true
   show_name: true
   name: '[[[ return states[entity.entity_id].attributes.temperature + "°C" ]]]'
@@ -9,7 +7,6 @@ weather_pill:
   styles:
     card:
     - background: "[[[ return variables.flash_warning ? 'var(--red)' : 'var(--contrast20)'; ]]]"
-    - animation: "[[[ return variables.flash_warning ? 'blink 2s ease infinite' : 'none'; ]]]"
   state:
   - operator: '=='
     value: clear-night

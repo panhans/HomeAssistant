@@ -1,5 +1,7 @@
 person:
   template: base
+  variables:
+    on_state: home
   show_entity_picture: true
   styles:
     grid:
@@ -9,11 +11,14 @@ person:
     img_cell:
     - justify-self: start
     - width: 64px
+    - height: 64px
     - border-radius: 16px
     icon:
+    # - padding: 16px 0px 0px 16px
+    - margin: 22px
     - width: 64px
     - height: 64px
-    - color: var(--contrast18)
+    - color: var(--contrast18)  
     name:
     - padding-left: 8px
     - justify-self: start
@@ -24,17 +29,3 @@ person:
       - margin: 0px 0px 2px 0px
       - padding-left: 8px
       - height: auto
-  state:
-  - value: 'home'
-    styles:
-      card:
-        - background: "[[[ return 'var(--' + variables.active_color + ')';]]]"
-      icon:
-        - color: var(--black)
-      name:
-        - color: var(--black)
-      custom_fields:
-        cs:
-          - color: var(--black)
-        es:
-          - color: var(--black)

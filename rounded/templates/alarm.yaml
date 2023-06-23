@@ -84,22 +84,15 @@ alarm:
               ha-card.active {
                 height: 40px;
               }
-              .features hui-alarm-modes-tile-feature .container::before div.option-armed_custom_bypass.option.selected::before {
-                background: transparent;
-                display: none !important;
-              }
-              #option-armed_custom_bypass.option.selected::before : {
-                background: transparent;
-                display: none !important;
-              }
             .features hui-alarm-modes-tile-feature $: |
               .container {
-                padding-left: 0px !important;
-                padding-right: 0px !important;
-                padding-top: 0px !important;
-                padding-bottom: 0px !important;
+                padding: 0px !important;
               }
             .features hui-alarm-modes-tile-feature $ .container ha-control-select $ .container: |
+              .option {
+                background-color: transparent !important;
+                border-radius: 13px !important;
+              }
               .option.selected {
                 --control-select-color: var(--yellow) !important;
               }

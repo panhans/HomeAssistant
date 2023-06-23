@@ -28,6 +28,8 @@ calendar:
           if (startDay == today) {
             return startTime + ' - ' + endTime;
           }
+
+          return startDay + ' ' + startTime + ' - ' + endTime;
         }
 
         return startDay + ' ' + startTime + ' - ' + endDay + ' ' + endTime;

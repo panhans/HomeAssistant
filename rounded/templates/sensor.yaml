@@ -1,10 +1,49 @@
 sensor:
-  template: base
   variables:
-    active_color: orange
-    unit: ''
-  tap_action:
-    action: none
-  hold_action:
-    action: more-info
-    haptic: medium
+    max_height: false
+  template:
+  - base
+  show_name: true
+  show_icon: false
+  show_state: false
+  custom_fields:
+    es: "[[[ return variables.extra_entity != null ? states[variables.extra_entity].state + (states[variables.extra_entity].attributes.unit_of_measurement != null ? states[variables.extra_entity].attributes.unit_of_measurement : '') : null; ]]]"
+    unit: "[[[ return states[entity.entity_id].attributes.unit_of_measurement; ]]]"
+  styles:
+    grid:
+      - grid-template-areas: '"es es" "cs unit" "cs unit" "n n"'
+      - grid-template-columns: min-content 1fr
+      - grid-template-rows: 1fr min-content min-content min-content
+    name:
+      - justify-self: start
+      - align-self: start
+      - font-size: 12px
+      - margin: 0px
+    card:
+      - height: "[[[ return variables.max_height ? '100%' : '100px';]]]"
+    custom_fields:
+      es:
+      - line-height: 16px
+      - align-self: start
+      - min-width: 12px
+      - z-index: 5
+      - justify-self: end
+      - font-size: 12px
+      - height: "16px"
+      - border-radius: 16px
+      - background: 'var(--darker)'
+      - margin-bottom: 4px
+      cs:
+      - margin: 0px
+      - line-height: 18px
+      - font-size: 18px
+      - justify-self: start
+      - align-self: end
+      unit:
+      - margin: 0px
+      - justify-self: start
+      - align-self: end
+      - line-height: 15px
+      - font-size: 12px
+      - color: "[[[ return states[entity.entity_id].state == 'on' ? 'var(--black)' : 'var(--contrast10)'; ]]]"
+      - padding-left: 2px

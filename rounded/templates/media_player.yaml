@@ -1,0 +1,31 @@
+media_player:
+  template: base
+  custom_fields:
+    bg: |
+      [[[
+        return " "
+      ]]]
+  styles:
+    custom_fields:
+      bg:
+      - background: center center/cover no-repeat
+      - height: 100%
+      - width: 100%
+      - left: 20px
+      - position: absolute
+      - z-index: 0
+      - transition: all 2s ease-out
+      - margin-left: -20px
+  state:
+  - value: playing
+    custom_fields:
+      cs: "[[[ return states[entity.entity_id].attributes.media_title; ]]]"
+    styles:
+      custom_fields:
+        bg:
+        - filter: blur(3px) brightness(0.4) grayscale(50%)
+        - background-image: "[[[ return 'url('+states[entity.entity_id].attributes.entity_picture+')'; ]]]"
+        cs:
+        - color: var(--white)
+        - margin-right: 16px
+        - overflow: hidden

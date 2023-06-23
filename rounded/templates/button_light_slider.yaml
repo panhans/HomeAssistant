@@ -12,7 +12,6 @@ button_light_slider:
             - border-radius: 100px
             - overflow: visible
           card:
-            - margin-top: 2px
             - height: 16px
             - padding: 0 8px
             - background: |

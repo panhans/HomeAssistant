@@ -3,24 +3,20 @@ caption:
   show_label: true
   styles:
     card:
-      - box-shadow: "none"
-      - height: "auto"
-      - width: "auto"
-      - margin-top: "6px"
-      - margin-left: "6px"
-      - margin-bottom: "0px"
-      - background: none
       - border-radius: 0px
-      - padding: 0px 0
+      - background: none
+      - box-shadow: none
+      - padding: 0px 0px 0px 0px
       - '--mdc-ripple-press-opacity': 0
     grid:
-      - grid-template-areas: "'n' 'l'"
+      - grid-template-areas: "'s1' 'n' 'l' 's2'"
       - grid-template-columns: "1fr"
       - grid-template-rows: "min-content min-content"
     name:
-      - justify-self: "start"
-      - color: var(--contrast20)
-      - font-size: "1.5rem"
+      - justify-self: start
+      - font-size: 28px
+      - color: var(--contrast15)
+      - margin-top: -6px
     label:
       - justify-self: "start"
       - font-weight: "bold"
