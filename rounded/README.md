@@ -68,13 +68,13 @@ You can find language files here:
 | | ├── languages
 ```
 
-If you want to add a new one, just doublicate a existing language file and rename it. Open it and change the upper name, e.G. *de-DE*
-Edit the state values to your needs. When you're ready open the *state_engine.yaml* and replace the language template with yours:
+If you want to add a new one, just duplicate a existing language file and rename it. Open it and change the name on top, e.G. *de-DE*
+Edit the state values for your needs. When you're ready open the *state_engine.yaml* and replace the language template with yours:
 
 ```yaml
 state_engine:
   template:
-  - de-de
+  - de-de # replace it with the name of your language file
 ```
 ### Adding more translations
 You can add more translations to your language file. Be sure to add the variables to the language dictionary in your *state_engine.yaml*:
@@ -98,7 +98,7 @@ var lang = {
 ```
 
 ## Theme
-1. Download the theme and put it in cour config directory:
+1. Download the theme and put it in your config directory:
 
 ```
 ├── config
@@ -119,7 +119,7 @@ service: frontend.set_theme
 data:
   name: Rounded
 ```
-4. Go to your profile settings and select the theme *rounded*
+4. Go to your profile settings and select the theme *rounded* if you're not using default theme.
 
 ## Cards
 
@@ -401,11 +401,11 @@ variables:
   round: 2 # round state value if it's nummeric
   multiplier: 1 # multiply state if its nummeric
   show_last_changed: false # show last_changes instead of state
-  force_date: false # activate this if state is a date but treaten like an string
+  force_date: false # activate this if state is a date but treaten like a string
   show_unit: false # show / hide unit
   max_height: false # maximize height if needed
-  on_state: heat # define a state, except on whicht activates activation color for your card
-  active_color: #if your entity is on or the state matches the on_state this background color will be set
+  on_state: heat # define a state, except 'on' which enables activation color of your card
+  active_color: #if your entity is 'on' or the state matches the on_state this background color will be set
 ```
 
 ### Extra Information
