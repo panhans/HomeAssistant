@@ -140,8 +140,6 @@ name: Hausalarm
 type: 'custom:button-card'
 template: base
 entity: some.entity
-variables:
-  extra_entity
 ```
 
 ### Calendar
@@ -412,6 +410,15 @@ variables:
 
 ### Extra Information
 You can add additional info to any card except *pills*, *captions* and *titles*:
+
+You can define an extra entity using a variable:
+
+```yaml
+variables:
+  extra_entity: sensor.your_entity
+```
+
+... or overwrite the custom field:
 
 ```yaml
 type: 'custom:button-card'
