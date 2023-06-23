@@ -1,5 +1,7 @@
 media_player:
   template: base
+  variables:
+    on_state: "[[[ return states[entity.entity_id].attributes.entity_picture != null ? '' : 'playing'; ]]]"
   custom_fields:
     bg: |
       [[[
@@ -17,7 +19,8 @@ media_player:
       - transition: all 2s ease-out
       - margin-left: -20px
   state:
-  - value: playing
+  - operator: template
+    value: "[[[ return entity.state == 'playing' && states[entity.entity_id].attributes.entity_picture != null; ]]]"
     custom_fields:
       cs: "[[[ return states[entity.entity_id].attributes.media_title; ]]]"
     styles:
