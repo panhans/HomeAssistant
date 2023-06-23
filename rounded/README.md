@@ -79,7 +79,7 @@ state_engine:
 ### Adding more translations
 You can add more translations to your language file. Be sure to add the variables to the language dictionary in your *state_engine.yaml*:
 
-```yaml
+```js
 var lang = {
   "on": variables.lang_on,
   "off": variables.lang_off,
