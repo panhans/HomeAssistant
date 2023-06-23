@@ -2,10 +2,7 @@
 
 This templates and theme is inspired by [rounded](https://community.home-assistant.io/t/rounded-dashboard-guide) by LE0N.
 
-<img src="images/screenshots/screen1.png" height="500px">
-<img src="images/screenshots/screen2.png" height="500px">
-<img src="images/screenshots/screen3.png" height="500px">
-<img src="images/screenshots/screen4.png" height="500px">
+<img src="images/screenshots/header.png">
 
 - [Requirements](#requirements)
 - [Installation](#installation)
