@@ -79,7 +79,7 @@ state_engine:
 
         let trans_state = lang[state];
 
-        return trans_state != 'undefined' ? trans_state : state; 
+        return trans_state != null ? trans_state : state; 
       ]]]
     es: >
       [[[
