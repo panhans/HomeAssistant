@@ -20,6 +20,10 @@ media_player:
       - margin-left: -20px
   state:
   - operator: template
+    value: "[[[ return entity.state == 'playing' && states[entity.entity_id].attributes.entity_picture == null; ]]]"
+    custom_fields:
+      cs: "[[[ return states[entity.entity_id].attributes.media_title; ]]]"
+  - operator: template
     value: "[[[ return entity.state == 'playing' && states[entity.entity_id].attributes.entity_picture != null; ]]]"
     custom_fields:
       cs: "[[[ return states[entity.entity_id].attributes.media_title; ]]]"
