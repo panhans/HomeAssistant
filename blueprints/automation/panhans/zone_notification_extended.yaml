@@ -3,6 +3,8 @@ blueprint:
   description: "This blueprint let you generate a notifictaion automation when certain persons leave or arrive at specific zones."
   source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
+  homeassistant:
+    min_version: 2023.8.0
   
   input:
 
@@ -71,11 +73,18 @@ blueprint:
       
     status_bar_icon:
       name: "Status bar icon"
-      description: "Sets the status bar icon. (Android only)"
+      description: "Sets the status bar icon. (Android only)."
       default: mdi:map-marker
       selector:
         icon:
           placeholder: mdi:map-marker
+          
+    custom_conditions:
+      name: "Conditions"
+      description: "Custom conditions when notifications are active"
+      default: []
+      selector:
+        condition:
           
     custom_action_arriving:
       name: "Custom Action on arriving"
@@ -126,12 +135,15 @@ trigger:
   platform: state
   entity_id: !input persons
 
-condition:
+condition: 
   - condition: template
     value_template: "{{ trigger.to_state.state != trigger.from_state.state }}"
   
   - condition: template
     value_template: "{{ (trigger.to_state.state != not_home and trigger.to_state.state in zone_names) or (trigger.from_state.state != not_home and trigger.from_state.state in zone_names) }}"
+    
+  - condition: and
+    conditions: !input custom_conditions
 
 action:
   - variables:
@@ -185,4 +197,4 @@ action:
         value_template: '{{ custom_action_leaving is defined }}'
     then: !input 'custom_action_leaving'
             
-mode: single
+mode: parallel
