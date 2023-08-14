@@ -117,6 +117,7 @@ variables:
     
     {{ friendly.name }}
   notify_device: !input notify_device
+  notify_group: !input notify_group
   notify_service: |
     {% if(notify_group is defined) %}
       notify.{{ notify_group }}
