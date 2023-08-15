@@ -119,7 +119,7 @@ variables:
   notify_device: !input notify_device
   notify_group: !input notify_group
   notify_service: |
-    {% if(notify_group is defined) %}
+    {% if(notify_group is defined and notify_group != '') %}
       notify.{{ notify_group }}
     {% else %}
       notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}
