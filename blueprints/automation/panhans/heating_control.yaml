@@ -30,7 +30,7 @@ blueprint:
     - optional latency slider for a delay between service calls, because som TRVs have issues with setting mode and temperature in one call and don’t react to more than one call if they came instantly without a delay
 
 
-    **Help & FAQ**: [Zone based notification / custom action extended](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
+    **Help & FAQ**: [Advanced scheduled heating control with calibration and window detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
     **Version**: 2.9
