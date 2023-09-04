@@ -1,8 +1,28 @@
 blueprint:
   name: Zone Notification Extended
   description: >
-    This blueprint let you generate a notifictaion automation when certain persons leave or arrive at specific zones.
-    Version: 2.2_b2
+
+    **Features**
+
+    - notification / custom action triggered by persons entering / leaving zones
+
+    - notifications can be modified in color, channel group, ect.
+
+    - notification can be turned on / off easily
+
+    - custom condition for blocking / allowing notifications
+
+
+    **Hints**
+
+    - if you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
+
+    
+    **Help & FAQ**: [Zone based notification / custom action extended](https://community.home-assistant.io/t/zone-based-notification-custom-action-extended)
+
+    
+    **Version**: 2.2_b2
+
   source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
   homeassistant:
@@ -77,37 +97,37 @@ blueprint:
 
     status_bar_icon:
       name: "Status bar icon"
-      description: "Sets the status bar icon. (Android only)."
+      description: "Sets the status bar icon. (Android specific)"
       default: mdi:map-marker
       selector:
         icon:
           placeholder: mdi:map-marker
 
     notification_color:
-      name: "Notification color"
+      name: "Notification color (Android specific)"
       description: "Color of the notification"
       default: [100, 200, 240]
       selector:
         color_rgb:
 
     channel:
-      name: "Notification group"
-      description: "Group notifications by using this identifier"
+      name: "Channel (Android specific)"
+      description: "Seperate this notifications by channel."
       default: "General"
 
     group:
-      name: "Notification group"
-      description: "Group notifications by using this identifier"
+      name: "Notification group (Android specific)"
+      description: "Group notifications by using this identifier."
       default: "zone-notification-group"
 
     vibration_pattern:
-      name: "Vibration pattern"
-      description: "Pattern of the vibration when notification arrives"
+      name: "Vibration pattern (Android specific)"
+      description: "Pattern of the vibration when notification arrives."
       default: "100, 100"
 
     led_color:
-      name: "Notification LED color"
-      description: "Color of the phone LED after incoming notification"
+      name: "Notification LED color (Android specific)"
+      description: "Color of the phone LED after incoming notification."
       default: [100, 200, 240]
       selector:
         color_rgb:
