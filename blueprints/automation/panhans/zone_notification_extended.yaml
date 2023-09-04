@@ -2,7 +2,7 @@ blueprint:
   name: Zone Notification Extended
   description: >
     This blueprint let you generate a notifictaion automation when certain persons leave or arrive at specific zones.
-    Version: 2.2_b1
+    Version: 2.2_b2
   source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
   homeassistant:
@@ -184,9 +184,9 @@ action:
       zone_from: "{{ iif(trigger.from_state.state | lower != not_home,iif(trigger.from_state.state | lower == home_zone_name,state_attr(home_zone,'friendly_name'),trigger.from_state.state),not_home) }}"
       zone_to: "{{ iif(trigger.to_state.state | lower != not_home,iif(trigger.to_state.state | lower == home_zone_name,state_attr(home_zone,'friendly_name'),trigger.to_state.state),not_home) }}"
       notification_color: !input "notification_color"
-      notification_color_hex: "{{ '%02x%02x%02x' | format(notification_color[0], notification_color[1], notification_color[2]) }}"
+      notification_color_hex: "#{{ '%02x%02x%02x' | format(notification_color[0], notification_color[1], notification_color[2]) }}"
       led_color: !input "led_color"
-      led_color_hex: "{{ '%02x%02x%02x' | format(led_color[0], led_color[1], led_color[2]) }}"
+      led_color_hex: "#{{ '%02x%02x%02x' | format(led_color[0], led_color[1], led_color[2]) }}"
   - if:
       - condition: template
         value_template: "{{ zone_to in zone_names }}"
