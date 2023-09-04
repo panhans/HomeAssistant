@@ -1,9 +1,22 @@
 blueprint:
   name: Theatre Mode
   description: >
-    This blueprint let you create an automation for your home theatre experience. Just define two scenes with the entities you want.
-    One for the playing and another for the paused state. The automation stores the states of the entities from the playing scene for you.
-    When your movie ended or you simply stop it the initial state of the entities will be restored. 
+
+    **Features**
+
+    - activates playing or paused scene depending on media player state
+    
+    - stores the states of the entities of the playing scene before it gets activated and restores states after you finished the movie
+
+    - transition time for switching scenes
+
+
+    **Help & FAQ**: [Scene based theatre mode](https://community.home-assistant.io/t/zone-based-notification-custom-action-extended)
+
+
+    **Version**: 1.0
+
+  source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/theatre_mode.yaml"
   domain: automation
   input:
           
@@ -12,21 +25,24 @@ blueprint:
       description: Media player which triggers automation.
       selector:
         entity:
-          domain: media_player
+          filter:
+            domain: media_player
 
     scene_playing:
       name: Play Scene
       description: Activated when playing
       selector:
         entity:
-          domain: scene
+          filter:
+            domain: scene
 
     scene_paused:
       name: Pause Scene
       description: Activated when paused
       selector:
         entity:
-          domain: scene
+          filter:
+            domain: scene
 
     reaction_time:
       name: Reaction time
