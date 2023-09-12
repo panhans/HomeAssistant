@@ -21,7 +21,7 @@ blueprint:
     **Help & FAQ**: [Zone based notification / custom action extended](https://community.home-assistant.io/t/zone-based-notification-custom-action-extended)
 
 
-    **Version**: 2.2_b3
+    **Version**: 2.2
 
   source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
