@@ -518,10 +518,14 @@ action:
                         actual_temp: "{{ states(actual_local_temperature) | float }}"
                         offset: "{{ ( actual_temp - tado_temp ) | round }}"
                         calculated_offset: "{{ ( ( actual_temp - tado_temp ) + current_offset ) | round }}"
-                    - service: tado.set_climate_temperature_offset
-                      data:
-                        offset: "{{ calculated_offset }}"
-                        entity_id: "{{ current_valve }}"
+                    - if:
+                        - condition: template
+                          value_template: "{{ float(current_offset) != float(calculated_offset) }}"
+                      then:
+                        - service: tado.set_climate_temperature_offset
+                          data:
+                            offset: "{{ calculated_offset }}"
+                            entity_id: "{{ current_valve }}"
     else:
       - if:
           - condition: template
