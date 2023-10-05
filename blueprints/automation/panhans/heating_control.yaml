@@ -45,7 +45,7 @@ blueprint:
     detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
-    **Version**: 2.9.1
+    **Version**: 2.10_b1
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
@@ -281,6 +281,14 @@ variables:
     climate in valves %}\n  {% if climate not in valves_off_mode %}\n    {% set climates_not_off.name
     = climates_not_off.name + [climate] %}\n  {% endif %}\n{% endfor %} {{ climates_not_off.name
     }}\n"
+  valves_tado: |
+    {% set climates_tado = namespace(name=[]) %} 
+    {% for climate in valves %}
+      {% if device_attr(climate,'manufacturer') | regex_search('tado', ignorecase=True)%}
+        {% set climates_tado.name = climates_tado.name + [climate] %}
+      {% endif %}
+    {% endfor %} 
+    {{ climates_tado.name }}
   force_minimum_temperature: !input force_minimum_temperature
   set_temp: !input set_temp
   min_temp: !input min_temp
@@ -499,6 +507,21 @@ action:
                         value: "{{ float(offset_new) }}"
                       target:
                         entity_id: "{{ calibration_entity }}"
+              else:
+                - if:
+                    - condition: template
+                      value_template: "{{ current_valve in valves_tado}}"
+                  then:
+                    - variables:
+                        tado_temp: "{{ state_attr(current_valve, 'current_temperature') | float }}"
+                        current_offset: "{{ state_attr(current_valve, 'offset_celsius') }}"
+                        actual_temp: "{{ states(actual_local_temperature) | float }}"
+                        offset: "{{ ( actual_temp - tado_temp ) | round }}"
+                        calculated_offset: "{{ ( ( actual_temp - tado_temp ) + current_offset ) | round }}"
+                    - service: tado.set_climate_temperature_offset
+                      data:
+                        offset: "{{ calculated_offset }}"
+                        entity_id: "{{ current_valve }}"
     else:
       - if:
           - condition: template
