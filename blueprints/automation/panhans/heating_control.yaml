@@ -45,7 +45,7 @@ blueprint:
     detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
-    **Version**: 2.10_b1
+    **Version**: 2.10_b2
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
@@ -463,6 +463,13 @@ condition:
       - condition: template
         value_template: "{{ trigger.platform != 'time_pattern' }}"
 action:
+  - service: system_log.write
+    data:
+      message: >
+        Heating Control Beta Tado Version called.
+        There are {{ valves_tado | count }} tado trvs.
+      level: info
+      logger: blueprints.panhans.heatingcontrol
   - if:
       - condition: template
         value_template: "{{ trigger.platform == 'time_pattern' }}"
@@ -508,6 +515,14 @@ action:
                       target:
                         entity_id: "{{ calibration_entity }}"
               else:
+                - service: system_log.write
+                  data:
+                    message: >
+                      current_valve: {{ current_valve }}
+                      is_tado: {{ current_valve in valves_tado}}
+                      tado_valves: {{ current_valve }}
+                    level: info
+                    logger: blueprints.panhans.heatingcontrol
                 - if:
                     - condition: template
                       value_template: "{{ current_valve in valves_tado}}"
@@ -518,6 +533,18 @@ action:
                         actual_temp: "{{ states(actual_local_temperature) | float }}"
                         offset: "{{ ( actual_temp - tado_temp ) | round }}"
                         calculated_offset: "{{ ( ( actual_temp - tado_temp ) + current_offset ) | round }}"
+                    - service: system_log.write
+                      data:
+                        message: >
+                          current_valve: {{ current_valve }}
+                          actual_temp: {{ actual_temp }}
+                          trv_temp: {{ tado_temp }}
+                          offset: {{ offset }}
+                          offset_old: {{ current_offset }}
+                          calculated_offset: {{ calculated_offset }}
+                          offset_dif: {{ float(current_offset) != float(calculated_offset) }}
+                        level: info
+                        logger: blueprints.panhans.heatingcontrol
                     - if:
                         - condition: template
                           value_template: "{{ float(current_offset) != float(calculated_offset) }}"
