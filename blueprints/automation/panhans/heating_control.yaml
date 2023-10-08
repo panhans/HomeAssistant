@@ -45,7 +45,7 @@ blueprint:
     detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
-    **Version**: 2.10_b2
+    **Version**: 2.10_b3
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
@@ -487,7 +487,7 @@ action:
                   is defined, calibration_entity_id.id, NULL)  }}\n"
             - if:
                 - condition: template
-                  value_template: "{{ calibration_entity is defined }}"
+                  value_template: "{{ calibration_entity is defined and calibration_entity != '' }}"
               then:
                 - variables:
                     offset_old: "{{ states(calibration_entity) }}"
