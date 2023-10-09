@@ -127,6 +127,7 @@ blueprint:
           filter:
             - domain:
                 - input_boolean
+                - binary_sensor
           multiple: false
     window:
       name: Window (optional)
