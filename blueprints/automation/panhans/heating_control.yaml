@@ -484,7 +484,7 @@ action:
                   %}  {% set calibration_entity_id = namespace(id=[]) %} {% for s in entities
                   %}\n  {% if (('calibration' in s) or ('offset' in s))  %}\n    {% set
                   calibration_entity_id.id = s %}\n  {% endif %}\n{% endfor %} {{ iif (calibration_entity_id.id[0]
-                  is defined, calibration_entity_id.id, NULL)  }}\n"
+                  is defined, calibration_entity_id.id, '')  }}\n"
             - if:
                 - condition: template
                   value_template: "{{ calibration_entity is defined and calibration_entity != '' }}"
