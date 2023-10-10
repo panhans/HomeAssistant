@@ -45,7 +45,7 @@ blueprint:
     detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
-    **Version**: 2.10_b4
+    **Version**: 2.10_b5
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
@@ -117,6 +117,8 @@ blueprint:
           filter:
             - domain:
                 - input_boolean
+                - binary_sensor
+                - timer
           multiple: false
     guest_mode:
       name: Guest mode (optional)
@@ -302,7 +304,7 @@ variables:
   guest_mode: !input guest_mode
   persons: !input persons
   maintenance_mode: !input maintenance
-  party_state: "{{ party_mode != none and is_state(party_mode, 'on') }}"
+  party_state: "{{ party_mode != none and (is_state(party_mode, 'on') or is_state(party_mode, 'active')) }}"
   guest_state: "{{ guest_mode != none and is_state(guest_mode, 'on') }}"
   winter_state:
     "{{ winter_mode == none or (winter_mode != none and is_state(winter_mode,
@@ -424,11 +426,11 @@ trigger:
     for:
       seconds: !input window_reaction_time
   - platform: template
-    value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'on') }}"
+    value_template: "{{ party_mode_t != none and (is_state(party_mode_t, 'on') or is_state(party_mode_t, 'active')) }}"
     for:
       seconds: !input window_reaction_time
   - platform: template
-    value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'off') }}"
+    value_template: "{{ party_mode_t != none and (is_state(party_mode_t, 'off') or is_state(party_mode_t, 'idle') or is_state(party_mode_t, 'paused')) }}"
     for:
       seconds: !input window_reaction_time
   - platform: template
