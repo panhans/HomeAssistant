@@ -183,6 +183,7 @@ blueprint:
           filter:
             - domain:
                 - input_boolean
+                - binary_sensor
           multiple: false
     presence_sensor:
       name: Presence Sensor (optional)
