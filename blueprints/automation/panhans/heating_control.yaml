@@ -45,7 +45,7 @@ blueprint:
     detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
-    **Version**: 2.10_b5
+    **Version**: 2.10_b6
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
@@ -442,18 +442,18 @@ trigger:
     value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'off') }}"
     for:
       seconds: !input window_reaction_time
+
   - platform: template
     value_template:
       "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'on')
       }}"
-    for:
-      seconds: !input presence_reaction_time
   - platform: template
     value_template:
       "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'off')
       }}"
     for:
-      seconds: !input presence_reaction_time
+      minutes: !input presence_reaction_time
+
   - platform: time_pattern
     minutes: /10
     seconds: "30"
