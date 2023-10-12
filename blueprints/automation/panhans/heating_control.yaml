@@ -45,7 +45,7 @@ blueprint:
     detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
-    **Version**: 2.9.1
+    **Version**: 2.10_b6
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
@@ -117,6 +117,8 @@ blueprint:
           filter:
             - domain:
                 - input_boolean
+                - binary_sensor
+                - timer
           multiple: false
     guest_mode:
       name: Guest mode (optional)
@@ -127,6 +129,7 @@ blueprint:
           filter:
             - domain:
                 - input_boolean
+                - binary_sensor
           multiple: false
     window:
       name: Window (optional)
@@ -180,6 +183,7 @@ blueprint:
           filter:
             - domain:
                 - input_boolean
+                - binary_sensor
           multiple: false
     presence_sensor:
       name: Presence Sensor (optional)
@@ -281,6 +285,14 @@ variables:
     climate in valves %}\n  {% if climate not in valves_off_mode %}\n    {% set climates_not_off.name
     = climates_not_off.name + [climate] %}\n  {% endif %}\n{% endfor %} {{ climates_not_off.name
     }}\n"
+  valves_tado: |
+    {% set climates_tado = namespace(name=[]) %} 
+    {% for climate in valves %}
+      {% if device_attr(climate,'manufacturer') | regex_search('tado', ignorecase=True)%}
+        {% set climates_tado.name = climates_tado.name + [climate] %}
+      {% endif %}
+    {% endfor %} 
+    {{ climates_tado.name }}
   force_minimum_temperature: !input force_minimum_temperature
   set_temp: !input set_temp
   min_temp: !input min_temp
@@ -293,7 +305,7 @@ variables:
   guest_mode: !input guest_mode
   persons: !input persons
   maintenance_mode: !input maintenance
-  party_state: "{{ party_mode != none and is_state(party_mode, 'on') }}"
+  party_state: "{{ party_mode != none and (is_state(party_mode, 'on') or is_state(party_mode, 'active')) }}"
   guest_state: "{{ guest_mode != none and is_state(guest_mode, 'on') }}"
   winter_state:
     "{{ winter_mode == none or (winter_mode != none and is_state(winter_mode,
@@ -415,11 +427,11 @@ trigger:
     for:
       seconds: !input window_reaction_time
   - platform: template
-    value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'on') }}"
+    value_template: "{{ party_mode_t != none and (is_state(party_mode_t, 'on') or is_state(party_mode_t, 'active')) }}"
     for:
       seconds: !input window_reaction_time
   - platform: template
-    value_template: "{{ party_mode_t != none and is_state(party_mode_t, 'off') }}"
+    value_template: "{{ party_mode_t != none and (is_state(party_mode_t, 'off') or is_state(party_mode_t, 'idle') or is_state(party_mode_t, 'paused')) }}"
     for:
       seconds: !input window_reaction_time
   - platform: template
@@ -430,18 +442,18 @@ trigger:
     value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'off') }}"
     for:
       seconds: !input window_reaction_time
+
   - platform: template
     value_template:
       "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'on')
       }}"
-    for:
-      seconds: !input presence_reaction_time
   - platform: template
     value_template:
       "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'off')
       }}"
     for:
-      seconds: !input presence_reaction_time
+      minutes: !input presence_reaction_time
+
   - platform: time_pattern
     minutes: /10
     seconds: "30"
@@ -455,6 +467,13 @@ condition:
       - condition: template
         value_template: "{{ trigger.platform != 'time_pattern' }}"
 action:
+  - service: system_log.write
+    data:
+      message: >
+        Heating Control Beta Tado Version called.
+        There are {{ valves_tado | count }} tado trvs.
+      level: info
+      logger: blueprints.panhans.heatingcontrol
   - if:
       - condition: template
         value_template: "{{ trigger.platform == 'time_pattern' }}"
@@ -469,10 +488,10 @@ action:
                   %}  {% set calibration_entity_id = namespace(id=[]) %} {% for s in entities
                   %}\n  {% if (('calibration' in s) or ('offset' in s))  %}\n    {% set
                   calibration_entity_id.id = s %}\n  {% endif %}\n{% endfor %} {{ iif (calibration_entity_id.id[0]
-                  is defined, calibration_entity_id.id, NULL)  }}\n"
+                  is defined, calibration_entity_id.id, '')  }}\n"
             - if:
                 - condition: template
-                  value_template: "{{ calibration_entity is defined }}"
+                  value_template: "{{ calibration_entity is defined and calibration_entity != '' }}"
               then:
                 - variables:
                     offset_old: "{{ states(calibration_entity) }}"
@@ -499,6 +518,45 @@ action:
                         value: "{{ float(offset_new) }}"
                       target:
                         entity_id: "{{ calibration_entity }}"
+              else:
+                - service: system_log.write
+                  data:
+                    message: >
+                      current_valve: {{ current_valve }}
+                      is_tado: {{ current_valve in valves_tado}}
+                      tado_valves: {{ current_valve }}
+                    level: info
+                    logger: blueprints.panhans.heatingcontrol
+                - if:
+                    - condition: template
+                      value_template: "{{ current_valve in valves_tado}}"
+                  then:
+                    - variables:
+                        tado_temp: "{{ state_attr(current_valve, 'current_temperature') | float }}"
+                        current_offset: "{{ state_attr(current_valve, 'offset_celsius') }}"
+                        actual_temp: "{{ states(actual_local_temperature) | float }}"
+                        offset: "{{ actual_temp - tado_temp }}"
+                        calculated_offset: "{{ ( offset + current_offset ) | round(2) }}"
+                    - service: system_log.write
+                      data:
+                        message: >
+                          current_valve: {{ current_valve }}
+                          actual_temp: {{ actual_temp }}
+                          trv_temp: {{ tado_temp }}
+                          offset: {{ offset }}
+                          offset_old: {{ current_offset }}
+                          calculated_offset: {{ calculated_offset }}
+                          offset_dif: {{ float(current_offset) != float(calculated_offset) }}
+                        level: info
+                        logger: blueprints.panhans.heatingcontrol
+                    - if:
+                        - condition: template
+                          value_template: "{{ float(current_offset) != float(calculated_offset) }}"
+                      then:
+                        - service: tado.set_climate_temperature_offset
+                          data:
+                            offset: "{{ calculated_offset }}"
+                            entity_id: "{{ current_valve }}"
     else:
       - if:
           - condition: template
