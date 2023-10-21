@@ -17,6 +17,9 @@ blueprint:
 
     - party mode independent of scheduler (heats if on)
 
+    - party temp - optional temperature used for party mode, if unset the comfort
+    temperature will be used
+
     - winter mode - heating control on/off (if winter mode is on → heating control
     is on)
 
@@ -45,7 +48,7 @@ blueprint:
     detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
 
 
-    **Version**: 2.10
+    **Version**: 2.10-march
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
@@ -119,6 +122,19 @@ blueprint:
                 - input_boolean
                 - binary_sensor
                 - timer
+          multiple: false
+    party_temp:
+      name: Party temperature (optional)
+      description:
+        If party mode is on, the party temperature (input number) is set instead of
+        comfort temperature. An input number can be added in the helpers section in
+        your home assistant settings.
+      default:
+      selector:
+        entity:
+          filter:
+            - domain:
+                - input_number
           multiple: false
     guest_mode:
       name: Guest mode (optional)
@@ -296,6 +312,7 @@ variables:
   force_minimum_temperature: !input force_minimum_temperature
   set_temp: !input set_temp
   min_temp: !input min_temp
+  party_temp: !input party_temp
   scheduler_regular: !input scheduler
   scheduler_holiday: !input holiday_scheduler
   holiday_mode: !input holiday_mode
@@ -335,12 +352,15 @@ variables:
     "{{ (as_timestamp(state_attr(active_scheduler,'next_event'),as_timestamp(now()))
     - as_timestamp(now())) / (60 * 60) <=  presence_time_window }}"
   temperatur:
-    "{% if ( states(active_scheduler) == 'on' and ( persons_home_count |
-    int > 0 or guest_state == true)) %}\n\n  {% if ( presence_detected == false and
-    is_presence_time_window == true ) %}\n    {{ min_temp }}\n  {% else %}\n    {{
-    states(set_temp) }}\n  {% endif %}\n\n{% else %}\n\n  {% if party_state == true
-    %}\n    {{ states(set_temp) }}\n  {% else %}\n    {{ min_temp }}\n  {% endif %}\n\n{%
-    endif %}\n"
+    "{% if party_state == true and party_temp != none %}\n  {{ states(party_temp) }}\n
+    {% else %}\n\n  
+    {% if ( states(active_scheduler) == 'on' and ( persons_home_count | int > 0 or guest_state == true)) %}\n\n  
+    {% if ( presence_detected == false and is_presence_time_window == true ) %}\n    
+    {{ min_temp }}\n  {% else %}\n    {{ states(set_temp) }}\n  
+    {% endif %}\n\n{% else %}\n\n  
+    {% if party_state == true %}\n    {{ states(set_temp) }}\n  
+    {% else %}\n    {{ min_temp }}\n  {% endif %}\n\n{% endif %}\n\n
+    {% endif %}"
   actual_local_temperature: !input external_temp_sensor
 trigger_variables:
   winter_mode_t: !input winter_mode
