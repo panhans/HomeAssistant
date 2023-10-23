@@ -15,3 +15,7 @@ Here is my repo for my home assistant projects. For now you can find following p
   - Scripts
     - [Intelligent Vaccum Cleaning](blueprints/script/intelligent_vacuum_cleaning.yaml)
     - [Simple Scene Toggle](blueprints/script/scene_toggle.yaml)
+   
+If you appreciate my work and support:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
