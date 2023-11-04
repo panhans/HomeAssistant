@@ -621,4 +621,4 @@ action:
                 data:
                   entity_id: !input heating
                   temperature: "{{ temperatur | float }}"
-mode: parallel
+mode: queued
