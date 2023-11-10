@@ -1,57 +1,70 @@
 blueprint:
-  name: Heating Control
+  name: Advanced Heating Control
+  author: panhans
   description: "
 
-    **Core Features**
+    ## Core Features
 
-    - heating based on a scheduler (on = comfort temperature, off = minimum temperature)
-    only heating if defined persons are at home
+    - heating based on a scheduler, presence of persons and/or presence sensor
 
-    - support for TRVs without off mode (will be set to minimum temperature if window
-    is open or winter mode is off)
+    - window open / TRV off
 
+    - party mode
 
-    **Optional Features**
+    - guest mode (if nobody is home who activates heating automatically)
 
-    - window open detection (when open trv goes off)
+    - winter mode: enable / disable the automation itself
 
-    - party mode independent of scheduler (heats if on)
+    - holiday mode: provide a 2nd holiday scheduler
 
-    - winter mode - heating control on/off (if winter mode is on → heating control
-    is on)
+    - trv calibration by an external temperature sensor
 
-    - external sensor for trv calibration
-
-    - 2nd holiday scheduler and input boolean to switch between regular and holiday
-    scheduler
-
-    - presence sensor: You can define a time window before your scheduler turns off
-    next time. If that sensor turns off the trv will be set to your minimum temperature.
-    Presence sensor could be a motion sensor or a binary sensor based on your lights.
-    So you are able to turn down temperature when you go to bed earlier.
-
-    - option to force the minimum temperature instead of switching TRVs off when window
-    is open
-
-    - guest mode - if turned on the blueprint behaves as somebody is home even if
-    it’s not
-
-    - optional latency slider for a delay between service calls, because som TRVs
-    have issues with setting mode and temperature in one call and don’t react to more
-    than one call if they came instantly without a delay
+    - several tweaks for fixing your TRV issues
 
 
-    **Help & FAQ**: [Advanced scheduled heating control with calibration and window
-    detection](https://community.home-assistant.io/t/advanced-scheduled-heating-control-with-calibration-and-window-detection)
+    ## New in version 3.0
+
+    - Guest Mode can be timer
+
+    - multiple windows / doors possible
+
+    - calibration only triggers when external sensor or current temperature of trv gets updated - not time based anymore
+
+    - adjustable calibration
+
+    - comfort temperature can be set in automation **or** by an input_number
+
+    - party mode overrides all other settings
+
+    - simplified and more functional presence detection
+
+    - presence detection only possible
+
+    - option to set climates off instead of minmum temperature
+
+    - several tweaks under the hood to prevent flooding zigbee mesh and reducing service calls
 
 
-    **Version**: 2.10
+    ## Additional Information
+
+    **Version**: 3.0
+
+    **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
+
+    **Debug Configuration**: `blueprints.panhans.heatingcontrol: debug`
+
+
+
+    If you like my work and support feel free to support me.
+
+
+    [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
 
     "
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/heating_control.yaml
   domain: automation
   input:
-    heating:
+    input_trvs:
       name: Thermostats / Valves
       description: Thermostats to be controlled
       selector:
@@ -60,33 +73,25 @@ blueprint:
             - domain:
                 - climate
           multiple: true
-    persons:
-      name: Persons
-      description:
-        If a person is at home and the scheduler state is on, the comfort
-        temperature will be set.
-      selector:
-        entity:
-          filter:
-            - domain:
-                - person
-          multiple: true
-    scheduler:
-      name: Scheduler
+
+    input_scheduler_regular:
+      name: Scheduler (optional)
       description:
         Scheduler that specifies when the comfort temperature can be set
         (scheduler state on). Scheduler can be added in the helpers section in your
         home assistant settings.
+      default:
       selector:
         entity:
           filter:
             - domain:
                 - schedule
           multiple: false
-    min_temp:
+
+    input_temperature_minimum:
       name: Minimum Temp
       description:
-        If no one is at home or the scheduler state is off, the minimum
+        If nobody is at home or the scheduler state is off, the minimum
         temperature is set.
       default: 19
       selector:
@@ -96,19 +101,44 @@ blueprint:
           step: 0.5
           mode: slider
           unit_of_measurement: °C
-    set_temp:
-      name: Comfort temperature
-      description:
-        If someone is at home and the scheduler / party mode is on, the
-        comfort temperature (input number) is set. An input number can be added in
-        the helpers section in your home assistant settings.
+
+    input_temperature_comfort_static:
+      name: Comfort Temperature
+      description: Set a static comfort temperature.
+      default: 22
+      selector:
+        number:
+          min: 12.0
+          max: 30.0
+          step: 0.5
+          mode: slider
+          unit_of_measurement: °C
+
+    input_temperature_comfort:
+      name: Comfort temperature (optional)
+      description: If you want to set the comfort temperature in ui just provide an input number helper.
+      default:
       selector:
         entity:
           filter:
             - domain:
                 - input_number
           multiple: false
-    party_mode:
+
+    input_persons:
+      name: Persons (optional)
+      description:
+        If a person is at home and the scheduler state is on, the comfort
+        temperature will be set.
+      default: []
+      selector:
+        entity:
+          filter:
+            - domain:
+                - person
+          multiple: true
+
+    input_mode_party:
       name: Party mode (optional)
       description: Overwrites winter mode and scheduler. If on, heating is activated.
       default:
@@ -120,7 +150,8 @@ blueprint:
                 - binary_sensor
                 - timer
           multiple: false
-    guest_mode:
+
+    input_mode_guest:
       name: Guest mode (optional)
       description: Activates the scheduler and ignores if anybody is at home or not.
       default:
@@ -130,22 +161,23 @@ blueprint:
             - domain:
                 - input_boolean
                 - binary_sensor
+                - timer
           multiple: false
-    window:
-      name: Window (optional)
-      description: Window that turns off the thermostats if it is open.
-      default:
+
+    input_windows:
+      name: Windows / Doors (optional)
+      description: If open during airing TRVs will set to off.
+      default: []
       selector:
         entity:
           filter:
             - domain:
                 - binary_sensor
-          multiple: false
-    window_reaction_time:
-      name: Window reaction time
-      description:
-        Duration that the window must be open for the thermostats to be
-        turned off.
+          multiple: true
+
+    input_windows_reaction_time:
+      name: Window / Door Reaction Time
+      description: Duration for which a window or door must be open/closed for the thermostats to close/open.
       default: 10
       selector:
         number:
@@ -154,15 +186,20 @@ blueprint:
           step: 1.0
           mode: slider
           unit_of_measurement: s
-    winter_mode:
+
+    input_mode_winter:
       name: Winter mode (optional)
-      description:
-        If this entity is off, heating will never occur. Be sure the entity
-        is a binary input or binary sensor.
+      description: If on scheduled heating is activated, otherwise TRVs stay off.
       default:
       selector:
-        entity: {}
-    holiday_scheduler:
+        entity:
+          filter:
+            - domain:
+                - input_boolean
+                - binary_sensor
+          multiple: false
+
+    input_scheduler_holiday:
       name: Holiday scheduler (optional)
       description: Scheduler for holidays
       default:
@@ -172,11 +209,10 @@ blueprint:
             - domain:
                 - schedule
           multiple: false
-    holiday_mode:
+
+    input_mode_holiday:
       name: Holiday mode (optional)
-      description:
-        If this input boolean is on, the holiday scheduler will be used
-        instead of the regular one.
+      description: If on the defined holiday scheduler is active instead of the default one.
       default:
       selector:
         entity:
@@ -185,12 +221,10 @@ blueprint:
                 - input_boolean
                 - binary_sensor
           multiple: false
-    presence_sensor:
+
+    input_presence_sensor:
       name: Presence Sensor (optional)
-      description:
-        If no presence is detected before the scheduler switches to off
-        the temperature will be turned down to minimum. This saves energy e.g. when
-        you go to bed earlier. This could also be a binary sensor based on your lights.
+      description: If a presence sensor has been specified, heating is also carried out if the scheduler is off but presence has been detected. This presence sensor only has impact when no scheduler is defined or the active scheduler is off.
       default:
       selector:
         entity:
@@ -198,38 +232,52 @@ blueprint:
             - domain:
                 - binary_sensor
           multiple: false
-    presence_time_window:
-      name: Presence time window
-      description:
-        If a presence sensor is defined it will only be observed X hours
-        before the scheduler turns off.
-      default: 1
+
+    input_scheduler_presence:
+      name: Presence Sensor Scheduler (optional)
+      description: This optional scheduler specifies when heating is controlled by presence. If this is not specified, presence-based heating is always active.
+      default:
       selector:
-        number:
-          min: 1.0
-          max: 5.0
-          step: 1.0
-          mode: slider
-          unit_of_measurement: h
-    presence_reaction_time:
-      name: Presence reaction time
+        entity:
+          filter:
+            - domain:
+                - schedule
+          multiple: false
+
+    input_presence_reaction_off_time:
+      name: Presence Reaction Off Time
       description:
         Define how many minutes the presence sensor must be off so the
         temperature turns to minimum.
       default: 5
       selector:
         number:
-          min: 1.0
+          min: 1
+          max: 30.0
+          step: 1.0
+          mode: slider
+          unit_of_measurement: min
+
+    input_presence_reaction_on_time:
+      name: Presence Reaction On Time
+      description: Define how many minutes the presence sensor must be on to turn on heating.
+      default: 5
+      selector:
+        number:
+          min: 1
           max: 10.0
           step: 1.0
           mode: slider
           unit_of_measurement: min
-    external_temp_sensor:
+
+    input_temperature_sensor:
       name: External Temperatur Sensor (optional)
-      description:
-        Set this if you want temperature calibration for your thermostat.
-        Be sure your valve has a calibration number entity that contains "calibration"
-        or "offset" in its id.
+      description: >
+        Temperature calibration for your TRVs. Following is supported:
+
+          * TRVs must porvide calibration number entity (entity_id must contain *calibration* or *offset*)
+          * TADO TRVs
+
       default:
       selector:
         entity:
@@ -239,32 +287,22 @@ blueprint:
               device_class:
                 - temperature
           multiple: false
-    force_minimum_temperature:
-      name: Force mimimum temperature
-      description:
-        Activate this option if you have problems with your TRVs with off
-        mode when window is open. All TRVs will be set to their minimum temperature
-        if this option is enabled.
-      default: false
-      selector:
-        boolean: {}
-    service_call_delay:
-      name: Service call delay
-      description:
-        Some TRVs have problems with setting temperature. You can add a
-        delay between the service calls that control the mode and temperature of your
-        TRVs. This could fix your problem.
-      default: 2
+
+    input_calibration_delta:
+      name: Calibration Delta
+      description: If the difference between TRV temperature and the external sensor temperature is greater or less than the calibration delta the TRV calibration will be triggered.
+      default: 0.5
       selector:
         number:
-          min: 0.0
-          max: 10.0
-          step: 1.0
+          min: 0
+          max: 2
+          step: 0.1
           mode: slider
-          unit_of_measurement: s
-    maintenance:
-      name: Maintenance mode (optional)
-      description: Open all valves to max.
+          unit_of_measurement: °C
+
+    input_force_max_temperature:
+      name: Force Max Temperature (optional)
+      description: Set the maximum temperature of all TRVs regardless of any other settings.
       default:
       selector:
         entity:
@@ -272,353 +310,619 @@ blueprint:
             - domain:
                 - input_boolean
           multiple: false
+
+    input_off_instead_min:
+      name: Off Instead Of Minimum Temperature
+      description: If enabled your climates turn *off* instead of lower temperature when scheduler is off or no presence is detected.
+      default: false
+      selector:
+        boolean: {}
+
+    input_force_minimum_temperature:
+      name: Force Mimimum Temperature
+      description: Activate this option if you have problems with OFF mode. Instead of setting them to off all TRVs will be set to their individual minimum temperature.
+      default: false
+      selector:
+        boolean: {}
+
+    input_split_service_calls:
+      name: Split Service Calls
+      description: Mode and temperature are set in one service call. Some TRVs have problems by setting it this way. Activate this option to set mode and temperature in seperate service calls.
+      default: false
+      selector:
+        boolean: {}
+
+    input_service_call_delay:
+      name: Service Call Delay
+      description:
+        Some TRVs have problems with setting mode and temperature. You can try to increas the
+        delay between the service calls. This could fix your problems.
+      default: 2
+      selector:
+        number:
+          min: 1.0
+          max: 10.0
+          step: 1.0
+          mode: slider
+          unit_of_measurement: s
+
+##################################################
+############### T R I G G E R ####################
+##################################################
+
+trigger_variables:
+  # M O D E S
+  input_mode_winter: !input input_mode_winter
+  input_mode_party: !input input_mode_party
+  input_mode_guest: !input input_mode_guest
+  input_force_max_temperature: !input input_force_max_temperature
+  input_mode_holiday: !input input_mode_holiday
+  input_temperature_comfort: !input input_temperature_comfort
+  input_temperature_comfort_static: !input input_temperature_comfort_static
+
+  # S C H E D U L E R
+  input_scheduler_regular: !input input_scheduler_regular
+  input_scheduler_holiday: !input input_scheduler_holiday
+  input_scheduler_presence: !input input_scheduler_holiday
+
+  # A D D I T I O N A L   S E T T I N G S
+  input_windows: !input input_windows
+  input_temperature_sensor: !input input_temperature_sensor
+  input_persons: !input input_persons
+  input_presence_sensor: !input input_presence_sensor
+  is_default_scheduler_configured: "{{ input_scheduler_regular != none }}"
+  is_mode_holiday_configured: "{{ input_scheduler_holiday != none and mode_holiday != none }}"
+
+trigger:
+  # S Y S T E M   T R I G G E R S
+  - platform: homeassistant
+    event: start
+
+  - platform: event
+    event_type: automation_reloaded
+
+  # T E M P E R A T U R E   C H A N G E S
+  - platform: template
+    value_template: >
+      {% if input_temperature_comfort != none %}
+        {{ as_timestamp(now()) - as_timestamp(states.input_number[input_temperature_comfort.split('.')[1]].last_updated) >= 2 }}
+      {% else %}
+        {{ false }}
+      {% endif %}
+
+  # S C H E D U L E R   O N / O F F
+  - platform: template
+    value_template: >
+      {% if is_default_scheduler_configured %}
+        {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_scheduler_regular) %} 
+        {{ is_state(active_scheduler, 'on') }}
+      {% else %}
+        false
+      {% endif %}
+
+  - platform: template
+    value_template: >
+      {% if is_default_scheduler_configured %}
+        {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_scheduler_regular) %} 
+        {{ is_state(active_scheduler, 'off') }}
+      {% else %}
+        false
+      {% endif %}
+
+  # P E R S O N  P R E S E N C E
+  - platform: template
+    value_template: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count > 0 }}"
+    for:
+      seconds: 2
+
+  - platform: template
+    value_template: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count == 0 }}"
+    for:
+      seconds: 2
+
+  # W I N D O W  O P E N
+  - platform: template
+    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
+    for:
+      seconds: !input input_windows_reaction_time
+
+  - platform: template
+    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count == 0 }}"
+    for:
+      seconds: !input input_windows_reaction_time
+
+  # M O D E   -   H O L I D A Y
+  - platform: template
+    value_template: "{{ is_mode_holiday_configured and is_state(input_mode_holiday, 'on') }}"
+    for:
+      seconds: 2
+
+  - platform: template
+    value_template: "{{ is_mode_holiday_configured and is_state(input_mode_holiday, 'off') }}"
+    for:
+      seconds: 2
+
+  # M O D E   -   W I N T E R
+  - platform: template
+    value_template: "{{ input_mode_winter != none and is_state(input_mode_winter, 'on') }}"
+    for:
+      seconds: 2
+
+  - platform: template
+    value_template: "{{ input_mode_winter != none and is_state(input_mode_winter, 'off') }}"
+    for:
+      seconds: 2
+
+  # M O D E   -   M A I N T A N A C E
+  - platform: template
+    value_template: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'on') }}"
+    for:
+      seconds: 2
+
+  - platform: template
+    value_template: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'off') }}"
+    for:
+      seconds: 2
+
+  # M O D E   -   P A R T Y
+  - platform: template
+    value_template: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
+    for:
+      seconds: 2
+
+  - platform: template
+    value_template: "{{ input_mode_party != none and states(input_mode_party) in ['off','idle','paused'] }}"
+    for:
+      seconds: 2
+
+  # M O D E   -   G U E S T
+  - platform: template
+    value_template: "{{ input_mode_guest != none and states(input_mode_guest) in ['on','active'] }}"
+    for:
+      seconds: 2
+  - platform: template
+    value_template: "{{ input_mode_guest != none and states(input_mode_guest) in ['off','idle','paused'] }}"
+    for:
+      seconds: 2
+
+  # P R E S E N C E   S E N S O R
+  - platform: template
+    value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'on') }}"
+    for:
+      minutes: !input input_presence_reaction_on_time
+
+  - platform: template
+    value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'off') }}"
+    for:
+      minutes: !input input_presence_reaction_off_time
+
+  # P R E S E N C E   S C H E D U L E R
+  - platform: template
+    value_template: "{{ input_scheduler_presence != none and is_state(input_scheduler_presence, 'on') }}"
+    for:
+      seconds: 2
+
+  - platform: template
+    value_template: "{{ input_scheduler_presence != none and is_state(input_scheduler_presence, 'off') }}"
+    for:
+      seconds: 2
+
+  # E X T E R N A L  C A L I B R A T I O N   S E N S O R
+  - platform: template
+    id: "calibration_sensor_temp"
+    value_template: >
+      {% if input_temperature_sensor != none %}
+        {{ as_timestamp(now()) - as_timestamp(states.sensor[input_temperature_sensor.split('.')[1]].last_updated) <= 30 }}
+      {% else %}
+        {{ false }}
+      {% endif %}
+
+  - platform: state
+    id: "calibration_trv_temp"
+    entity_id: !input input_trvs
+    attribute: current_temperature
+    for:
+      seconds: 2
+
+##################################################
+############### V A R I A B L E S ################
+##################################################
+
 variables:
-  trvs: !input heating
-  valves: "{{ expand(trvs) | map(attribute='entity_id') | list }}"
-  valves_off_mode:
-    "{% set climates_off = namespace(name=[]) %} {% for climate in
-    valves %}\n  {% if state_attr(climate,'hvac_modes') | regex_search('off', ignorecase=True)
-    %}\n    {% set climates_off.name = climates_off.name + [climate] %}\n  {% endif
-    %}\n{% endfor %} {{ climates_off.name }}\n"
-  valves_without_off_mode:
-    "{% set climates_not_off = namespace(name=[]) %} {% for
-    climate in valves %}\n  {% if climate not in valves_off_mode %}\n    {% set climates_not_off.name
-    = climates_not_off.name + [climate] %}\n  {% endif %}\n{% endfor %} {{ climates_not_off.name
-    }}\n"
+  # I N P U T S
+  input_trvs: !input input_trvs
+  input_force_minimum_temperature: !input input_force_minimum_temperature
+  input_temperature_comfort: !input input_temperature_comfort
+  input_temperature_comfort_static: !input input_temperature_comfort_static
+  input_temperature_minimum: !input input_temperature_minimum
+  input_scheduler_regular: !input input_scheduler_regular
+  input_scheduler_holiday: !input input_scheduler_holiday
+  input_scheduler_presence: !input input_scheduler_presence
+  input_windows: !input input_windows
+  input_mode_holiday: !input input_mode_holiday
+  input_mode_winter: !input input_mode_winter
+  input_mode_party: !input input_mode_party
+  input_mode_guest: !input input_mode_guest
+  input_force_max_temperature: !input input_force_max_temperature
+  input_persons: !input input_persons
+  input_presence_sensor: !input input_presence_sensor
+  input_presence_reaction_off_time: !input input_presence_reaction_off_time
+  input_presence_reaction_on_time: !input input_presence_reaction_on_time
+  input_temperature_sensor: !input input_temperature_sensor
+  input_split_service_calls: !input input_split_service_calls
+  input_calibration_delta: !input input_calibration_delta
+  input_off_instead_min: !input input_off_instead_min
+
+  # V A L V E   G R O U P S
+  valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
+  valves_off_mode: >
+    {% set climates_off = namespace(name=[]) %} 
+
+    {% for climate in valves %}
+      {% if state_attr(climate,'hvac_modes') | regex_search('off', ignorecase=True) %}
+        {% set climates_off.name = climates_off.name + [climate] %}
+      {% endif %}
+    {% endfor %} 
+
+    {{ climates_off.name }}
+
+  valves_without_off_mode: >
+    {% set climates_not_off = namespace(name=[]) %} 
+
+    {% for climate in valves %}
+      {% if climate not in valves_off_mode %}
+        {% set climates_not_off.name = climates_not_off.name + [climate] %}
+      {% endif %}
+    {% endfor %} 
+
+    {{ climates_not_off.name }}
+
   valves_tado: |
-    {% set climates_tado = namespace(name=[]) %} 
+    {% set climates_tado = namespace(name=[]) %}
+
     {% for climate in valves %}
       {% if device_attr(climate,'manufacturer') | regex_search('tado', ignorecase=True)%}
         {% set climates_tado.name = climates_tado.name + [climate] %}
       {% endif %}
-    {% endfor %} 
+    {% endfor %}
+
     {{ climates_tado.name }}
-  force_minimum_temperature: !input force_minimum_temperature
-  set_temp: !input set_temp
-  min_temp: !input min_temp
-  scheduler_regular: !input scheduler
-  scheduler_holiday: !input holiday_scheduler
-  holiday_mode: !input holiday_mode
-  window: !input window
-  winter_mode: !input winter_mode
-  party_mode: !input party_mode
-  guest_mode: !input guest_mode
-  persons: !input persons
-  maintenance_mode: !input maintenance
-  party_state: "{{ party_mode != none and (is_state(party_mode, 'on') or is_state(party_mode, 'active')) }}"
-  guest_state: "{{ guest_mode != none and is_state(guest_mode, 'on') }}"
-  winter_state:
-    "{{ winter_mode == none or (winter_mode != none and is_state(winter_mode,
-    'on')) }}"
-  maintenance: "{{ maintenance_mode != none and is_state(maintenance_mode, 'on')
-    }}"
-  window_state: "{{ window != none and is_state(window, 'on') }}"
-  mode:
-    "{% if ((winter_state == true or party_state == true) and window_state ==
-    false) or maintenance == true %}\n  heat\n{% else %}\n  off\n{% endif %}\n"
-  persons_home_count: "{{ expand(persons) | selectattr('state', 'eq', 'home')
-    | list | count }}"
-  holiday_mode_state:
-    "{{ scheduler_holiday != none and holiday_mode != none and is_state(holiday_mode,
-    'on') }}"
-  active_scheduler:
-    "{{ iif(holiday_mode_state,scheduler_holiday,scheduler_regular)
-    }}"
-  presence_sensor: !input presence_sensor
-  presence_reaction_time: !input presence_reaction_time
-  presence_detected:
-    "{{ presence_sensor == none or (presence_sensor != none and is_state(presence_sensor,'on')
-    and (as_timestamp(now()) - as_timestamp(states[presence_sensor].last_changed,
-    default=as_timestamp(now()))) / 60 >= presence_reaction_time) }}"
-  presence_time_window: !input presence_time_window
-  is_presence_time_window:
-    "{{ (as_timestamp(state_attr(active_scheduler,'next_event'),as_timestamp(now()))
-    - as_timestamp(now())) / (60 * 60) <=  presence_time_window }}"
-  temperatur:
-    "{% if ( states(active_scheduler) == 'on' and ( persons_home_count |
-    int > 0 or guest_state == true)) %}\n\n  {% if ( presence_detected == false and
-    is_presence_time_window == true ) %}\n    {{ min_temp }}\n  {% else %}\n    {{
-    states(set_temp) }}\n  {% endif %}\n\n{% else %}\n\n  {% if party_state == true
-    %}\n    {{ states(set_temp) }}\n  {% else %}\n    {{ min_temp }}\n  {% endif %}\n\n{%
-    endif %}\n"
-  actual_local_temperature: !input external_temp_sensor
-trigger_variables:
-  winter_mode_t: !input winter_mode
-  party_mode_t: !input party_mode
-  guest_mode_t: !input guest_mode
-  holiday_mode_t: !input holiday_mode
-  window_t: !input window
-  regular_scheduler_t: !input scheduler
-  holiday_scheduler_t: !input holiday_scheduler
-  persons_t: !input persons
-  presence_sensor_t: !input presence_sensor
-  maintenance_mode_t: !input maintenance
-trigger:
-  - platform: homeassistant
-    event: start
-  - platform: event
-    event_type: automation_reloaded
-  - platform: state
-    entity_id: !input set_temp
-    for:
-      seconds: 2
-  - platform: template
-    value_template:
-      "{% set active_scheduler_t = iif(holiday_scheduler_t != none and
-      holiday_mode_t != none and is_state(holiday_mode_t,'on'), holiday_scheduler_t,
-      regular_scheduler_t) %} {{ is_state(active_scheduler_t, 'on') }}
 
-      "
-  - platform: template
-    value_template:
-      "{% set active_scheduler_t = iif(holiday_scheduler_t != none and
-      holiday_mode_t != none and is_state(holiday_mode_t,'on'), holiday_scheduler_t,
-      regular_scheduler_t) %} {{ is_state(active_scheduler_t, 'off') }}
+##################################################
+########### C O N D I T I O N S ##################
+##################################################
 
-      "
-  - platform: template
-    value_template: "{{ expand(persons_t) | selectattr('state', 'eq', 'home')
-      | list | count > 0 }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ expand(persons_t) | selectattr('state', 'eq', 'home')
-      | list | count == 0 }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ window_t != none and is_state(window_t, 'on') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ window_t != none and is_state(window_t, 'off') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template:
-      "{{ holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t,
-      'on') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template:
-      "{{ holiday_scheduler_t != none and holiday_mode_t != none and is_state(holiday_mode_t,
-      'off') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ winter_mode_t != none and is_state(winter_mode_t, 'on') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ winter_mode_t != none and is_state(winter_mode_t, 'off') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template:
-      "{{ maintenance_mode_t != none and is_state(maintenance_mode_t,
-      'on') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template:
-      "{{ maintenance_mode_t != none and is_state(maintenance_mode_t,
-      'off') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ party_mode_t != none and (is_state(party_mode_t, 'on') or is_state(party_mode_t, 'active')) }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ party_mode_t != none and (is_state(party_mode_t, 'off') or is_state(party_mode_t, 'idle') or is_state(party_mode_t, 'paused')) }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'on') }}"
-    for:
-      seconds: !input window_reaction_time
-  - platform: template
-    value_template: "{{ guest_mode_t != none and is_state(guest_mode_t, 'off') }}"
-    for:
-      seconds: !input window_reaction_time
-
-  - platform: template
-    value_template:
-      "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'on')
-      }}"
-  - platform: template
-    value_template:
-      "{{ presence_sensor_t != none and is_state(presence_sensor_t, 'off')
-      }}"
-    for:
-      minutes: !input presence_reaction_time
-
-  - platform: time_pattern
-    minutes: /10
-    seconds: "30"
 condition:
   - condition: or
     conditions:
       - condition: template
-        value_template:
-          "{{ trigger.platform == 'time_pattern' and actual_local_temperature
-          != none and mode == 'heat' }}"
+        value_template: "{{ (trigger.id == 'calibration_sensor_temp' or trigger.id == 'calibration_trv_temp') and input_temperature_sensor != none }}"
       - condition: template
-        value_template: "{{ trigger.platform != 'time_pattern' }}"
+        value_template: "{{ trigger.id != 'calibration_sensor_temp' and trigger.id != 'calibration_trv_temp' }}"
+
+##################################################
+################## A C T I O N ###################
+##################################################
+
 action:
+  - variables:
+      # S T A T E S
+      state_mode_party: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
+      state_mode_guest: "{{ input_mode_guest != none and is_state(input_mode_guest, 'on') }}"
+      state_mode_winter: "{{ input_mode_winter == none or (input_mode_winter != none and is_state(input_mode_winter, 'on')) }}"
+      state_force_max_temperature: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'on') }}"
+      state_window: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
+      state_presence_sensor: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'on') }}"
+
+      state_temperature_comfort: >
+        {% if input_temperature_comfort != none%}
+          {{ states(input_temperature_comfort) }}
+        {% else %}
+          {{ input_temperature_comfort_static }}
+        {% endif %}
+      state_mode_holiday: "{{ input_mode_holiday != none and is_state(input_mode_holiday, 'on') }}"
+      active_scheduler: "{{ iif(state_mode_holiday, input_scheduler_holiday, input_scheduler_regular) }}"
+      is_anybody_home: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count > 0 or state_mode_guest }}"
+      is_mode_holiday_configured: "{{ input_scheduler_holiday != none and input_mode_holiday != none and is_state(input_mode_holiday, 'on') }}"
+      is_scheduler_on: "{{ active_scheduler != none and states(active_scheduler) == 'on' }}"
+
+      is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
+      is_presence_scheduler_defined: "{{ input_scheduler_presence != none }}"
+      is_presence: >
+        {{ 
+          (is_presence_scheduler_defined == true and is_state(input_scheduler_presence,'on') and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on'))
+          or
+          (is_presence_scheduler_defined == false and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on'))
+        }}
+
+      # T R V - V A L U E S
+      set_comfort: >
+        {% if state_mode_party == true %}
+          {{ true }}
+        {% else %}
+          {% if (is_scheduler_on == true and is_anybody_home) %}
+              {{ true }}
+          {% else %}
+            {% if (is_presence == true) %}
+              {{ true }}
+            {% else %}
+              {{ false }}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+
+      mode: >
+        {% if ((state_mode_winter == true or state_mode_party == true) and state_window == false) or state_force_max_temperature == true %}
+          {% if input_off_instead_min == true and set_comfort == false %}
+            off
+          {% else %}
+            heat
+          {% endif %}
+        {% else %}
+          off
+        {% endif %}
+
+      temperature: "{{ iif(set_comfort, state_temperature_comfort, input_temperature_minimum) }}"
+
+      trvs_temp_is_none: "{{ expand(input_trvs) | selectattr('attributes.temperature', 'defined') | selectattr('attributes.temperature', 'eq', none) | map(attribute='entity_id') | list }}"
+      trvs_temp_not_set: "{{ expand(input_trvs) | selectattr('attributes.temperature', 'defined') | rejectattr('attributes.temperature', 'eq', float(temperature)) | map(attribute='entity_id') | list }}"
+      trvs_mode_not_set: "{{ expand(input_trvs) | rejectattr('state', 'eq', mode) | map(attribute='entity_id') | list }}"
+      trvs_mode_and_temp_not_set: "{{ (((trvs_temp_not_set + trvs_temp_is_none) | reject('in', trvs_mode_not_set) | list) + trvs_mode_not_set) | list }}"
+
   - service: system_log.write
     data:
       message: >
-        Heating Control Beta Tado Version called.
-        There are {{ valves_tado | count }} tado trvs.
-      level: info
+        {{" \n "}}
+        - state_mode_party: {{ state_mode_party }} {{" \n "}}
+        - state_mode_guest: {{state_mode_guest }} {{" \n "}}
+        - state_mode_winter: {{ state_mode_winter }} {{" \n "}}
+        - state_force_max_temperature: {{ state_force_max_temperature }} {{" \n "}}
+        - state_window: {{ state_window }} {{" \n "}}
+        - state_presence_sensor: {{ state_presence_sensor }} {{" \n "}}
+        - state_temperature_comfort: {{ state_temperature_comfort }} {{" \n "}}
+        - state_mode_holiday: {{ state_mode_holiday }} {{" \n "}}
+        - mode: {{ mode }} {{" \n "}}
+        - active_scheduler: {{ active_scheduler }} {{" \n "}}
+        - is_anybody_home: {{ is_anybody_home }} {{" \n "}}
+        - is_mode_holiday_configured: {{ is_mode_holiday_configured }} {{" \n "}}
+        - is_scheduler_on: {{ is_scheduler_on }} {{" \n "}}
+        - is_presence_sensor_defined: {{ is_presence_sensor_defined }} {{" \n "}}
+        - is_presence_scheduler_defined: {{ is_presence_scheduler_defined }} {{" \n "}}
+        - is_presence: {{ is_presence }} {{" \n "}}
+        - temperature: {{ temperature }} {{" \n "}}
+        - valves: {{ valves }} {{" \n "}}
+        - valves_off_mode: {{ valves_off_mode }} {{" \n "}}
+        - valves_without_off_mode: {{ valves_without_off_mode }} {{" \n "}}
+        - valves_tado: {{ valves_tado }} {{" \n "}}
+        - trvs_temp_not_set: {{ trvs_temp_not_set }} {{" \n "}}
+        - trvs_mode_not_set: {{ trvs_mode_not_set }} {{" \n "}}
+        - trvs_mode_and_temp_not_set: {{ trvs_mode_and_temp_not_set }}
+      level: debug
       logger: blueprints.panhans.heatingcontrol
+
+  # CALIBRATION
   - if:
+      - condition: or
+        conditions:
+          - condition: trigger
+            id: "calibration_trv_temp"
+          - condition: trigger
+            id: "calibration_sensor_temp"
       - condition: template
-        value_template: "{{ trigger.platform == 'time_pattern' }}"
+        value_template: "{{ mode == 'heat' }}"
     then:
       - repeat:
           count: "{{ valves | count | int }}"
           sequence:
             - variables:
                 current_valve: "{{ valves[repeat.index-1] }}"
-                calibration_entity:
-                  "{% set entities =  device_entities(device_id(current_valve))
-                  %}  {% set calibration_entity_id = namespace(id=[]) %} {% for s in entities
-                  %}\n  {% if (('calibration' in s) or ('offset' in s))  %}\n    {% set
-                  calibration_entity_id.id = s %}\n  {% endif %}\n{% endfor %} {{ iif (calibration_entity_id.id[0]
-                  is defined, calibration_entity_id.id, '')  }}\n"
+                calibration_entity: >
+                  {% set entities =  device_entities(device_id(current_valve)) %}
+                  {% set calibration_entity_id = namespace(id=[]) %} 
+                  {% for s in entities %}
+                    {% if (('calibration' in s) or ('offset' in s))  %}
+                      {% set calibration_entity_id.id = s %}
+                    {% endif %}
+                  {% endfor %} 
+                  {{ iif (calibration_entity_id.id[0] is defined, calibration_entity_id.id, '')  }}
             - if:
                 - condition: template
-                  value_template: "{{ calibration_entity is defined and calibration_entity != '' }}"
+                  value_template: "{{ calibration_entity != '' or current_valve in valves_tado }}"
               then:
                 - variables:
-                    offset_old: "{{ states(calibration_entity) }}"
-                    offset_new:
-                      "{% set current_calibration_value = states(calibration_entity)
-                      %} {% set step = state_attr(calibration_entity,'step') %}\n{% set local_temperature
-                      = state_attr(current_valve,'current_temperature') %} {% set actual_trv_temperature
-                      = (local_temperature | float(0) - current_calibration_value | float(0))
-                      | round(1) %} {% set actual_sensor_temperature = states(actual_local_temperature)
-                      | float(0) | round(1) %} {% set new_calibration_value =  actual_sensor_temperature
-                      - actual_trv_temperature %}\n{% set min_calibration_value = state_attr(calibration_entity,'min')
-                      \ %} {% set max_calibration_value = state_attr(calibration_entity,'max')
-                      \ %} {% if(new_calibration_value > max_calibration_value) %}\n  {% set
-                      new_calibration_value = max_calibration_value %}\n{% elif (new_calibration_value
-                      < min_calibration_value)  %}\n  {% set new_calibration_value = min_calibration_value
-                      %}\n{% endif %}\n{{ (new_calibration_value | float(0) / step) | round(0)
-                      * step }}\n"
-                - if:
-                    - condition: template
-                      value_template: "{{ float(offset_old) != float(offset_new) }}"
-                  then:
-                    - service: number.set_value
-                      data:
-                        value: "{{ float(offset_new) }}"
-                      target:
-                        entity_id: "{{ calibration_entity }}"
-              else:
+                    offset_old: >
+                      {% if  calibration_entity != '' %}
+                        {{ states(calibration_entity) }}
+                      {% else %}
+                        {{ state_attr(current_valve, 'offset_celsius') }}
+                      {% endif %}
+                    offset_new: >
+                      {% set actual_sensor_temperature = states(input_temperature_sensor) | float(0) | round(1) %}
+                      {% set local_temperature = state_attr(current_valve,'current_temperature') %}
+
+                      {% if calibration_entity != '' %}
+
+                        {% set current_calibration_value = states(calibration_entity) %}
+                        {% set step = state_attr(calibration_entity,'step') %}
+                        {% set actual_trv_temperature = (local_temperature | float(0) - current_calibration_value | float(0)) | round(1) %} 
+                        {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
+                        {% set min_calibration_value = state_attr(calibration_entity,'min') %}
+                        {% set max_calibration_value = state_attr(calibration_entity,'max') %}
+                        
+                        {% if(new_calibration_value > max_calibration_value) %}
+                          {% set new_calibration_value = max_calibration_value %}
+                        {% elif (new_calibration_value < min_calibration_value) %}
+                          {% set new_calibration_value = min_calibration_value %}
+                        {% endif %}
+                        
+                        {{ (new_calibration_value | float(0) / step) | round(0) * step }}
+
+                      {% else %}
+                        {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
+                        {% set calculated_offset = ( float(offset) + float(offset_old) ) | round(2) %}
+
+                        {{ calculated_offset }}
+                      {% endif %}
                 - service: system_log.write
                   data:
                     message: >
-                      current_valve: {{ current_valve }}
-                      is_tado: {{ current_valve in valves_tado}}
-                      tado_valves: {{ current_valve }}
-                    level: info
+                      - is_tado_calibration: {{ calibration_entity == '' }} {{" \n "}}
+                      - offset_old: {{ offset_old }} {{" \n "}}
+                      - offset_new: {{ offset_new }}
+                    level: debug
                     logger: blueprints.panhans.heatingcontrol
                 - if:
                     - condition: template
-                      value_template: "{{ current_valve in valves_tado}}"
+                      value_template: "{{ (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta)  }}"
                   then:
-                    - variables:
-                        tado_temp: "{{ state_attr(current_valve, 'current_temperature') | float }}"
-                        current_offset: "{{ state_attr(current_valve, 'offset_celsius') }}"
-                        actual_temp: "{{ states(actual_local_temperature) | float }}"
-                        offset: "{{ actual_temp - tado_temp }}"
-                        calculated_offset: "{{ ( offset + current_offset ) | round(2) }}"
-                    - service: system_log.write
-                      data:
-                        message: >
-                          current_valve: {{ current_valve }}
-                          actual_temp: {{ actual_temp }}
-                          trv_temp: {{ tado_temp }}
-                          offset: {{ offset }}
-                          offset_old: {{ current_offset }}
-                          calculated_offset: {{ calculated_offset }}
-                          offset_dif: {{ float(current_offset) != float(calculated_offset) }}
-                        level: info
-                        logger: blueprints.panhans.heatingcontrol
                     - if:
                         - condition: template
-                          value_template: "{{ float(current_offset) != float(calculated_offset) }}"
+                          value_template: "{{ calibration_entity != '' }}"
+
+                      # SET GENERIC OFFSET
                       then:
+                        - service: number.set_value
+                          data:
+                            value: "{{ float(offset_new) }}"
+                          target:
+                            entity_id: "{{ calibration_entity }}"
+
+                      # SET TADO OFFSET
+                      else:
                         - service: tado.set_climate_temperature_offset
                           data:
-                            offset: "{{ calculated_offset }}"
+                            offset: "{{ offset_new }}"
                             entity_id: "{{ current_valve }}"
+
+                    - delay:
+                        seconds: !input input_service_call_delay
+
+    # SET MODE & TEMPERRATURE
     else:
       - if:
           - condition: template
             value_template: "{{ mode == 'off' }}"
         then:
-          - variables:
-              low_temp_valves:
-                "{{ iif(force_minimum_temperature == true, valves, valves_without_off_mode)
-                }} "
-          - repeat:
-              count: "{{ low_temp_valves | count | int }}"
-              sequence:
-                - variables:
-                    current_valve: "{{ low_temp_valves[repeat.index-1] }}"
-                    off_temperature: "{{ state_attr(current_valve,'min_temp') }}"
-                - service: climate.set_temperature
-                  data:
-                    entity_id: "{{ current_valve }}"
-                    temperature: "{{ off_temperature | float }}"
+          # SET TEMPERATURE TO MINIMUM INSTEAD TO MODE OFF
           - if:
               - condition: template
-                value_template: "{{ valves_off_mode | count > 0 }}"
-              - condition: template
-                value_template: "{{ force_minimum_temperature == false }}"
+                value_template: "{{ input_force_minimum_temperature or valves_without_off_mode | count > 0 }}"
             then:
-              - service: climate.set_hvac_mode
-                target:
-                  entity_id: "{{ valves_off_mode }}"
-                data:
-                  hvac_mode: "off"
+              - variables:
+                  low_temp_valves: "{{ iif(input_force_minimum_temperature == true, valves, valves_without_off_mode) }}"
+              - repeat:
+                  count: "{{ low_temp_valves | count | int }}"
+                  sequence:
+                    - variables:
+                        current_valve: "{{ low_temp_valves[repeat.index-1] }}"
+                        off_temperature: "{{ state_attr(current_valve,'input_temperature_minimum') }}"
+                        temperature: "{{ state_attr(current_valve,'temperature') }}"
+                    - if:
+                        - condition: template
+                          value_template: "{{ temperature != off_temperature }}"
+                      then:
+                        - service: climate.set_temperature
+                          data:
+                            entity_id: "{{ current_valve }}"
+                            temperature: "{{ off_temperature | float }}"
+                        - delay:
+                            seconds: !input input_service_call_delay
+
+            # SET MODE TO OFF AND NOT MIN TEMP
+            else:
+              - if:
+                  - condition: template
+                    value_template: "{{ valves_off_mode | count > 0 }}"
+                  - condition: template
+                    value_template: "{{ input_force_minimum_temperature == false }}"
+                then:
+                  if:
+                    - condition: template
+                      value_template: "{{ trvs_mode_not_set | count > 0 }}"
+                  then:
+                    - variables:
+                        valves_to_turn_off: "{{ (valves_off_mode | select('in', trvs_mode_not_set) | list) }}"
+                    - if:
+                        - condition: template
+                          value_template: "{{ input_split_service_calls == true }}"
+                      then:
+                        - repeat:
+                            count: "{{ valves_to_turn_off | count | int }}"
+                            sequence:
+                              - variables:
+                                  current_valve: "{{ valves_to_turn_off[repeat.index-1] }}"
+                              - service: climate.set_hvac_mode
+                                target:
+                                  entity_id: "{{ current_valve }}"
+                                data:
+                                  hvac_mode: "off"
+                              - delay:
+                                  seconds: !input input_service_call_delay
+                      else:
+                        - service: climate.set_hvac_mode
+                          target:
+                            entity_id: "{{ (valves_off_mode | select('in', trvs_mode_not_set) | list)}}"
+                          data:
+                            hvac_mode: "off"
+                        - delay:
+                            seconds: !input input_service_call_delay
+
+        # IF NOT OFF -> HEAT
         else:
           - if:
               - condition: template
-                value_template: "{{ maintenance }}"
+                value_template: "{{ state_force_max_temperature or input_split_service_calls }}"
+            # FORCE MAX TEMP
             then:
+              - variables:
+                  valves_to_be_set: "{{ iif(state_force_max_temperature, valves, trvs_mode_and_temp_not_set) }}"
               - repeat:
-                  count: "{{ valves | count | int }}"
+                  count: "{{ valves_to_be_set | count | int }}"
                   sequence:
                     - variables:
-                        current_valve: "{{ valves[repeat.index-1] }}"
-                        max_temperature: "{{ state_attr(current_valve,'max_temp') }}"
-                    - service: climate.set_hvac_mode
-                      target:
-                        entity_id: "{{ current_valve }}"
-                      data:
-                        hvac_mode: heat
-                    - delay:
-                        seconds: !input service_call_delay
-                    - service: climate.set_temperature
-                      data:
-                        entity_id: "{{ current_valve }}"
-                        temperature: "{{ max_temperature | float }}"
+                        current_valve: "{{ valves_to_be_set[repeat.index-1] }}"
+                        new_temperature: "{{ iif(state_force_max_temperature,state_attr(current_valve,'max_temp'),temperature) }}"
+                    - if:
+                        - condition: template
+                          value_template: "{{ states(current_valve) != mode }}"
+                      then:
+                        - service: climate.set_hvac_mode
+                          target:
+                            entity_id: "{{ current_valve }}"
+                          data:
+                            hvac_mode: "{{ mode }}"
+                        - delay:
+                            seconds: !input input_service_call_delay
+                    - if:
+                        - condition: template
+                          value_template: "{{ state_attr(current_valve, 'temperature') != new_temperature }}"
+                      then:
+                        - service: climate.set_temperature
+                          data:
+                            entity_id: "{{ current_valve }}"
+                            temperature: "{{ new_temperature | float }}"
+                        - delay:
+                            seconds: !input input_service_call_delay
             else:
-              - service: climate.set_hvac_mode
-                target:
-                  entity_id: !input heating
-                data:
-                  hvac_mode: heat
-              - delay:
-                  seconds: !input service_call_delay
-              - service: climate.set_temperature
-                data:
-                  entity_id: !input heating
-                  temperature: "{{ temperatur | float }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ trvs_mode_not_set | count > 0 }}"
+                then:
+                  - service: climate.set_hvac_mode
+                    target:
+                      entity_id: "{{ trvs_mode_not_set }}"
+                    data:
+                      hvac_mode: "{{ mode }}"
+                  - delay:
+                      seconds: !input input_service_call_delay
+              - if:
+                  - condition: template
+                    value_template: "{{ trvs_temp_not_set | count > 0 }}"
+                then:
+                  - service: climate.set_temperature
+                    data:
+                      entity_id: "{{ trvs_temp_not_set }}"
+                      temperature: "{{ temperature | float }}"
+                  - delay:
+                      seconds: !input input_service_call_delay
 mode: queued
