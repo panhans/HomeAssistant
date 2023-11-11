@@ -47,7 +47,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.0
+    **Version**: 3.0.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -758,8 +758,8 @@ action:
                         {{ (new_calibration_value | float(0) / step) | round(0) * step }}
 
                       {% else %}
-                        {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
-                        {% set calculated_offset = ( float(offset) + float(offset_old) ) | round(2) %}
+                        {% set offset = actual_sensor_temperature | float(0) - local_temperature | float(0) %}
+                        {% set calculated_offset = ( float(offset) + offset_old | float(0) ) | round(2) %}
 
                         {{ calculated_offset }}
                       {% endif %}
