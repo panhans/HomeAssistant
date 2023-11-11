@@ -653,7 +653,7 @@ action:
         {% if state_mode_party == true %}
           {{ true }}
         {% else %}
-          {% if (is_scheduler_on == true and is_anybody_home) %}
+          {% if (is_scheduler_on == true and (is_anybody_home or input_persons | count == 0)) %}
               {{ true }}
           {% else %}
             {% if (is_presence == true) %}
