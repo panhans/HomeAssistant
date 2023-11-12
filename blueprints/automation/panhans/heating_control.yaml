@@ -732,9 +732,9 @@ action:
                 - variables:
                     offset_old: >
                       {% if  calibration_entity != '' %}
-                        {{ states(calibration_entity) | float(0) }}
+                        {{ states(calibration_entity) }}
                       {% else %}
-                        {{ state_attr(current_valve, 'offset_celsius') | float(0) }}
+                        {{ state_attr(current_valve, 'offset_celsius') }}
                       {% endif %}
                     offset_new: >
                       {% set actual_sensor_temperature = states(input_temperature_sensor) | float(0) | round(1) %}
@@ -743,7 +743,7 @@ action:
                       {% if calibration_entity != '' %}
 
                         {% set step = state_attr(calibration_entity,'step') %}
-                        {% set actual_trv_temperature = float(local_temperature) - float(offset_old) | round(1) %} 
+                        {% set actual_trv_temperature = float(local_temperature) - offset_old | float(0) | round(1) %} 
                         {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
                         {% set min_calibration_value = state_attr(calibration_entity,'min') | float(0) %}
                         {% set max_calibration_value = state_attr(calibration_entity,'max') | float(0) %}
@@ -758,7 +758,7 @@ action:
 
                       {% else %}
                         {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
-                        {% set calculated_offset = ( float(offset) + float(offset_old) ) | round(2) %}
+                        {% set calculated_offset = ( float(offset) + offset_old | float(0) ) | round(2) %}
 
                         {{ calculated_offset }}
                       {% endif %}
@@ -772,7 +772,7 @@ action:
                     logger: blueprints.panhans.heatingcontrol
                 - if:
                     - condition: template
-                      value_template: "{{ (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta)  }}"
+                      value_template: "{{ offset_old == none or (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta)  }}"
                   then:
                     - if:
                         - condition: template
