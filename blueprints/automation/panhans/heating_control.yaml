@@ -390,6 +390,7 @@ trigger:
   # S Y S T E M   T R I G G E R S
   - platform: homeassistant
     event: start
+    id: hastart
 
   - platform: event
     event_type: automation_reloaded
@@ -618,6 +619,14 @@ condition:
 ##################################################
 
 action:
+  # DELAY WHEN HA STARTED
+  - if:
+    - condition: trigger
+      id: "hastart"
+    then:
+      - delay:
+          seconds: 30
+
   - variables:
       # S T A T E S
       state_mode_party: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
