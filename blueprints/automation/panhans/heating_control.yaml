@@ -22,32 +22,13 @@ blueprint:
     - several tweaks for fixing your TRV issues
 
 
-    ## New in version 3
+    ## New in version 4
 
-    - Guest Mode can be timer
-
-    - multiple windows / doors possible
-
-    - calibration only triggers when external sensor or current temperature of trv gets updated - not time based anymore
-
-    - adjustable calibration
-
-    - comfort temperature can be set in automation **or** by an input_number
-
-    - party mode overrides all other settings
-
-    - simplified and more functional presence detection
-
-    - presence detection only possible
-
-    - option to set climates off instead of minmum temperature
-
-    - several tweaks under the hood to prevent flooding zigbee mesh and reducing service calls
-
+    - TODO
 
     ## Additional Information
 
-    **Version**: 3.1
+    **Version**: 4.0_beta
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
