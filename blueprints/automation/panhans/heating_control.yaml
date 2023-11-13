@@ -22,7 +22,7 @@ blueprint:
     - several tweaks for fixing your TRV issues
 
 
-    ## New in version 3.0
+    ## New in version 3
 
     - Guest Mode can be timer
 
@@ -47,7 +47,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.0.2
+    **Version**: 3.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -290,7 +290,7 @@ blueprint:
 
     input_calibration_delta:
       name: Calibration Delta
-      description: If the difference between TRV temperature and the external sensor temperature is greater or less than the calibration delta the TRV calibration will be triggered.
+      description: If the difference between TRV temperature and the external sensor temperature is greater or less than the calibration delta the TRV calibration will be triggered. The lower the delta the often calibration gets triggered.
       default: 0.5
       selector:
         number:
@@ -299,6 +299,18 @@ blueprint:
           step: 0.1
           mode: slider
           unit_of_measurement: °C
+
+    input_calibration_timeout:
+      name: Calibration Timeout
+      description: Define a timeout if you want to decrease calibration calls if temperature changes too much. At least temperature of the external sensor or trv must stay for that duration before calibration gets triggered.
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 30.0
+          step: 1.0
+          mode: slider
+          unit_of_measurement: min
 
     input_force_max_temperature:
       name: Force Max Temperature (optional)
@@ -372,11 +384,13 @@ trigger_variables:
   input_presence_sensor: !input input_presence_sensor
   is_default_scheduler_configured: "{{ input_scheduler_regular != none }}"
   is_mode_holiday_configured: "{{ input_scheduler_holiday != none and mode_holiday != none }}"
+  input_calibration_timeout: !input input_calibration_timeout
 
 trigger:
   # S Y S T E M   T R I G G E R S
   - platform: homeassistant
     event: start
+    id: hastart
 
   - platform: event
     event_type: automation_reloaded
@@ -512,7 +526,7 @@ trigger:
     id: "calibration_sensor_temp"
     value_template: >
       {% if input_temperature_sensor != none %}
-        {{ as_timestamp(now()) - as_timestamp(states.sensor[input_temperature_sensor.split('.')[1]].last_updated) <= 30 }}
+        {{ as_timestamp(now()) - as_timestamp(states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= input_calibration_timeout * 60 }}
       {% else %}
         {{ false }}
       {% endif %}
@@ -522,7 +536,7 @@ trigger:
     entity_id: !input input_trvs
     attribute: current_temperature
     for:
-      seconds: 2
+      minutes: !input input_calibration_timeout
 
 ##################################################
 ############### V A R I A B L E S ################
@@ -605,6 +619,14 @@ condition:
 ##################################################
 
 action:
+  # DELAY WHEN HA STARTED
+  - if:
+    - condition: trigger
+      id: "hastart"
+    then:
+      - delay:
+          seconds: 30
+
   - variables:
       # S T A T E S
       state_mode_party: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
@@ -640,7 +662,7 @@ action:
         {% if state_mode_party == true %}
           {{ true }}
         {% else %}
-          {% if (is_scheduler_on == true and is_anybody_home) %}
+          {% if (is_scheduler_on == true and (is_anybody_home or input_persons | count == 0)) %}
               {{ true }}
           {% else %}
             {% if (is_presence == true) %}
