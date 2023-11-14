@@ -409,7 +409,7 @@ trigger:
     entity_id: !input input_trvs
     attribute: temperature
     for:
-      seconds: 2
+      seconds: 5
     id: comfort_change
 
   # T E M P E R A T U R E   C H A N G E S
