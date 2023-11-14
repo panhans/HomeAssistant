@@ -270,6 +270,16 @@ blueprint:
           mode: slider
           unit_of_measurement: min
 
+    input_change_comfort_temperature_on_physical_change:
+      name: Physical Comfort Temperature Change
+      description: >
+        Enable this if you want to control the comfort temperature with your valves. 
+        A comfort temperature *input_number* has to be defined. Note that the changes have no effect on the minimum temperature. 
+        The temperature for the value range of the *input_number* is also adjusted.
+      default: false
+      selector:
+        boolean: {}
+
     input_temperature_sensor:
       name: External Temperatur Sensor (optional)
       description: >
@@ -394,6 +404,13 @@ trigger:
 
   - platform: event
     event_type: automation_reloaded
+  
+  - platform: state
+    entity_id: !input input_trvs
+    attribute: temperature
+    for:
+      seconds: 2
+    id: comfort_change
 
   # T E M P E R A T U R E   C H A N G E S
   - platform: template
@@ -566,6 +583,7 @@ variables:
   input_split_service_calls: !input input_split_service_calls
   input_calibration_delta: !input input_calibration_delta
   input_off_instead_min: !input input_off_instead_min
+  input_change_comfort_temperature_on_physical_change: !input input_change_comfort_temperature_on_physical_change
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -610,23 +628,26 @@ condition:
   - condition: or
     conditions:
       - condition: template
+        value_template: "{{ trigger.id == 'comfort_change' and input_temperature_comfort != none and trigger.to_state.context.id != none and trigger.to_state.context.parent_id == none and trigger.to_state.context.user_id == none }}"
+      - condition: template
         value_template: "{{ (trigger.id == 'calibration_sensor_temp' or trigger.id == 'calibration_trv_temp') and input_temperature_sensor != none }}"
       - condition: template
-        value_template: "{{ trigger.id != 'calibration_sensor_temp' and trigger.id != 'calibration_trv_temp' }}"
+        value_template: "{{ trigger.id not in ['calibration_sensor_temp','comfort_change','calibration_trv_temp'] }}"
 
 ##################################################
 ################## A C T I O N ###################
 ##################################################
 
 action:
-  # DELAY WHEN HA STARTED
+  # DELAY AFTER HA START
   - if:
     - condition: trigger
       id: "hastart"
     then:
       - delay:
-          seconds: 30
+          seconds: 30    
 
+  # SETTING UP VARIABLES
   - variables:
       # S T A T E S
       state_mode_party: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
@@ -722,104 +743,156 @@ action:
       level: debug
       logger: blueprints.panhans.heatingcontrol
 
-  # CALIBRATION
-  - if:
-      - condition: or
-        conditions:
+  # ----------------------------------------------------------------------------------------------------------------------------------------------------------
+  # A C T I O N S 
+  - choose:
+      # MANUAL COMFORT CHANGE -------------------------------------------------------------------------------------------------------------
+      - conditions:
+
           - condition: trigger
-            id: "calibration_trv_temp"
-          - condition: trigger
-            id: "calibration_sensor_temp"
-      - condition: template
-        value_template: "{{ mode == 'heat' }}"
-    then:
-      - repeat:
-          count: "{{ valves | count | int }}"
-          sequence:
-            - variables:
-                current_valve: "{{ valves[repeat.index-1] }}"
-                calibration_entity: >
-                  {% set entities =  device_entities(device_id(current_valve)) %}
-                  {% set calibration_entity_id = namespace(id=[]) %} 
-                  {% for s in entities %}
-                    {% if (('calibration' in s) or ('offset' in s))  %}
-                      {% set calibration_entity_id.id = s %}
-                    {% endif %}
-                  {% endfor %} 
-                  {{ iif (calibration_entity_id.id[0] is defined, calibration_entity_id.id, '')  }}
-            - if:
-                - condition: template
-                  value_template: "{{ calibration_entity != '' or current_valve in valves_tado }}"
-              then:
+            id: "comfort_change"
+
+          - condition: template
+            value_template: "{{ input_temperature_comfort != none }}"
+
+          - condition: template
+            value_template: "{{ input_change_comfort_temperature_on_physical_change }}"
+
+        sequence:
+          - variables:
+              new_manual_temp: "{{ trigger.to_state.attributes.temperature }}"
+              max_comfort_temp: "{{ state_attr(input_temperature_comfort,'max') }}"
+              min_comfort_temp: "{{ state_attr(input_temperature_comfort,'min') }}"
+              real_manual_temp: > 
+                {% if (new_manual_temp > max_comfort_temp) %}
+                  {{ max_comfort_temp }}
+                {% elif (new_manual_temp < min_comfort_temp ) %}
+                  {{ min_comfort_temp }}
+                {% else %}
+                  {{ new_manual_temp }}
+                {% endif %}
+          - if:
+            - condition: template
+              value_template: "{{ new_manual_temp > max_comfort_temp or new_manual_temp < min_comfort_temp }}"
+            then:
+            - service: system_log.write
+              data:
+                level: warning
+                logger: blueprints.panhans.heatingcontrol
+                message: "{{ input_temperature_comfort }} can handle numbers between {{ min_comfort_temp }} and {{ max_comfort_temp }}. You want to set the temperature to {{ new_manual_temp }} °C. So comfort temperature will automatically adjust to {{ real_manual_temp }} °C."
+          - service: system_log.write
+            data:
+              level: debug
+              logger: blueprints.panhans.heatingcontrol
+              message: "Comfort Temperature will set to: {{ real_manual_temp }}"
+          - service: input_number.set_value
+            data:
+              value: "{{ real_manual_temp }}"
+            target:
+              entity_id: !input input_temperature_comfort
+          - delay:
+              seconds: !input input_service_call_delay
+
+      # CALIBRATION -------------------------------------------------------------------------------------------------------------
+      - conditions:
+
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: "calibration_trv_temp"
+              - condition: trigger
+                id: "calibration_sensor_temp"
+          - condition: template
+            value_template: "{{ mode == 'heat' }}"
+
+        sequence:
+          - repeat:
+              count: "{{ valves | count | int }}"
+              sequence:
                 - variables:
-                    offset_old: >
-                      {% if  calibration_entity != '' %}
-                        {{ states(calibration_entity) }}
-                      {% else %}
-                        {{ state_attr(current_valve, 'offset_celsius') }}
-                      {% endif %}
-                    offset_new: >
-                      {% set actual_sensor_temperature = states(input_temperature_sensor) | float(0) | round(1) %}
-                      {% set local_temperature = state_attr(current_valve,'current_temperature') | float(0) %}
-
-                      {% if calibration_entity != '' %}
-
-                        {% set step = state_attr(calibration_entity,'step') %}
-                        {% set actual_trv_temperature = float(local_temperature) - offset_old | float(0) | round(1) %} 
-                        {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
-                        {% set min_calibration_value = state_attr(calibration_entity,'min') | float(0) %}
-                        {% set max_calibration_value = state_attr(calibration_entity,'max') | float(0) %}
-                        
-                        {% if(new_calibration_value > max_calibration_value) %}
-                          {% set new_calibration_value = max_calibration_value %}
-                        {% elif (new_calibration_value < min_calibration_value) %}
-                          {% set new_calibration_value = min_calibration_value %}
+                    current_valve: "{{ valves[repeat.index-1] }}"
+                    calibration_entity: >
+                      {% set entities =  device_entities(device_id(current_valve)) %}
+                      {% set calibration_entity_id = namespace(id=[]) %} 
+                      {% for s in entities %}
+                        {% if (('calibration' in s) or ('offset' in s))  %}
+                          {% set calibration_entity_id.id = s %}
                         {% endif %}
-                        
-                        {{ (new_calibration_value | float(0) / step) | round(0) * step }}
-
-                      {% else %}
-                        {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
-                        {% set calculated_offset = ( float(offset) + offset_old | float(0) ) | round(2) %}
-
-                        {{ calculated_offset }}
-                      {% endif %}
-                - service: system_log.write
-                  data:
-                    message: >
-                      - is_tado_calibration: {{ calibration_entity == '' }} {{" \n "}}
-                      - offset_old: {{ offset_old }} {{" \n "}}
-                      - offset_new: {{ offset_new }}
-                    level: debug
-                    logger: blueprints.panhans.heatingcontrol
+                      {% endfor %} 
+                      {{ iif (calibration_entity_id.id[0] is defined, calibration_entity_id.id, '')  }}
                 - if:
                     - condition: template
-                      value_template: "{{ offset_old == none or (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta)  }}"
+                      value_template: "{{ calibration_entity != '' or current_valve in valves_tado }}"
                   then:
+                    - variables:
+                        offset_old: >
+                          {% if  calibration_entity != '' %}
+                            {{ states(calibration_entity) }}
+                          {% else %}
+                            {{ state_attr(current_valve, 'offset_celsius') }}
+                          {% endif %}
+                        offset_new: >
+                          {% set actual_sensor_temperature = states(input_temperature_sensor) | float(0) | round(1) %}
+                          {% set local_temperature = state_attr(current_valve,'current_temperature') | float(0) %}
+
+                          {% if calibration_entity != '' %}
+
+                            {% set step = state_attr(calibration_entity,'step') %}
+                            {% set actual_trv_temperature = float(local_temperature) - offset_old | float(0) | round(1) %} 
+                            {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
+                            {% set min_calibration_value = state_attr(calibration_entity,'min') | float(0) %}
+                            {% set max_calibration_value = state_attr(calibration_entity,'max') | float(0) %}
+                            
+                            {% if(new_calibration_value > max_calibration_value) %}
+                              {% set new_calibration_value = max_calibration_value %}
+                            {% elif (new_calibration_value < min_calibration_value) %}
+                              {% set new_calibration_value = min_calibration_value %}
+                            {% endif %}
+                            
+                            {{ (new_calibration_value | float(0) / step) | round(0) * step }}
+
+                          {% else %}
+                            {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
+                            {% set calculated_offset = ( float(offset) + offset_old | float(0) ) | round(2) %}
+
+                            {{ calculated_offset }}
+                          {% endif %}
+                    - service: system_log.write
+                      data:
+                        message: >
+                          - is_tado_calibration: {{ calibration_entity == '' }} {{" \n "}}
+                          - offset_old: {{ offset_old }} {{" \n "}}
+                          - offset_new: {{ offset_new }}
+                        level: debug
+                        logger: blueprints.panhans.heatingcontrol
                     - if:
                         - condition: template
-                          value_template: "{{ calibration_entity != '' }}"
-
-                      # SET GENERIC OFFSET
+                          value_template: "{{ offset_old == none or (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta)  }}"
                       then:
-                        - service: number.set_value
-                          data:
-                            value: "{{ float(offset_new) }}"
-                          target:
-                            entity_id: "{{ calibration_entity }}"
+                        - if:
+                            - condition: template
+                              value_template: "{{ calibration_entity != '' }}"
 
-                      # SET TADO OFFSET
-                      else:
-                        - service: tado.set_climate_temperature_offset
-                          data:
-                            offset: "{{ offset_new }}"
-                            entity_id: "{{ current_valve }}"
+                          # SET GENERIC OFFSET
+                          then:
+                            - service: number.set_value
+                              data:
+                                value: "{{ float(offset_new) }}"
+                              target:
+                                entity_id: "{{ calibration_entity }}"
 
-                    - delay:
-                        seconds: !input input_service_call_delay
+                          # SET TADO OFFSET
+                          else:
+                            - service: tado.set_climate_temperature_offset
+                              data:
+                                offset: "{{ offset_new }}"
+                                entity_id: "{{ current_valve }}"
 
-    # SET MODE & TEMPERRATURE
-    else:
+                        - delay:
+                            seconds: !input input_service_call_delay
+    
+    # SET MODE & TEMPERRATURE -------------------------------------------------------------------------------------------------------------
+    default:
       - if:
           - condition: template
             value_template: "{{ mode == 'off' }}"
