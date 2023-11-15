@@ -869,7 +869,7 @@ action:
                         logger: blueprints.panhans.heatingcontrol
                     - if:
                         - condition: template
-                          value_template: "{{ offset_old == none or (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta)  }}"
+                          value_template: "{{ offset_old == none or ((float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta))  }}"
                       then:
                         - if:
                             - condition: template
