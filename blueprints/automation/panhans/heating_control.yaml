@@ -24,6 +24,8 @@ blueprint:
 
     ## New in version 3
 
+    - adjust comfort temperature using your TRVs
+
     - Guest Mode can be timer
 
     - multiple windows / doors possible
