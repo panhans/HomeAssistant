@@ -2,7 +2,7 @@ blueprint:
   name: Zone Notification Extended
   description: >
 
-    **Features**
+    ## Features
 
     - notification / custom action triggered by persons entering / leaving zones
 
@@ -12,16 +12,21 @@ blueprint:
 
     - custom condition for blocking / allowing notifications
 
+    ## Additional Information
 
-    **Hints**
+    If you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
-    - if you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
-
+    
+    **Version**: 2.3
 
     **Help & FAQ**: [Zone based notification / custom action extended](https://community.home-assistant.io/t/zone-based-notification-custom-action-extended)
 
 
-    **Version**: 2.2
+     If you like my work and support feel free to support me.
+
+    [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
+
+    
 
   source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
@@ -184,9 +189,9 @@ variables:
   notify_device: !input notify_device
   notify_group: !input notify_group
   notify_service: |
-    {% if(notify_group is defined and notify_group != '') %}
+    {% if(notify_group is defined and notify_group != '' ) %}
       notify.{{ notify_group }}
-    {% else %}
+    {% elif (notify_device != none and notify_device != '' ) %}
       notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}
     {% endif %}
 
@@ -226,6 +231,8 @@ action:
         value_template: "{{ zone_to in zone_names }}"
       - condition: template
         value_template: "{{ is_arriving_notification_enabled }}"
+      - condition: template
+        value_template: "{{ notify_service != none and notify_service != '' }}"
     then:
       - variables:
           zone: "{{ zone_to }}"
@@ -247,6 +254,8 @@ action:
         value_template: "{{ zone_from in zone_names }}"
       - condition: template
         value_template: "{{ is_leaving_notification_enabled }}"
+      - condition: template
+        value_template: "{{ notify_service != none and notify_service != '' }}"
     then:
       - variables:
           zone: "{{ zone_from }}"
