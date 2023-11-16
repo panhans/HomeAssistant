@@ -271,7 +271,7 @@ blueprint:
           unit_of_measurement: min
 
     input_change_comfort_temperature_on_physical_change:
-      name: Physical Comfort Temperature Change
+      name: Physical Comfort Temperature Change (experimental)
       description: >
         Enable this if you want to control the comfort temperature with your valves. 
         A comfort temperature *input_number* has to be defined. Note that the changes have no effect on the minimum temperature. 
