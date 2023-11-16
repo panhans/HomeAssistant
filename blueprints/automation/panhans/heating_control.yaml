@@ -405,7 +405,7 @@ trigger:
 
   - platform: event
     event_type: automation_reloaded
-  
+
   # S T A T E   T R I G G E R S
   - platform: state
     entity_id: !input input_trvs
@@ -643,11 +643,11 @@ condition:
 action:
   # DELAY AFTER HA START
   - if:
-    - condition: trigger
-      id: "hastart"
+      - condition: trigger
+        id: "hastart"
     then:
       - delay:
-          seconds: 30    
+          seconds: 30
 
   # SETTING UP VARIABLES
   - variables:
@@ -746,11 +746,10 @@ action:
       logger: blueprints.panhans.heatingcontrol
 
   # ----------------------------------------------------------------------------------------------------------------------------------------------------------
-  # A C T I O N S 
+  # A C T I O N S
   - choose:
       # MANUAL COMFORT CHANGE -------------------------------------------------------------------------------------------------------------
       - conditions:
-
           - condition: trigger
             id: "comfort_change"
 
@@ -765,7 +764,7 @@ action:
               new_manual_temp: "{{ trigger.to_state.attributes.temperature }}"
               max_comfort_temp: "{{ state_attr(input_temperature_comfort,'max') }}"
               min_comfort_temp: "{{ state_attr(input_temperature_comfort,'min') }}"
-              real_manual_temp: > 
+              real_manual_temp: >
                 {% if (new_manual_temp > max_comfort_temp) %}
                   {{ max_comfort_temp }}
                 {% elif (new_manual_temp < min_comfort_temp ) %}
@@ -774,14 +773,14 @@ action:
                   {{ new_manual_temp }}
                 {% endif %}
           - if:
-            - condition: template
-              value_template: "{{ new_manual_temp > max_comfort_temp or new_manual_temp < min_comfort_temp }}"
+              - condition: template
+                value_template: "{{ new_manual_temp > max_comfort_temp or new_manual_temp < min_comfort_temp }}"
             then:
-            - service: system_log.write
-              data:
-                level: warning
-                logger: blueprints.panhans.heatingcontrol
-                message: "{{ input_temperature_comfort }} can handle numbers between {{ min_comfort_temp }} and {{ max_comfort_temp }}. You want to set the temperature to {{ new_manual_temp }} °C. So comfort temperature will automatically adjust to {{ real_manual_temp }} °C."
+              - service: system_log.write
+                data:
+                  level: warning
+                  logger: blueprints.panhans.heatingcontrol
+                  message: "{{ input_temperature_comfort }} can handle numbers between {{ min_comfort_temp }} and {{ max_comfort_temp }}. You want to set the temperature to {{ new_manual_temp }} °C. So comfort temperature will automatically adjust to {{ real_manual_temp }} °C."
           - service: system_log.write
             data:
               level: debug
@@ -797,7 +796,6 @@ action:
 
       # CALIBRATION -------------------------------------------------------------------------------------------------------------
       - conditions:
-
           - condition: or
             conditions:
               - condition: trigger
@@ -840,7 +838,7 @@ action:
                           {% if calibration_entity != '' %}
 
                             {% set step = state_attr(calibration_entity,'step') %}
-                            {% set actual_trv_temperature = float(local_temperature) - offset_old | float(0) | round(1) %} 
+                            {% set actual_trv_temperature = float(local_temperature) - (offset_old | float(0)) | round(1) %} 
                             {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
                             {% set min_calibration_value = state_attr(calibration_entity,'min') | float(0) %}
                             {% set max_calibration_value = state_attr(calibration_entity,'max') | float(0) %}
@@ -855,7 +853,7 @@ action:
 
                           {% else %}
                             {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
-                            {% set calculated_offset = ( float(offset) + offset_old | float(0) ) | round(2) %}
+                            {% set calculated_offset = ( float(offset) + (offset_old | float(0)) ) | round(2) %}
 
                             {{ calculated_offset }}
                           {% endif %}
@@ -867,9 +865,12 @@ action:
                           - offset_new: {{ offset_new }}
                         level: debug
                         logger: blueprints.panhans.heatingcontrol
+                    - variables:
+                        offset_old_c: "{{ offset_old | float(0) }}"
+                        offset_new_c: "{{ offset_new | float(offset_old_c) }}"
                     - if:
                         - condition: template
-                          value_template: "{{ offset_old == none or ((float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta))  }}"
+                          value_template: "{{ (float(offset_old_c) - float(offset_new_c)) | abs >= float(input_calibration_delta) }}"
                       then:
                         - if:
                             - condition: template
@@ -879,7 +880,7 @@ action:
                           then:
                             - service: number.set_value
                               data:
-                                value: "{{ float(offset_new) }}"
+                                value: "{{ float(offset_new_c) }}"
                               target:
                                 entity_id: "{{ calibration_entity }}"
 
@@ -887,12 +888,12 @@ action:
                           else:
                             - service: tado.set_climate_temperature_offset
                               data:
-                                offset: "{{ offset_new }}"
+                                offset: "{{ offset_new_c }}"
                                 entity_id: "{{ current_valve }}"
 
                         - delay:
                             seconds: !input input_service_call_delay
-    
+
     # SET MODE & TEMPERRATURE -------------------------------------------------------------------------------------------------------------
     default:
       - if:
@@ -911,7 +912,7 @@ action:
                   sequence:
                     - variables:
                         current_valve: "{{ low_temp_valves[repeat.index-1] }}"
-                        off_temperature: "{{ state_attr(current_valve,'input_temperature_minimum') }}"
+                        off_temperature: "{{ state_attr(current_valve,'min_temp') }}"
                         temperature: "{{ state_attr(current_valve,'temperature') }}"
                     - if:
                         - condition: template
