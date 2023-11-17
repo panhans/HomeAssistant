@@ -16,12 +16,14 @@ blueprint:
 
     - define zones for arriving and/or leaving notifications / actions
 
+    - custom conditions for leaving and arriving actions / notifications
+
     ## Additional Information
 
     If you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.0
+    **Version**: 3.1
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
@@ -164,7 +166,21 @@ blueprint:
 
     custom_conditions:
       name: "Conditions"
-      description: "Custom conditions when notifications are active"
+      description: "Custom conditions when all notifications and actions are active"
+      default: []
+      selector:
+        condition:
+
+    custom_conditions_arriving:
+      name: "Conditions Arriving"
+      description: "Custom conditions when notifications / actions for arriving are active"
+      default: []
+      selector:
+        condition:
+
+    custom_conditions_leaving:
+      name: "Conditions Leaving"
+      description: "Custom conditions when notifications / actions for leaving are active"
       default: []
       selector:
         condition:
@@ -269,29 +285,7 @@ action:
       led_color_hex: "#{{ '%02x%02x%02x' | format(led_color[0], led_color[1], led_color[2]) }}"
       zone_names_arriving: "{{ zone_names }}"
       zone_names_leaving: "{{ iif(zones_leaving | count == 0, zone_names, zones_leaving_names) }}"
-  - if:
-      - condition: template
-        value_template: "{{ zone_to in zone_names_arriving }}"
-      - condition: template
-        value_template: "{{ is_arriving_notification_enabled }}"
-      - condition: template
-        value_template: "{{ notify_service != none and notify_service != '' }}"
-    then:
-      - variables:
-          zone: "{{ zone_to }}"
-      - service: "{{ notify_service }}"
-        data:
-          title: !input title_arriving
-          message: !input message_arriving
-          data:
-            ttl: 0
-            priority: high
-            notification_icon: !input "status_bar_icon"
-            channel: !input "channel"
-            group: !input "group"
-            color: "{{ notification_color_hex }}"
-            vibrationPattern: !input "vibration_pattern"
-            ledColor: "{{led_color_hex}}"
+
   - if:
       - condition: template
         value_template: "{{ zone_from in zone_names_leaving }}"
@@ -299,6 +293,8 @@ action:
         value_template: "{{ is_leaving_notification_enabled }}"
       - condition: template
         value_template: "{{ notify_service != none and notify_service != '' }}"
+      - condition: and
+        conditions: !input custom_conditions_leaving
     then:
       - variables:
           zone: "{{ zone_from }}"
@@ -315,18 +311,50 @@ action:
             color: "{{ notification_color_hex }}"
             vibrationPattern: !input "vibration_pattern"
             ledColor: "{{led_color_hex}}"
+
   - if:
       - condition: template
         value_template: "{{ zone_to in zone_names_arriving }}"
       - condition: template
-        value_template: "{{ custom_action_arriving is defined }}"
-    then: !input "custom_action_arriving"
+        value_template: "{{ is_arriving_notification_enabled }}"
+      - condition: template
+        value_template: "{{ notify_service != none and notify_service != '' }}"
+      - condition: and
+        conditions: !input custom_conditions_arriving
+    then:
+      - variables:
+          zone: "{{ zone_to }}"
+      - service: "{{ notify_service }}"
+        data:
+          title: !input title_arriving
+          message: !input message_arriving
+          data:
+            ttl: 0
+            priority: high
+            notification_icon: !input "status_bar_icon"
+            channel: !input "channel"
+            group: !input "group"
+            color: "{{ notification_color_hex }}"
+            vibrationPattern: !input "vibration_pattern"
+            ledColor: "{{led_color_hex}}"
+  
 
   - if:
       - condition: template
         value_template: "{{ zone_from in zone_names_leaving }}"
       - condition: template
         value_template: "{{ custom_action_leaving is defined }}"
+      - condition: and
+        conditions: !input custom_conditions_leaving
     then: !input "custom_action_leaving"
+
+  - if:
+      - condition: template
+        value_template: "{{ zone_to in zone_names_arriving }}"
+      - condition: template
+        value_template: "{{ custom_action_arriving is defined }}"
+      - condition: and
+        conditions: !input custom_conditions_arriving
+    then: !input "custom_action_arriving"
 
 mode: parallel
