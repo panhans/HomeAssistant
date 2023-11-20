@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.4
+    **Version**: 3.4.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -966,23 +966,9 @@ action:
       # AUTO RESET COMFORT TEMP
       - conditions:
           - condition: template
-            value_template: "{{ input_temperature_comfort != none and states(input_temperature_comfort) != input_temperature_comfort_static }}"
-
-          - condition: or
-            conditions:
-              - condition: and
-                conditions:
-                  - condition: template
-                    value_template: "{{  input_reset_comfort_temperature }}"
-                  - condition: trigger
-                    id: "scheduler-on"
-              - condition: and
-                conditions:
-                  - condition: template
-                    value_template: "{{  input_reset_comfort_temperature_after_timer }}"
-                  - condition: trigger
-                    id: "party-end"
-
+            value_template: "{{  input_temperature_comfort != none and states(input_temperature_comfort) != input_temperature_comfort_static }}"
+          - condition: template
+            value_template: "{{ (trigger.id == 'scheduler-on' and input_reset_comfort_temperature ) or (trigger.id == 'party-end' and input_reset_comfort_temperature_after_timer) }}"
         sequence:
           - service: input_number.set_value
             data:
