@@ -44,12 +44,18 @@ blueprint:
 
     - option to set climates off instead of minmum temperature
 
+    - comfort temperature is set when the temperature is changed on the thermostat itself
+
+    - reset comfort temperature when next schedule starts and/or party timer ends
+
+    - start party timer when the temperature is changed on the thermostat itself
+
     - several tweaks under the hood to prevent flooding zigbee mesh and reducing service calls
 
 
     ## Additional Information
 
-    **Version**: 3.3
+    **Version**: 3.4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -105,7 +111,7 @@ blueprint:
           unit_of_measurement: °C
 
     input_temperature_comfort_static:
-      name: Comfort Temperature
+      name: Static Comfort Temperature
       description: Set a static comfort temperature.
       default: 22
       selector:
@@ -126,6 +132,13 @@ blueprint:
             - domain:
                 - input_number
           multiple: false
+
+    input_reset_comfort_temperature:
+      name: Reset Comfort Temperature
+      description: If a *scheduler* and am *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* when scheduler changes to *on* next time.
+      default: false
+      selector:
+        boolean: {}
 
     input_persons:
       name: Persons (optional)
@@ -152,6 +165,13 @@ blueprint:
                 - binary_sensor
                 - timer
           multiple: false
+
+    input_reset_comfort_temperature_after_timer:
+      name: Reset Comfort Temperature When Party Ends
+      description: If an *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* when party mode turns *off*.
+      default: false
+      selector:
+        boolean: {}
 
     input_mode_guest:
       name: Guest mode (optional)
@@ -278,6 +298,14 @@ blueprint:
         Enable this if you want to control the comfort temperature with your valves. 
         A comfort temperature *input_number* has to be defined. Note that the changes have no effect on the minimum temperature. 
         The temperature for the value range of the *input_number* is also adjusted.
+      default: false
+      selector:
+        boolean: {}
+
+    input_start_party_timer_on_physical_change:
+      name: Start Party Timer on Physical Comfort Temperature Change
+      description: >
+        If enabled party mode going to be started if a timer is given and temperature changed on a TRV device.
       default: false
       selector:
         boolean: {}
@@ -427,6 +455,7 @@ trigger:
 
   # S C H E D U L E R   O N / O F F
   - platform: template
+    id: scheduler-on
     value_template: >
       {% if is_default_scheduler_configured %}
         {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_scheduler_regular) %} 
@@ -507,6 +536,7 @@ trigger:
 
   - platform: template
     value_template: "{{ input_mode_party != none and states(input_mode_party) in ['off','idle','paused'] }}"
+    id: party-end
     for:
       seconds: 2
 
@@ -588,6 +618,9 @@ variables:
   input_calibration_delta: !input input_calibration_delta
   input_off_instead_min: !input input_off_instead_min
   input_change_comfort_temperature_on_physical_change: !input input_change_comfort_temperature_on_physical_change
+  input_reset_comfort_temperature: !input input_reset_comfort_temperature
+  input_reset_comfort_temperature_after_timer: !input input_reset_comfort_temperature_after_timer
+  input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -743,9 +776,24 @@ action:
         - valves_tado: {{ valves_tado }} {{" \n "}}
         - trvs_temp_not_set: {{ trvs_temp_not_set }} {{" \n "}}
         - trvs_mode_not_set: {{ trvs_mode_not_set }} {{" \n "}}
-        - trvs_mode_and_temp_not_set: {{ trvs_mode_and_temp_not_set }}
+        - trvs_mode_and_temp_not_set: {{ trvs_mode_and_temp_not_set }} {{" \n "}}
+        - trigger.id: {{ trigger.id }}
       level: debug
       logger: blueprints.panhans.heatingcontrol
+
+  - if:
+      - condition: template
+        value_template: "{{  trigger.to_state != none and trigger.to_state.context != none }}"
+    then:
+      - service: system_log.write
+        data:
+          level: debug
+          logger: blueprints.panhans.heatingcontrol
+          message: >
+            TRIGGER_INFO:{{" \n "}}
+            - trigger.to_state.context.id: {{ trigger.to_state.context.id }} {{" \n "}}
+            - trigger.to_state.context.parent_id: {{trigger.to_state.context.parent_id }} {{" \n "}}
+            - trigger.to_state.context.user_id: {{ trigger.to_state.context.user_id }} {{" \n "}}
 
   # ----------------------------------------------------------------------------------------------------------------------------------------------------------
   # A C T I O N S
@@ -783,16 +831,35 @@ action:
                   level: warning
                   logger: blueprints.panhans.heatingcontrol
                   message: "{{ input_temperature_comfort }} can handle numbers between {{ min_comfort_temp }} and {{ max_comfort_temp }}. You want to set the temperature to {{ new_manual_temp }} °C. So comfort temperature will automatically adjust to {{ real_manual_temp }} °C."
-          - service: system_log.write
-            data:
-              level: debug
-              logger: blueprints.panhans.heatingcontrol
-              message: "Comfort Temperature will set to: {{ real_manual_temp }}"
-          - service: input_number.set_value
-            data:
-              value: "{{ real_manual_temp }}"
-            target:
-              entity_id: !input input_temperature_comfort
+
+          # IF NEW COMFORT TEMP CHANGED -> SET NEW
+          - if:
+              - condition: template
+                value_template: "{{  real_manual_temp != state_temperature_comfort }}"
+            then:
+              - service: system_log.write
+                data:
+                  level: debug
+                  logger: blueprints.panhans.heatingcontrol
+                  message: "Comfort Temperature will set to: {{ real_manual_temp }}"
+
+              - service: input_number.set_value
+                data:
+                  value: "{{ real_manual_temp }}"
+                target:
+                  entity_id: !input input_temperature_comfort
+
+          # IF PARTY TIMER IS GIVEN AND PARTY MODE IS OFF AND TIMER SHALL START -> START TIMER
+          - if:
+              - condition: template
+                value_template: "{{ input_start_party_timer_on_physical_change and input_mode_party != none and input_mode_party.split('.')[0] == 'timer' and state_mode_party == false }}"
+            then:
+              - delay:
+                  seconds: !input input_service_call_delay
+              - service: timer.start
+                target:
+                  entity_id: "{{ input_mode_party }}"
+
           - delay:
               seconds: !input input_service_call_delay
 
@@ -895,6 +962,33 @@ action:
 
                         - delay:
                             seconds: !input input_service_call_delay
+
+      # AUTO RESET COMFORT TEMP
+      - conditions:
+          - condition: template
+            value_template: "{{ input_temperature_comfort != none and states(input_temperature_comfort) != input_temperature_comfort_static }}"
+
+          - condition: or
+            conditions:
+              - condition: and
+                conditions:
+                  - condition: template
+                    value_template: "{{  input_reset_comfort_temperature }}"
+                  - condition: trigger
+                    id: "scheduler-on"
+              - condition: and
+                conditions:
+                  - condition: template
+                    value_template: "{{  input_reset_comfort_temperature_after_timer }}"
+                  - condition: trigger
+                    id: "party-end"
+
+        sequence:
+          - service: input_number.set_value
+            data:
+              value: "{{ input_temperature_comfort_static }}"
+            target:
+              entity_id: !input input_temperature_comfort
 
     # SET MODE & TEMPERRATURE -------------------------------------------------------------------------------------------------------------
     default:
