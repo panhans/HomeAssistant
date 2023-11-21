@@ -1,6 +1,6 @@
 blueprint:
   name: Zone Notification Extended
-  description: >
+  description: "
 
     ## Features
 
@@ -23,7 +23,7 @@ blueprint:
     If you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.1
+    **Version**: 3.2
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
@@ -31,7 +31,7 @@ blueprint:
      If you like my work and support feel free to support me.
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
-
+    "
   source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
   homeassistant:
@@ -211,7 +211,7 @@ variables:
       {% if home_zone == zone %}
         {% set friendly.name = friendly.name + [home_zone_name] %}
       {% endif %}
-      {% set friendly.name = friendly.name + [new_zone] %}
+      {% set friendly.name = friendly.name + [new_zone.strip()] %}
     {% endfor %}
 
     {{ friendly.name }}
@@ -224,7 +224,7 @@ variables:
       {% if home_zone == zone %}
         {% set friendly.name = friendly.name + [home_zone_name] %}
       {% endif %}
-      {% set friendly.name = friendly.name + [new_zone] %}
+      {% set friendly.name = friendly.name + [new_zone.strip()] %}
     {% endfor %}
 
     {{ friendly.name }}
