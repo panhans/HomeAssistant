@@ -23,12 +23,12 @@ blueprint:
     If you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.2
+    **Version**: 3.3
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
 
-     If you like my work and support feel free to support me.
+    If you like my work and support feel free to support me.
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
     "
@@ -311,6 +311,10 @@ action:
             color: "{{ notification_color_hex }}"
             vibrationPattern: !input "vibration_pattern"
             ledColor: "{{led_color_hex}}"
+            push:
+              sound:
+                name: "default"
+                critical: 1
 
   - if:
       - condition: template
@@ -337,7 +341,10 @@ action:
             color: "{{ notification_color_hex }}"
             vibrationPattern: !input "vibration_pattern"
             ledColor: "{{led_color_hex}}"
-  
+            push:
+              sound:
+                name: "default"
+                critical: 1
 
   - if:
       - condition: template
