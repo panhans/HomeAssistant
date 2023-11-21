@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.4.1
+    **Version**: 3.4.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -781,20 +781,6 @@ action:
       level: debug
       logger: blueprints.panhans.heatingcontrol
 
-  - if:
-      - condition: template
-        value_template: "{{  trigger.to_state != none and trigger.to_state.context != none }}"
-    then:
-      - service: system_log.write
-        data:
-          level: debug
-          logger: blueprints.panhans.heatingcontrol
-          message: >
-            TRIGGER_INFO:{{" \n "}}
-            - trigger.to_state.context.id: {{ trigger.to_state.context.id }} {{" \n "}}
-            - trigger.to_state.context.parent_id: {{trigger.to_state.context.parent_id }} {{" \n "}}
-            - trigger.to_state.context.user_id: {{ trigger.to_state.context.user_id }} {{" \n "}}
-
   # ----------------------------------------------------------------------------------------------------------------------------------------------------------
   # A C T I O N S
   - choose:
@@ -811,7 +797,7 @@ action:
 
         sequence:
           - variables:
-              new_manual_temp: "{{ trigger.to_state.attributes.temperature }}"
+              new_manual_temp: "{{  trigger.to_state.attributes.temperature }}"
               max_comfort_temp: "{{ state_attr(input_temperature_comfort,'max') }}"
               min_comfort_temp: "{{ state_attr(input_temperature_comfort,'min') }}"
               real_manual_temp: >
@@ -968,7 +954,7 @@ action:
           - condition: template
             value_template: "{{  input_temperature_comfort != none and states(input_temperature_comfort) != input_temperature_comfort_static }}"
           - condition: template
-            value_template: "{{ (trigger.id == 'scheduler-on' and input_reset_comfort_temperature ) or (trigger.id == 'party-end' and input_reset_comfort_temperature_after_timer) }}"
+            value_template: "{{ (trigger.id == 'scheduler-on' and input_reset_comfort_temperature == true ) or (trigger.id == 'party-end' and input_reset_comfort_temperature_after_timer == true ) }}"
         sequence:
           - service: input_number.set_value
             data:
