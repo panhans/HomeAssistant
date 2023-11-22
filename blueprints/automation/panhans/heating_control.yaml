@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.4.3
+    **Version**: 3.4.4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -135,7 +135,7 @@ blueprint:
 
     input_reset_comfort_temperature:
       name: Reset Comfort Temperature
-      description: If a *scheduler* and am *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* when scheduler changes to *on* next time.
+      description: If a *scheduler* and am *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* after current schedule ends.
       default: false
       selector:
         boolean: {}
@@ -455,7 +455,6 @@ trigger:
 
   # S C H E D U L E R   O N / O F F
   - platform: template
-    id: scheduler-on
     value_template: >
       {% if is_default_scheduler_configured %}
         {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_scheduler_regular) %} 
@@ -465,6 +464,7 @@ trigger:
       {% endif %}
 
   - platform: template
+    id: scheduler-off
     value_template: >
       {% if is_default_scheduler_configured %}
         {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_scheduler_regular) %} 
@@ -955,7 +955,7 @@ action:
           - condition: template
             value_template: "{{  input_temperature_comfort != none and states(input_temperature_comfort) != input_temperature_comfort_static }}"
           - condition: template
-            value_template: "{{ (trigger.id == 'scheduler-on' and input_reset_comfort_temperature == true ) or (trigger.id == 'party-end' and input_reset_comfort_temperature_after_timer == true ) }}"
+            value_template: "{{ (trigger.id == 'scheduler-off' and input_reset_comfort_temperature == true ) or (trigger.id == 'party-end' and input_reset_comfort_temperature_after_timer == true ) }}"
         sequence:
           - service: input_number.set_value
             data:
