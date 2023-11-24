@@ -1,35 +1,60 @@
 blueprint:
   name: Scene Toggle
-  description: This script toggles through scenes of a certain area based on its last activated timestamp.
+  description: >
+
+    ## Features
+
+    - toggle through scenes by order or last activated timestamp
+
+    - define a transition time
+
+    - select scenes by area and/or include/exclude specific scenes
+
+    - timeout for beginning at start if using static order
+
+
+    **Help & FAQ**: [Simple Scene Toggle](https://community.home-assistant.io/t/simple-scene-toggle)
+
+
+    **Version**: 3.2
+
+    
+    If you like my work and support feel free to support me.
+
+
+    [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
+
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/script/scene_toggle.yaml
   domain: script
 
-  input:    
+  input:
     area:
       name: Name of area
       description: Name of the area where you want to toggle scenes
-      default: ''
+      default: ""
       selector:
         area:
-        
+
     included_scenes:
       name: Included Scenes
       description: Additional scenes to be included
       default: []
       selector:
         entity:
-          domain: scene
+          filter:
+            domain: scene
           multiple: true
-          
+
     excluded_scenes:
       name: Excluded Scenes
       description: Scenes to be excluded
       default: []
       selector:
         entity:
-          domain: scene
+          filter:
+            domain: scene
           multiple: true
-    
+
     transition:
       name: Transition time
       description: Transition time when switching between scenes
@@ -40,7 +65,7 @@ blueprint:
           max: 10
           step: 0.1
           unit_of_measurement: s
-      
+
     use_static_order:
       name: "Static order"
       description: "This automation is based on timestamps of the activation of the scenes. If this option is enabled a static order will be used instead of the dynamic one."
@@ -62,10 +87,10 @@ blueprint:
 mode: queued
 
 variables:
-  area: !input 'area'
-  included_scenes: !input 'included_scenes'
-  excluded_scenes: !input 'excluded_scenes'
-  reset_after: !input 'reset_after'
+  area: !input "area"
+  included_scenes: !input "included_scenes"
+  excluded_scenes: !input "excluded_scenes"
+  reset_after: !input "reset_after"
   use_static_order: !input use_static_order
   last_triggered: "{{ as_timestamp(iif(state_attr(this.entity_id,'last_triggered') == none, now(), state_attr(this.entity_id,'last_triggered'))) }}"
 
@@ -76,7 +101,7 @@ sequence:
       entity_id: >
         {% set area_scenes = states.scene | selectattr('entity_id', 'in', area_entities(area)) | map(attribute='entity_id') | list %}
         {% set all_scenes = (area_scenes | reject('in', excluded_scenes) | list) + included_scenes %}
-        
+
         {% if use_static_order == true %}
 
           {% set is_reset = reset_after > 0 and (as_timestamp(now()) - last_triggered >= reset_after) %}
