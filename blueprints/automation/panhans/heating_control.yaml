@@ -291,6 +291,8 @@ blueprint:
         Enable this if you want to control the comfort temperature with your valves. 
         A comfort temperature *input_number* has to be defined. Note that the changes have no effect on the minimum temperature. 
         The temperature for the value range of the *input_number* is also adjusted.
+
+        Note: This feature doesn't work properly since there is a [bug](https://github.com/home-assistant/core/issues/68047) in home assistant.
       default: false
       selector:
         boolean: {}
