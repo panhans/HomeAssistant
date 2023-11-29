@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.6_beta
+    **Version**: 3.5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -401,25 +401,6 @@ blueprint:
           mode: slider
           unit_of_measurement: s
 
-    input_time_based_comfort_change:
-      name: Comfort Heating Plan
-      description: >
-        Define you comfort temperature plan. You need to provide an *input_number* for your comfort temperature. Then you can setup a heating plan like this:
-
-        ```yaml
-        
-        - time: "08:00"
-          temp: "22"
-        - time: "16:00"
-          temp: "20"
-        - time: "20:00"
-          temp: "24"
-        ```
-
-      selector:
-        object:
-      default: "[]"
-
 ##################################################
 ############### T R I G G E R ####################
 ##################################################
@@ -433,7 +414,6 @@ trigger_variables:
   input_mode_holiday: !input input_mode_holiday
   input_temperature_comfort: !input input_temperature_comfort
   input_temperature_comfort_static: !input input_temperature_comfort_static
-  input_time_based_comfort_change: !input input_time_based_comfort_change
 
   # S C H E D U L E R
   input_scheduler_regular: !input input_scheduler_regular
@@ -614,11 +594,6 @@ trigger:
     for:
       minutes: !input input_calibration_timeout
 
-  # C O M F O R T   T E M P   C H A N G E   B Y   T I M E
-  - platform: template
-    id: "comfort_changed_by_time"
-    value_template: "{{ now().strftime('%H:%M') in (input_time_based_comfort_change | map(attribute='time') | list) }}"
-
 ##################################################
 ############### V A R I A B L E S ################
 ##################################################
@@ -651,7 +626,6 @@ variables:
   input_reset_comfort_temperature: !input input_reset_comfort_temperature
   input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
   input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
-  input_time_based_comfort_change: !input input_time_based_comfort_change
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -818,40 +792,21 @@ action:
   - choose:
       # MANUAL COMFORT CHANGE -------------------------------------------------------------------------------------------------------------
       - conditions:
-          - condition: template
-            value_template: >
-              {{ 
-                (trigger.id == 'comfort_change' and input_change_comfort_temperature_on_physical_change) or
-                trigger.id == 'comfort_changed_by_time'
-              }}
+          - condition: trigger
+            id: "comfort_change"
 
           - condition: template
             value_template: "{{ input_temperature_comfort != none }}"
 
+          - condition: template
+            value_template: "{{ input_change_comfort_temperature_on_physical_change }}"
+
         sequence:
           - variables:
-              timestamp: "{{ now().strftime('%H:%M') }}"
-              new_manual_temp_r: >
-                {% if trigger.id == 'comfort_changed_by_time' %}
-                    {{ input_time_based_comfort_change | selectattr("time", "eq", timestamp) | map(attribute='temp') | first | default(state_temperature_comfort) }}
-                {% else %}
-                  {{ trigger.to_state.attributes.temperature }}
-                {% endif %}
+              new_manual_temp_r: "{{  trigger.to_state.attributes.temperature }}"
               max_comfort_temp_r: "{{ state_attr(input_temperature_comfort,'max') }}"
               min_comfort_temp_r: "{{ state_attr(input_temperature_comfort,'min') }}"
               comfort_change_error: "{{ new_manual_temp_r == none or max_comfort_temp_r == none or min_comfort_temp_r == none}}"
-
-          - service: system_log.write
-            data:
-              level: debug
-              logger: blueprints.panhans.heatingcontrol
-              message: >
-                valid_time_based_comfort_change: {{ valid_time_based_comfort_change }}
-                new_manual_temp_r: {{ new_manual_temp_r }}
-                max_comfort_temp_r: {{ max_comfort_temp_r }}
-                min_comfort_temp_r: {{ min_comfort_temp_r }}
-                comfort_change_error: {{ comfort_change_error }}
-                timestamp: {{ timestamp }}
 
           - condition: template
             value_template: "{{ comfort_change_error == false }}"
