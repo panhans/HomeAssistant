@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.5
+    **Version**: 3.6
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -284,6 +284,14 @@ blueprint:
           step: 1.0
           mode: slider
           unit_of_measurement: min
+
+    input_presence_detection_if_somebody_home:
+      name: Presence Detection When Home
+      description: >
+        Enable this option if you want presence detection is active only if somebody of the defined persons are home.
+      default: false
+      selector:
+        boolean: {}
 
     input_change_comfort_temperature_on_physical_change:
       name: Physical Comfort Temperature Change (experimental)
@@ -626,6 +634,7 @@ variables:
   input_reset_comfort_temperature: !input input_reset_comfort_temperature
   input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
   input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
+  input_presence_detection_if_somebody_home: !input input_presence_detection_if_somebody_home
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -715,10 +724,14 @@ action:
       is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
       is_presence_scheduler_defined: "{{ input_scheduler_presence != none }}"
       is_presence: >
-        {{ 
-          (is_presence_scheduler_defined == true and is_state(input_scheduler_presence,'on') and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on'))
+        {{
+          ((input_presence_detection_if_somebody_home == true and is_anybody_home == true)
           or
-          (is_presence_scheduler_defined == false and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on'))
+          (input_presence_detection_if_somebody_home == false))
+          and
+          ((is_presence_scheduler_defined == true and is_state(input_scheduler_presence,'on') and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on'))
+          or
+          (is_presence_scheduler_defined == false and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on')))
         }}
 
       # T R V - V A L U E S
@@ -730,7 +743,7 @@ action:
               {{ true }}
           {% else %}
             {% if (is_presence == true) %}
-              {{ true }}
+              {{ true  }}
             {% else %}
               {{ false }}
             {% endif %}
