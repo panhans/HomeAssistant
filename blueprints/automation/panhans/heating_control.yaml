@@ -22,35 +22,9 @@ blueprint:
     - several tweaks for fixing your TRV issues
 
 
-    ## New in version 3
+    ## New in version 4
 
-    - adjust comfort temperature using your TRVs
-
-    - Guest Mode can be timer
-
-    - multiple windows / doors possible
-
-    - calibration only triggers when external sensor or current temperature of trv gets updated - not time based anymore
-
-    - adjustable calibration
-
-    - comfort temperature can be set in automation **or** by an input_number
-
-    - party mode overrides all other settings
-
-    - simplified and more functional presence detection
-
-    - presence detection only possible
-
-    - option to set climates off instead of minmum temperature
-
-    - comfort temperature is set when the temperature is changed on the thermostat itself
-
-    - reset comfort temperature when next schedule starts and/or party timer ends
-
-    - start party timer when the temperature is changed on the thermostat itself
-
-    - several tweaks under the hood to prevent flooding zigbee mesh and reducing service calls
+    - time based comfort temperature plan
 
 
     ## Additional Information
@@ -407,7 +381,7 @@ blueprint:
         Define you comfort temperature plan. You need to provide an *input_number* for your comfort temperature. Then you can setup a heating plan like this:
 
         ```yaml
-        
+
         - time: "08:00"
           temp: "22"
         - time: "16:00"
@@ -846,7 +820,6 @@ action:
               level: debug
               logger: blueprints.panhans.heatingcontrol
               message: >
-                valid_time_based_comfort_change: {{ valid_time_based_comfort_change }}
                 new_manual_temp_r: {{ new_manual_temp_r }}
                 max_comfort_temp_r: {{ max_comfort_temp_r }}
                 min_comfort_temp_r: {{ min_comfort_temp_r }}
