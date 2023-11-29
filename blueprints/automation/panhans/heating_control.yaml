@@ -22,13 +22,40 @@ blueprint:
     - several tweaks for fixing your TRV issues
 
 
-    ## New in version 4
+    ## New in version 3
 
-    - TODO
+    - adjust comfort temperature using your TRVs
+
+    - Guest Mode can be timer
+
+    - multiple windows / doors possible
+
+    - calibration only triggers when external sensor or current temperature of trv gets updated - not time based anymore
+
+    - adjustable calibration
+
+    - comfort temperature can be set in automation **or** by an input_number
+
+    - party mode overrides all other settings
+
+    - simplified and more functional presence detection
+
+    - presence detection only possible
+
+    - option to set climates off instead of minmum temperature
+
+    - comfort temperature is set when the temperature is changed on the thermostat itself
+
+    - reset comfort temperature when next schedule starts and/or party timer ends
+
+    - start party timer when the temperature is changed on the thermostat itself
+
+    - several tweaks under the hood to prevent flooding zigbee mesh and reducing service calls
+
 
     ## Additional Information
 
-    **Version**: 4.0_beta
+    **Version**: 4.0_alpha1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -84,7 +111,7 @@ blueprint:
           unit_of_measurement: °C
 
     input_temperature_comfort_static:
-      name: Comfort Temperature
+      name: Static Comfort Temperature
       description: Set a static comfort temperature.
       default: 22
       selector:
@@ -105,6 +132,13 @@ blueprint:
             - domain:
                 - input_number
           multiple: false
+
+    input_reset_comfort_temperature:
+      name: Reset Comfort Temperature
+      description: If a *scheduler* and am *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* when scheduler changes to *on* next time.
+      default: false
+      selector:
+        boolean: {}
 
     input_persons:
       name: Persons (optional)
@@ -251,6 +285,26 @@ blueprint:
           mode: slider
           unit_of_measurement: min
 
+    input_change_comfort_temperature_on_physical_change:
+      name: Physical Comfort Temperature Change (experimental)
+      description: >
+        Enable this if you want to control the comfort temperature with your valves. 
+        A comfort temperature *input_number* has to be defined. Note that the changes have no effect on the minimum temperature. 
+        The temperature for the value range of the *input_number* is also adjusted.
+
+        Note: This feature doesn't work properly since there is a [bug](https://github.com/home-assistant/core/issues/68047) in home assistant.
+      default: false
+      selector:
+        boolean: {}
+
+    input_start_party_timer_on_physical_change:
+      name: Start Party Timer on Physical Comfort Temperature Change
+      description: >
+        If enabled party mode going to be started if a timer is given and temperature changed on a TRV device.
+      default: false
+      selector:
+        boolean: {}
+
     input_temperature_sensor:
       name: External Temperatur Sensor (optional)
       description: >
@@ -259,6 +313,7 @@ blueprint:
           * TRVs must porvide calibration number entity (entity_id must contain *calibration* or *offset*)
           * TADO TRVs
 
+        Note: This is an additional sensor inside your room usually next to your favourite spot.
       default:
       selector:
         entity:
@@ -280,6 +335,13 @@ blueprint:
           step: 0.1
           mode: slider
           unit_of_measurement: °C
+
+    input_calibration_rounding_full_values:
+      name: Calibration Full Rounding
+      description: Some integrations offer a calibration step size of e.g. *0.1* or *0.01* so theroretically calibration values of e.g. *2.3* or *3.45* are possible. But some TRVs can handle only full values. Just have a look into your devices. Enable this to force rounding to full values in order to prevent redundant calibration calls.
+      default: false
+      selector:
+        boolean: {}
 
     input_calibration_timeout:
       name: Calibration Timeout
@@ -339,6 +401,25 @@ blueprint:
           mode: slider
           unit_of_measurement: s
 
+    input_time_based_comfort_change:
+      name: Comfort Heating Plan
+      description: >
+        Define you comfort temperature plan. You need to provide an *input_number* for your comfort temperature. Then you can setup a heating plan like this:
+
+        ```yaml
+        
+        - time: "08:00"
+          temp: "22"
+        - time: "16:00"
+          temp: "20"
+        - time: "20:00"
+          temp: "24"
+        ```
+
+      selector:
+        object:
+      default: "[]"
+
 ##################################################
 ############### T R I G G E R ####################
 ##################################################
@@ -352,6 +433,7 @@ trigger_variables:
   input_mode_holiday: !input input_mode_holiday
   input_temperature_comfort: !input input_temperature_comfort
   input_temperature_comfort_static: !input input_temperature_comfort_static
+  input_time_based_comfort_change: !input input_time_based_comfort_change
 
   # S C H E D U L E R
   input_scheduler_regular: !input input_scheduler_regular
@@ -376,6 +458,14 @@ trigger:
   - platform: event
     event_type: automation_reloaded
 
+  # S T A T E   T R I G G E R S
+  - platform: state
+    entity_id: !input input_trvs
+    attribute: temperature
+    for:
+      seconds: 5
+    id: comfort_change
+
   # T E M P E R A T U R E   C H A N G E S
   - platform: template
     value_template: >
@@ -396,6 +486,7 @@ trigger:
       {% endif %}
 
   - platform: template
+    id: scheduler-off
     value_template: >
       {% if is_default_scheduler_configured %}
         {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_scheduler_regular) %} 
@@ -412,6 +503,7 @@ trigger:
 
   - platform: template
     value_template: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count == 0 }}"
+    id: person-presence-off
     for:
       seconds: 2
 
@@ -467,6 +559,7 @@ trigger:
 
   - platform: template
     value_template: "{{ input_mode_party != none and states(input_mode_party) in ['off','idle','paused'] }}"
+    id: party-off
     for:
       seconds: 2
 
@@ -477,6 +570,7 @@ trigger:
       seconds: 2
   - platform: template
     value_template: "{{ input_mode_guest != none and states(input_mode_guest) in ['off','idle','paused'] }}"
+    id: guest-presence-off
     for:
       seconds: 2
 
@@ -488,6 +582,7 @@ trigger:
 
   - platform: template
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'off') }}"
+    id: sensor-personpresence-off
     for:
       minutes: !input input_presence_reaction_off_time
 
@@ -519,6 +614,11 @@ trigger:
     for:
       minutes: !input input_calibration_timeout
 
+  # C O M F O R T   T E M P   C H A N G E   B Y   T I M E
+  - platform: template
+    id: "comfort_changed_by_time"
+    value_template: "{{ now().strftime('%H:%M') in (input_time_based_comfort_change | map(attribute='time') | list) }}"
+
 ##################################################
 ############### V A R I A B L E S ################
 ##################################################
@@ -547,6 +647,11 @@ variables:
   input_split_service_calls: !input input_split_service_calls
   input_calibration_delta: !input input_calibration_delta
   input_off_instead_min: !input input_off_instead_min
+  input_change_comfort_temperature_on_physical_change: !input input_change_comfort_temperature_on_physical_change
+  input_reset_comfort_temperature: !input input_reset_comfort_temperature
+  input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
+  input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
+  input_time_based_comfort_change: !input input_time_based_comfort_change
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -591,23 +696,26 @@ condition:
   - condition: or
     conditions:
       - condition: template
+        value_template: "{{ trigger.id == 'comfort_change' and input_temperature_comfort != none and trigger.to_state.context.id != none and trigger.to_state.context.parent_id == none and trigger.to_state.context.user_id == none }}"
+      - condition: template
         value_template: "{{ (trigger.id == 'calibration_sensor_temp' or trigger.id == 'calibration_trv_temp') and input_temperature_sensor != none }}"
       - condition: template
-        value_template: "{{ trigger.id != 'calibration_sensor_temp' and trigger.id != 'calibration_trv_temp' }}"
+        value_template: "{{ trigger.id not in ['calibration_sensor_temp','comfort_change','calibration_trv_temp'] }}"
 
 ##################################################
 ################## A C T I O N ###################
 ##################################################
 
 action:
-  # DELAY WHEN HA STARTED
+  # DELAY AFTER HA START
   - if:
-    - condition: trigger
-      id: "hastart"
+      - condition: trigger
+        id: "hastart"
     then:
       - delay:
           seconds: 30
 
+  # SETTING UP VARIABLES
   - variables:
       # S T A T E S
       state_mode_party: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
@@ -628,6 +736,7 @@ action:
       is_anybody_home: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count > 0 or state_mode_guest }}"
       is_mode_holiday_configured: "{{ input_scheduler_holiday != none and input_mode_holiday != none and is_state(input_mode_holiday, 'on') }}"
       is_scheduler_on: "{{ active_scheduler != none and states(active_scheduler) == 'on' }}"
+      no_person_is_defined: "{{ input_persons | count == 0 }}"
 
       is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
       is_presence_scheduler_defined: "{{ input_scheduler_presence != none }}"
@@ -643,7 +752,7 @@ action:
         {% if state_mode_party == true %}
           {{ true }}
         {% else %}
-          {% if (is_scheduler_on == true and (is_anybody_home or input_persons | count == 0)) %}
+          {% if ((is_scheduler_on == true and is_anybody_home) or (active_scheduler == none and is_anybody_home) or (no_person_is_defined and is_scheduler_on == true)) %}
               {{ true }}
           {% else %}
             {% if (is_presence == true) %}
@@ -699,108 +808,246 @@ action:
         - valves_tado: {{ valves_tado }} {{" \n "}}
         - trvs_temp_not_set: {{ trvs_temp_not_set }} {{" \n "}}
         - trvs_mode_not_set: {{ trvs_mode_not_set }} {{" \n "}}
-        - trvs_mode_and_temp_not_set: {{ trvs_mode_and_temp_not_set }}
+        - trvs_mode_and_temp_not_set: {{ trvs_mode_and_temp_not_set }} {{" \n "}}
+        - trigger.id: {{ trigger.id }}
       level: debug
       logger: blueprints.panhans.heatingcontrol
 
-  # CALIBRATION
-  - if:
-      - condition: or
-        conditions:
-          - condition: trigger
-            id: "calibration_trv_temp"
-          - condition: trigger
-            id: "calibration_sensor_temp"
-      - condition: template
-        value_template: "{{ mode == 'heat' }}"
-    then:
-      - repeat:
-          count: "{{ valves | count | int }}"
-          sequence:
-            - variables:
-                current_valve: "{{ valves[repeat.index-1] }}"
-                calibration_entity: >
-                  {% set entities =  device_entities(device_id(current_valve)) %}
-                  {% set calibration_entity_id = namespace(id=[]) %} 
-                  {% for s in entities %}
-                    {% if (('calibration' in s) or ('offset' in s))  %}
-                      {% set calibration_entity_id.id = s %}
-                    {% endif %}
-                  {% endfor %} 
-                  {{ iif (calibration_entity_id.id[0] is defined, calibration_entity_id.id, '')  }}
-            - if:
+  # ----------------------------------------------------------------------------------------------------------------------------------------------------------
+  # A C T I O N S
+  - choose:
+      # MANUAL COMFORT CHANGE -------------------------------------------------------------------------------------------------------------
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ 
+                (trigger.id == 'comfort_change' and input_change_comfort_temperature_on_physical_change) or
+                trigger.id == 'comfort_changed_by_time'
+              }}
+
+          - condition: template
+            value_template: "{{ input_temperature_comfort != none }}"
+
+        sequence:
+          - variables:
+              timestamp: "{{ now().strftime('%H:%M') }}"
+              new_manual_temp_r: >
+                {% if trigger.id == 'comfort_changed_by_time' %}
+                    {{ input_time_based_comfort_change | selectattr("time", "eq", timestamp) | map(attribute='temp') | first | default(state_temperature_comfort) }}
+                {% else %}
+                  {{ trigger.to_state.attributes.temperature }}
+                {% endif %}
+              max_comfort_temp_r: "{{ state_attr(input_temperature_comfort,'max') }}"
+              min_comfort_temp_r: "{{ state_attr(input_temperature_comfort,'min') }}"
+              comfort_change_error: "{{ new_manual_temp_r == none or max_comfort_temp_r == none or min_comfort_temp_r == none}}"
+
+          - service: system_log.write
+            data:
+              level: debug
+              logger: blueprints.panhans.heatingcontrol
+              message: >
+                valid_time_based_comfort_change: {{ valid_time_based_comfort_change }}
+                new_manual_temp_r: {{ new_manual_temp_r }}
+                max_comfort_temp_r: {{ max_comfort_temp_r }}
+                min_comfort_temp_r: {{ min_comfort_temp_r }}
+                comfort_change_error: {{ comfort_change_error }}
+                timestamp: {{ timestamp }}
+
+          - condition: template
+            value_template: "{{ comfort_change_error == false }}"
+
+          - variables:
+              new_manual_temp: "{{ new_manual_temp_r | float(0) }}"
+              max_comfort_temp: "{{ max_comfort_temp_r | float(0) }}"
+              min_comfort_temp: "{{ min_comfort_temp_r | float(0) }}"
+              real_manual_temp: >
+                {% if (new_manual_temp > max_comfort_temp) %}
+                  {{ max_comfort_temp }}
+                {% elif (new_manual_temp < min_comfort_temp ) %}
+                  {{ min_comfort_temp }}
+                {% else %}
+                  {{ new_manual_temp }}
+                {% endif %}
+          - if:
+              - condition: template
+                value_template: "{{ new_manual_temp > max_comfort_temp or new_manual_temp < min_comfort_temp }}"
+            then:
+              - service: system_log.write
+                data:
+                  level: warning
+                  logger: blueprints.panhans.heatingcontrol
+                  message: "{{ input_temperature_comfort }} can handle numbers between {{ min_comfort_temp }} and {{ max_comfort_temp }}. You want to set the temperature to {{ new_manual_temp }} °C. So comfort temperature will automatically adjust to {{ real_manual_temp }} °C."
+
+          # IF NEW COMFORT TEMP CHANGED -> SET NEW
+          - if:
+              - condition: template
+                value_template: "{{  real_manual_temp != state_temperature_comfort }}"
+            then:
+              - service: system_log.write
+                data:
+                  level: debug
+                  logger: blueprints.panhans.heatingcontrol
+                  message: "Comfort Temperature will set to: {{ real_manual_temp }}"
+
+              - service: input_number.set_value
+                data:
+                  value: "{{ real_manual_temp }}"
+                target:
+                  entity_id: !input input_temperature_comfort
+
+          # IF PARTY TIMER IS GIVEN AND PARTY MODE IS OFF AND TIMER SHALL START -> START TIMER
+          - if:
+              - condition: template
+                value_template: "{{ input_start_party_timer_on_physical_change and input_mode_party != none and input_mode_party.split('.')[0] == 'timer' and state_mode_party == false }}"
+            then:
+              - delay:
+                  seconds: !input input_service_call_delay
+              - service: timer.start
+                target:
+                  entity_id: "{{ input_mode_party }}"
+
+          - delay:
+              seconds: !input input_service_call_delay
+
+      # CALIBRATION -------------------------------------------------------------------------------------------------------------
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: "calibration_trv_temp"
+              - condition: trigger
+                id: "calibration_sensor_temp"
+          - condition: template
+            value_template: "{{ mode == 'heat' }}"
+
+        sequence:
+          - repeat:
+              count: "{{ valves | count | int }}"
+              sequence:
+                - variables:
+                    current_valve: "{{ valves[repeat.index-1] }}"
+                    calibration_entity: >
+                      {% set entities =  device_entities(device_id(current_valve)) %}
+                      {% set calibration_entity_id = namespace(id=[]) %} 
+                      {% for s in entities %}
+                        {% if (('calibration' in s) or ('offset' in s))  %}
+                          {% set calibration_entity_id.id = s %}
+                        {% endif %}
+                      {% endfor %} 
+                      {{ iif (calibration_entity_id.id[0] is defined, calibration_entity_id.id, '')  }}
+
                 - condition: template
                   value_template: "{{ calibration_entity != '' or current_valve in valves_tado }}"
-              then:
+
                 - variables:
-                    offset_old: >
+                    offset_old_r: >
                       {% if  calibration_entity != '' %}
                         {{ states(calibration_entity) }}
                       {% else %}
                         {{ state_attr(current_valve, 'offset_celsius') }}
                       {% endif %}
-                    offset_new: >
-                      {% set actual_sensor_temperature = states(input_temperature_sensor) | float(0) | round(1) %}
-                      {% set local_temperature = state_attr(current_valve,'current_temperature') | float(0) %}
+                    actual_sensor_temperature_r: "{{ states(input_temperature_sensor) }}"
+                    local_temperature_r: "{{ state_attr(current_valve,'current_temperature') }}"
 
-                      {% if calibration_entity != '' %}
+                    offset_old: "{{ offset_old_r | float(0) }}"
+                    actual_sensor_temperature: "{{ actual_sensor_temperature_r | float(0) | round(1) }}"
+                    local_temperature: "{{ local_temperature_r | float(0) }}"
 
-                        {% set step = state_attr(calibration_entity,'step') %}
-                        {% set actual_trv_temperature = float(local_temperature) - offset_old | float(0) | round(1) %} 
-                        {% set new_calibration_value =  actual_sensor_temperature - actual_trv_temperature %}
-                        {% set min_calibration_value = state_attr(calibration_entity,'min') | float(0) %}
-                        {% set max_calibration_value = state_attr(calibration_entity,'max') | float(0) %}
-                        
-                        {% if(new_calibration_value > max_calibration_value) %}
-                          {% set new_calibration_value = max_calibration_value %}
-                        {% elif (new_calibration_value < min_calibration_value) %}
-                          {% set new_calibration_value = min_calibration_value %}
-                        {% endif %}
-                        
-                        {{ (new_calibration_value | float(0) / step) | round(0) * step }}
+                - condition: template
+                  value_template: "{{ is_number(offset_old_r) == true and is_number(actual_sensor_temperature_r) == true and is_number(local_temperature_r) == true }}"
 
-                      {% else %}
-                        {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
-                        {% set calculated_offset = ( float(offset) + offset_old | float(0) ) | round(2) %}
-
-                        {{ calculated_offset }}
-                      {% endif %}
-                - service: system_log.write
-                  data:
-                    message: >
-                      - is_tado_calibration: {{ calibration_entity == '' }} {{" \n "}}
-                      - offset_old: {{ offset_old }} {{" \n "}}
-                      - offset_new: {{ offset_new }}
-                    level: debug
-                    logger: blueprints.panhans.heatingcontrol
                 - if:
                     - condition: template
-                      value_template: "{{ offset_old == none or (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta)  }}"
+                      value_template: "{{ calibration_entity != '' }}"
                   then:
-                    - if:
-                        - condition: template
-                          value_template: "{{ calibration_entity != '' }}"
+                    - variables:
+                        step_r: "{{ state_attr(calibration_entity,'step') }}"
+                        min_calibration_value_r: "{{ state_attr(calibration_entity,'min') }}"
+                        max_calibration_value_r: "{{ state_attr(calibration_entity,'max') }}"
 
-                      # SET GENERIC OFFSET
-                      then:
-                        - service: number.set_value
-                          data:
-                            value: "{{ float(offset_new) }}"
-                          target:
-                            entity_id: "{{ calibration_entity }}"
+                        step: "{{ step_r | float(0) }}"
+                        actual_trv_temperature: "{{ float(local_temperature) - (offset_old | float(0)) | round(1) }}"
+                        min_calibration_value: "{{ min_calibration_value_r | float(0) }}"
+                        max_calibration_value: "{{ max_calibration_value_r | float(0) }}"
+                        new_calibration_value: "{{ actual_sensor_temperature - actual_trv_temperature }}"
 
-                      # SET TADO OFFSET
-                      else:
-                        - service: tado.set_climate_temperature_offset
-                          data:
-                            offset: "{{ offset_new }}"
-                            entity_id: "{{ current_valve }}"
+                        offset_new: >
+                          {% if(new_calibration_value > max_calibration_value) %}
+                            {% set new_calibration_value = max_calibration_value %}
+                          {% elif (new_calibration_value < min_calibration_value) %}
+                            {% set new_calibration_value = min_calibration_value %}
+                          {% endif %}
 
-                    - delay:
-                        seconds: !input input_service_call_delay
+                          {% set offset = (new_calibration_value | float(0) / step) | round(0) * step %}
+                          {{ iif(input_calibration_rounding_full_values == true, float(offset) | round(), offset) }}
 
-    # SET MODE & TEMPERRATURE
-    else:
+                    - service: system_log.write
+                      data:
+                        level: debug
+                        logger: blueprints.panhans.heatingcontrol
+                        message: >
+                          Calibration:  {{" \n "}}
+                          offset_old: {{ offset_old }}  {{" \n "}}
+                          offset_new: {{ offset_new }}  {{" \n "}}
+                          step: {{ step }} {{" \n "}}
+                          diff: {{ (float(offset_old) - float(offset_new)) | abs }} {{" \n "}}
+                          delta: {{ float(input_calibration_delta) }}
+                          full_rounding: "{{ input_calibration_rounding_full_values }}"
+
+                    - condition: template
+                      value_template: "{{ is_number(step_r) == true and is_number(min_calibration_value_r) and is_number(max_calibration_value_r) == true }}"
+
+                    - condition: template
+                      value_template: "{{ (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) }}"
+
+                    - service: system_log.write
+                      data:
+                        level: debug
+                        logger: blueprints.panhans.heatingcontrol
+                        message: >
+                          Calibration set to:  {{ offset_new }} on {{ calibration_entity }}
+
+                    - service: number.set_value
+                      data:
+                        value: "{{ float(offset_new) }}"
+                      target:
+                        entity_id: "{{ calibration_entity }}"
+
+                  # Tado Calibration
+                  else:
+                    - variables:
+                        offset_new: >
+                          {% set offset = float(actual_sensor_temperature) - float(local_temperature) %}
+                          {% set calculated_offset = ( float(offset) + (offset_old | float(0)) ) | round(2) %}
+
+                          {{ iif(input_calibration_rounding_full_values == true, float(calculated_offset) | round(), calculated_offset) }}
+
+                    - condition: template
+                      value_template: "{{ (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) }}"
+
+                    - service: tado.set_climate_temperature_offset
+                      data:
+                        offset: "{{ offset_new }}"
+                        entity_id: "{{ current_valve }}"
+
+                - delay:
+                    seconds: !input input_service_call_delay
+
+      # AUTO RESET COMFORT TEMP
+      - conditions:
+          - condition: template
+            value_template: "{{  input_temperature_comfort != none and float(states(input_temperature_comfort)) != float(input_temperature_comfort_static) }}"
+          - condition: template
+            value_template: "{{ trigger.id in ['scheduler-off','party-off','person-presence-off','guest-presence-off','sensor-presence-off'] and set_comfort == false and input_reset_comfort_temperature == true }}"
+        sequence:
+          - service: input_number.set_value
+            data:
+              value: "{{ input_temperature_comfort_static }}"
+            target:
+              entity_id: !input input_temperature_comfort
+
+    # SET MODE & TEMPERRATURE -------------------------------------------------------------------------------------------------------------
+    default:
       - if:
           - condition: template
             value_template: "{{ mode == 'off' }}"
@@ -817,7 +1064,7 @@ action:
                   sequence:
                     - variables:
                         current_valve: "{{ low_temp_valves[repeat.index-1] }}"
-                        off_temperature: "{{ state_attr(current_valve,'input_temperature_minimum') }}"
+                        off_temperature: "{{ state_attr(current_valve,'min_temp') }}"
                         temperature: "{{ state_attr(current_valve,'temperature') }}"
                     - if:
                         - condition: template
