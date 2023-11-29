@@ -246,6 +246,7 @@ blueprint:
           filter:
             - domain:
                 - binary_sensor
+                - input_boolean
           multiple: false
 
     input_scheduler_presence:
