@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.6
+    **Version**: 3.6.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -289,7 +289,8 @@ blueprint:
     input_presence_detection_if_somebody_home:
       name: Presence Detection When Home
       description: >
-        Enable this option if you want presence detection is active only if somebody of the defined persons are home.
+        Enable this option if you want presence detection is active only if somebody of the defined persons are home. 
+        Note: Heating is now presence detection based. A person who's home home doesnt result in heating. (Scheduler is required)
       default: false
       selector:
         boolean: {}
@@ -740,7 +741,9 @@ action:
         {% if state_mode_party == true %}
           {{ true }}
         {% else %}
-          {% if ((is_scheduler_on == true and is_anybody_home) or (active_scheduler == none and is_anybody_home) or (no_person_is_defined and is_scheduler_on == true)) %}
+          {% if ((is_scheduler_on == true and is_anybody_home) or 
+                  (active_scheduler == none and is_anybody_home and input_presence_detection_if_somebody_home == false) or 
+                  (no_person_is_defined and is_scheduler_on == true)) %}
               {{ true }}
           {% else %}
             {% if (is_presence == true) %}
