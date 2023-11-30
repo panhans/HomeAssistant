@@ -24,33 +24,7 @@ blueprint:
 
     ## New in version 4
 
-    - adjust comfort temperature using your TRVs
-
-    - Guest Mode can be timer
-
-    - multiple windows / doors possible
-
-    - calibration only triggers when external sensor or current temperature of trv gets updated - not time based anymore
-
-    - adjustable calibration
-
-    - comfort temperature can be set in automation **or** by an input_number
-
-    - party mode overrides all other settings
-
-    - simplified and more functional presence detection
-
-    - presence detection only possible
-
-    - option to set climates off instead of minmum temperature
-
-    - comfort temperature is set when the temperature is changed on the thermostat itself
-
-    - reset comfort temperature when next schedule starts and/or party timer ends
-
-    - start party timer when the temperature is changed on the thermostat itself
-
-    - several tweaks under the hood to prevent flooding zigbee mesh and reducing service calls
+    - time based comfort temperature plan
 
 
     ## Additional Information
@@ -112,7 +86,6 @@ blueprint:
 
     input_temperature_comfort_static:
       name: Static Comfort Temperature
-      name: Static Comfort Temperature
       description: Set a static comfort temperature.
       default: 22
       selector:
@@ -133,13 +106,6 @@ blueprint:
             - domain:
                 - input_number
           multiple: false
-
-    input_reset_comfort_temperature:
-      name: Reset Comfort Temperature
-      description: If a *scheduler* and am *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* when scheduler changes to *on* next time.
-      default: false
-      selector:
-        boolean: {}
 
     input_reset_comfort_temperature:
       name: Reset Comfort Temperature
@@ -319,26 +285,6 @@ blueprint:
       description: >
         Enable this option if you want presence detection is active only if somebody of the defined persons are home. 
         Note: Heating is now presence detection based. A person who's home home doesnt result in heating. (Scheduler is required)
-      default: false
-      selector:
-        boolean: {}
-
-    input_change_comfort_temperature_on_physical_change:
-      name: Physical Comfort Temperature Change (experimental)
-      description: >
-        Enable this if you want to control the comfort temperature with your valves. 
-        A comfort temperature *input_number* has to be defined. Note that the changes have no effect on the minimum temperature. 
-        The temperature for the value range of the *input_number* is also adjusted.
-
-        Note: This feature doesn't work properly since there is a [bug](https://github.com/home-assistant/core/issues/68047) in home assistant.
-      default: false
-      selector:
-        boolean: {}
-
-    input_start_party_timer_on_physical_change:
-      name: Start Party Timer on Physical Comfort Temperature Change
-      description: >
-        If enabled party mode going to be started if a timer is given and temperature changed on a TRV device.
       default: false
       selector:
         boolean: {}
@@ -533,7 +479,6 @@ trigger:
 
   - platform: template
     id: scheduler-off
-    id: scheduler-off
     value_template: >
       {% if is_default_scheduler_configured %}
         {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_scheduler_regular) %} 
@@ -550,7 +495,6 @@ trigger:
 
   - platform: template
     value_template: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count == 0 }}"
-    id: person-presence-off
     id: person-presence-off
     for:
       seconds: 2
@@ -619,7 +563,6 @@ trigger:
   - platform: template
     value_template: "{{ input_mode_guest != none and states(input_mode_guest) in ['off','idle','paused'] }}"
     id: guest-presence-off
-    id: guest-presence-off
     for:
       seconds: 2
 
@@ -631,7 +574,6 @@ trigger:
 
   - platform: template
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'off') }}"
-    id: sensor-personpresence-off
     id: sensor-personpresence-off
     for:
       minutes: !input input_presence_reaction_off_time
@@ -702,10 +644,6 @@ variables:
   input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
   input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
   input_time_based_comfort_change: !input input_time_based_comfort_change
-  input_change_comfort_temperature_on_physical_change: !input input_change_comfort_temperature_on_physical_change
-  input_reset_comfort_temperature: !input input_reset_comfort_temperature
-  input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
-  input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
   input_presence_detection_if_somebody_home: !input input_presence_detection_if_somebody_home
 
   # V A L V E   G R O U P S
@@ -795,7 +733,6 @@ action:
       is_anybody_home: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count > 0 or state_mode_guest }}"
       is_mode_holiday_configured: "{{ input_scheduler_holiday != none and input_mode_holiday != none and is_state(input_mode_holiday, 'on') }}"
       is_scheduler_on: "{{ active_scheduler != none and states(active_scheduler) == 'on' }}"
-      no_person_is_defined: "{{ input_persons | count == 0 }}"
       no_person_is_defined: "{{ input_persons | count == 0 }}"
 
       is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
