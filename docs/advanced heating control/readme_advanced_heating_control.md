@@ -50,7 +50,7 @@ Let's say you heat the during the day and leave your home heating will be set to
 
 ### 3. Presence based heating
 
-You can setup a *presence detector*. 
+You can setup a *presence detector*. Which means *presence detected* then *heat* to *comfort temperature*.
 
 #### 3.1 Fully presence based
 If you leave persons and the schedulers empty the automation works fully presence based.<br/>
