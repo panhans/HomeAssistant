@@ -79,14 +79,14 @@ Let's say I am the only one who's living in a specific room. So I setup the auto
 
 I want the room to be heated in the morning and afternoon and the hole day on weekend. Let's define a scheduler for that room.
 
-![Heating scheduler](images/heating_scheduler.png "Heating scheduler")
+![Heating scheduler](images/heating_scheduler.png "Heating scheduler") { width: 200px; }
 
 Now my automation set the thermostats to *comfort temperature* if the scheduler is *on* and I am *home*. Nice!<br/>
 <br/>
 But wait: Heating is only configured till 16.00 o'clock. There are some days I stay awake and do some work or watching TV but I don't want to heat stupidly to 24:00 o'lock.<br/>
 Let's add a presence sensor for this case. I know, if I am in that room I always have my lights on in the evening. So I take my grouped lights or at least one light and create an fake presence sensor, a template based senso in the helper section.<br/>
 
-![Presence sensor](images/presence_sensor.png "Presence sensor")
+![Presence sensor](images/presence_sensor.png =x250)
 
 Lets put this sensor to my configuration.
 
