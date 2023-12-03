@@ -11,7 +11,8 @@ The *comfort temperature* will be set if the conditions you can setup match. Oth
 
 ![Temperatures](images/temps.png "Temperatures")
 
->**Note**: with this configuration heating is not possible. It's just a base setup.
+>**Note**: with this configuration heating is not possible. It's just a base setup.<br/>
+For some features you need to provide a comfort temoperature *input_number* entity. Also if you want to change it in your front end.
 
 ## Heating Possibilites
 
