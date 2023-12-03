@@ -79,7 +79,7 @@ Let's say I am the only one who's living in a specific room. So I setup the auto
 
 I want the room to be heated in the morning and afternoon and the hole day on weekend. Let's define a scheduler for that room.
 
-![Heating scheduler](images/heating_scheduler.png "Heating scheduler") { width: 200px; }
+<img src="images/heating_scheduler.png" width="300"/>
 
 Now my automation set the thermostats to *comfort temperature* if the scheduler is *on* and I am *home*. Nice!<br/>
 <br/>
