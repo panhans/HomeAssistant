@@ -86,7 +86,7 @@ Now my automation set the thermostats to *comfort temperature* if the scheduler 
 But wait: Heating is only configured till 16.00 o'clock. There are some days I stay awake and do some work or watching TV but I don't want to heat stupidly to 24:00 o'lock.<br/>
 Let's add a presence sensor for this case. I know, if I am in that room I always have my lights on in the evening. So I take my grouped lights or at least one light and create an fake presence sensor, a template based senso in the helper section.<br/>
 
-![Presence sensor](images/presence_sensor.png =x250)
+<img src="images/presence_sensor.png" width="300"/>
 
 Lets put this sensor to my configuration.
 
@@ -95,7 +95,7 @@ Lets put this sensor to my configuration.
 Now I want the presence sensor only get in the game after 16:00 o'clock.<br/>
 I need another scheduler to define the time window when the presence detection shall be avtive.
 
-![Presence scheduler](images/presence_scheduler.png "Presence scheduler")
+<img src="images/presence_scheduler.png" width="300"/>
 
 Let's put the scheduler to our configuration.
 
