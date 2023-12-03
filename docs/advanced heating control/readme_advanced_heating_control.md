@@ -1,17 +1,17 @@
 # :fire: **ADVANCED HEATING CONTROL <sup>v3</sup>** :fire:
 
 # Table of Contents
-1. [Base configuration](#1.Base-configuration)
-2. [Heating Possibilites](#2.-Heating-Possibilites)<br/>
-  2.1 [Heating Possibilites](#2.1-Heating-Possibilites)</br>
-  2.2 [Scheduler based heating](#2.2-Scheduler-based-heating)<br/>
-    2.2.1 [Fully time/scheduler based](#2.2.1-Fully-time/scheduler-based)<br/>
-    2.2.2 [Scheduler combined with persons](#2.2.2-Scheduler-combined-with-persons)<br/>
-  2.3 [Presence based heating](#2.3-Presence-based-heating) <br/>
-  2.3.1 [Fully presence based](#2.3.1-Fully-presence-based)<br/>
-  2.3.2 [Presence combined with persons](#2.3.2-Presence-combined-with-persons)
-3. [Combination Overview](#3.-Combination-Overview)
-4. [Example Configuration](#4.-Example-Configuration)
+1. [Base configuration](#1-Base-configuration)
+2. [Heating Possibilites](#2-Heating-Possibilites)<br/>
+  2.1 [Heating Possibilites](#21-Heating-Possibilites)</br>
+  2.2 [Scheduler based heating](#22-Scheduler-based-heating)<br/>
+    2.2.1 [Fully time/scheduler based](#221-Fully-time/scheduler-based)<br/>
+    2.2.2 [Scheduler combined with persons](#222-Scheduler-combined-with-persons)<br/>
+  2.3 [Presence based heating](#23-Presence-based-heating) <br/>
+  2.3.1 [Fully presence based](#231-Fully-presence-based)<br/>
+  2.3.2 [Presence combined with persons](#232-Presence-combined-with-persons)
+3. [Combination Overview](#3-Combination-Overview)
+4. [Example Configuration](#4-Example-Configuration)
 
 
 
