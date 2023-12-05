@@ -735,7 +735,7 @@ action:
           {% set heat = false %}
           
           {% if is_presence_heating %}
-            {% set heat = iif(heat == false and is_presence_heating_with_scheduler, is_presence and is_presence_scheduler_on, heat) %}
+            {% set heat = iif(heat == false and is_presence_heating_with_scheduler, is_presence and is_scheduler_on, heat) %}
             {% set heat = iif(heat == false and is_presence_heating_with_scheduler == false, is_presence, heat) %}
             
             {% set heat = iif(no_person_is_defined == false, heat and is_anybody_home, heat) %}
