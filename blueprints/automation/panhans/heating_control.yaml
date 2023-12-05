@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.6.1
+    **Version**: 3.6.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -428,7 +428,7 @@ trigger_variables:
   # S C H E D U L E R
   input_scheduler_regular: !input input_scheduler_regular
   input_scheduler_holiday: !input input_scheduler_holiday
-  input_scheduler_presence: !input input_scheduler_holiday
+  input_scheduler_presence: !input input_scheduler_presence
 
   # A D D I T I O N A L   S E T T I N G S
   input_windows: !input input_windows
