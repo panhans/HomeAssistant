@@ -716,6 +716,7 @@ action:
       is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
       is_presence_scheduler_defined: "{{ input_scheduler_presence != none }}"
       is_presence: "{{ is_presence_sensor_defined and is_state(input_presence_sensor, 'on') }}"
+      is_presence_scheduler_on: "{{ is_presence_scheduler_defined and is_state(input_scheduler_presence, 'on') }}"
 
       is_presence_heating: "{{ is_presence_sensor_defined }}"
       is_presence_heating_with_scheduler: "{{ is_presence_heating and is_presence_scheduler_defined }}"
@@ -735,7 +736,7 @@ action:
           {% set heat = false %}
           
           {% if is_presence_heating %}
-            {% set heat = iif(heat == false and is_presence_heating_with_scheduler, is_presence and is_scheduler_on, heat) %}
+            {% set heat = iif(heat == false and is_presence_heating_with_scheduler, is_presence and is_presence_scheduler_on, heat) %}
             {% set heat = iif(heat == false and is_presence_heating_with_scheduler == false, is_presence, heat) %}
             
             {% set heat = iif(no_person_is_defined == false, heat and is_anybody_home, heat) %}
