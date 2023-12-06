@@ -559,13 +559,13 @@ trigger:
   - platform: template
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'on') }}"
     for:
-      seconds: !input input_presence_reaction_on_time
+      minutes: !input input_presence_reaction_on_time
 
   - platform: template
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'off') }}"
     id: sensor-personpresence-off
     for:
-      seconds: !input input_presence_reaction_off_time
+      minutes: !input input_presence_reaction_off_time
 
   # P R E S E N C E   S C H E D U L E R
   - platform: template
