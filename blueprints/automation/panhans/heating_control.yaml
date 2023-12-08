@@ -29,7 +29,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 4.0_alpha1
+    **Version**: 4.0_alpha2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -167,14 +167,12 @@ blueprint:
     input_windows_reaction_time:
       name: Window / Door Reaction Time
       description: Duration for which a window or door must be open/closed for the thermostats to close/open.
-      default: 10
+      default:
+        hours: 0
+        minutes: 0
+        seconds: 30
       selector:
-        number:
-          min: 0.0
-          max: 60.0
-          step: 1.0
-          mode: slider
-          unit_of_measurement: s
+        duration:
 
     input_mode_winter:
       name: Winter mode (optional)
@@ -234,31 +232,27 @@ blueprint:
                 - schedule
           multiple: false
 
+    input_presence_reaction_on_time:
+      name: Presence Reaction On Time
+      description: Define how many minutes the presence sensor must be on to turn on heating.
+      default:
+        hours: 0
+        minutes: 5
+        seconds: 0
+      selector:
+        duration:
+
     input_presence_reaction_off_time:
       name: Presence Reaction Off Time
       description:
         Define how many minutes the presence sensor must be off so the
         temperature turns to minimum.
-      default: 5
+      default:
+        hours: 0
+        minutes: 5
+        seconds: 0
       selector:
-        number:
-          min: 1
-          max: 30.0
-          step: 1.0
-          mode: slider
-          unit_of_measurement: min
-
-    input_presence_reaction_on_time:
-      name: Presence Reaction On Time
-      description: Define how many minutes the presence sensor must be on to turn on heating.
-      default: 5
-      selector:
-        number:
-          min: 1
-          max: 10.0
-          step: 1.0
-          mode: slider
-          unit_of_measurement: min
+        duration:
 
     input_change_comfort_temperature_on_physical_change:
       name: Physical Comfort Temperature Change (experimental)
@@ -321,14 +315,12 @@ blueprint:
     input_calibration_timeout:
       name: Calibration Timeout
       description: Define a timeout if you want to decrease calibration calls if temperature changes too much. At least temperature of the external sensor or trv must stay for that duration before calibration gets triggered.
-      default: 1
+      default:
+        hours: 0
+        minutes: 1
+        seconds: 0
       selector:
-        number:
-          min: 1
-          max: 30.0
-          step: 1.0
-          mode: slider
-          unit_of_measurement: min
+        duration:
 
     input_force_max_temperature:
       name: Force Max Temperature (optional)
@@ -367,14 +359,13 @@ blueprint:
       description:
         Some TRVs have problems with setting mode and temperature. You can try to increas the
         delay between the service calls. This could fix your problems.
-      default: 2
+      default:
+        default:
+        hours: 0
+        minutes: 0
+        seconds: 2
       selector:
-        number:
-          min: 1.0
-          max: 10.0
-          step: 1.0
-          mode: slider
-          unit_of_measurement: s
+        duration:
 
     input_time_based_comfort_change:
       name: Comfort Heating Plan
@@ -493,13 +484,11 @@ trigger:
   # W I N D O W  O P E N
   - platform: template
     value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
-    for:
-      seconds: !input input_windows_reaction_time
+    for: !input input_windows_reaction_time
 
   - platform: template
     value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count == 0 }}"
-    for:
-      seconds: !input input_windows_reaction_time
+    for: !input input_windows_reaction_time
 
   # M O D E   -   H O L I D A Y
   - platform: template
@@ -560,14 +549,12 @@ trigger:
   # P R E S E N C E   S E N S O R
   - platform: template
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'on') }}"
-    for:
-      minutes: !input input_presence_reaction_on_time
+    for: !input input_presence_reaction_on_time
 
   - platform: template
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'off') }}"
     id: sensor-personpresence-off
-    for:
-      minutes: !input input_presence_reaction_off_time
+    for: !input input_presence_reaction_off_time
 
   # P R E S E N C E   S C H E D U L E R
   - platform: template
@@ -585,7 +572,7 @@ trigger:
     id: "calibration_sensor_temp"
     value_template: >
       {% if input_temperature_sensor != none %}
-        {{ as_timestamp(now()) - as_timestamp(states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= input_calibration_timeout * 60 }}
+        {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(hours=input_calibration_timeout.hours, minutes=input_calibration_timeout.minutes, seconds=input_calibration_timeout.seconds) }}
       {% else %}
         {{ false }}
       {% endif %}
@@ -594,8 +581,7 @@ trigger:
     id: "calibration_trv_temp"
     entity_id: !input input_trvs
     attribute: current_temperature
-    for:
-      minutes: !input input_calibration_timeout
+    for: !input input_calibration_timeout
 
   # C O M F O R T   T E M P   C H A N G E   B Y   T I M E
   - platform: template
@@ -635,6 +621,7 @@ variables:
   input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
   input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
   input_time_based_comfort_change: !input input_time_based_comfort_change
+  input_service_call_delay: !input input_service_call_delay
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -693,7 +680,6 @@ condition:
 
 action:
   # DELAY AFTER HA START
-  # DELAY AFTER HA START
   - if:
         - condition: trigger
           id: "hastart"
@@ -701,7 +687,6 @@ action:
       - delay:
           seconds: 30
 
-  # SETTING UP VARIABLES
   # SETTING UP VARIABLES
   - variables:
       # S T A T E S
@@ -909,14 +894,18 @@ action:
               - condition: template
                 value_template: "{{ input_start_party_timer_on_physical_change and input_mode_party != none and input_mode_party.split('.')[0] == 'timer' and state_mode_party == false }}"
             then:
-              - delay:
-                  seconds: !input input_service_call_delay
+              - delay: 
+                  hours: "{{ input_service_call_delay.hours }}"
+                  minutes: "{{ input_service_call_delay.minutes }}"
+                  seconds: "{{ input_service_call_delay.seconds }}"
               - service: timer.start
                 target:
                   entity_id: "{{ input_mode_party }}"
 
-          - delay:
-              seconds: !input input_service_call_delay
+          - delay: 
+              hours: "{{ input_service_call_delay.hours }}"
+              minutes: "{{ input_service_call_delay.minutes }}"
+              seconds: "{{ input_service_call_delay.seconds }}"
 
       # CALIBRATION -------------------------------------------------------------------------------------------------------------
       - conditions:
@@ -1039,8 +1028,10 @@ action:
                         offset: "{{ offset_new }}"
                         entity_id: "{{ current_valve }}"
 
-                - delay:
-                    seconds: !input input_service_call_delay
+                - delay: 
+                    hours: "{{ input_service_call_delay.hours }}"
+                    minutes: "{{ input_service_call_delay.minutes }}"
+                    seconds: "{{ input_service_call_delay.seconds }}"
 
       # AUTO RESET COMFORT TEMP
       - conditions:
@@ -1083,8 +1074,10 @@ action:
                           data:
                             entity_id: "{{ current_valve }}"
                             temperature: "{{ off_temperature | float }}"
-                        - delay:
-                            seconds: !input input_service_call_delay
+                        - delay: 
+                            hours: "{{ input_service_call_delay.hours }}"
+                            minutes: "{{ input_service_call_delay.minutes }}"
+                            seconds: "{{ input_service_call_delay.seconds }}"
 
             # SET MODE TO OFF AND NOT MIN TEMP
             else:
@@ -1114,16 +1107,20 @@ action:
                                   entity_id: "{{ current_valve }}"
                                 data:
                                   hvac_mode: "off"
-                              - delay:
-                                  seconds: !input input_service_call_delay
+                              - delay: 
+                                  hours: "{{ input_service_call_delay.hours }}"
+                                  minutes: "{{ input_service_call_delay.minutes }}"
+                                  seconds: "{{ input_service_call_delay.seconds }}"
                       else:
                         - service: climate.set_hvac_mode
                           target:
                             entity_id: "{{ (valves_off_mode | select('in', trvs_mode_not_set) | list)}}"
                           data:
                             hvac_mode: "off"
-                        - delay:
-                            seconds: !input input_service_call_delay
+                        - delay: 
+                            hours: "{{ input_service_call_delay.hours }}"
+                            minutes: "{{ input_service_call_delay.minutes }}"
+                            seconds: "{{ input_service_call_delay.seconds }}"
 
         # IF NOT OFF -> HEAT
         else:
@@ -1149,8 +1146,10 @@ action:
                             entity_id: "{{ current_valve }}"
                           data:
                             hvac_mode: "{{ mode }}"
-                        - delay:
-                            seconds: !input input_service_call_delay
+                        - delay: 
+                            hours: "{{ input_service_call_delay.hours }}"
+                            minutes: "{{ input_service_call_delay.minutes }}"
+                            seconds: "{{ input_service_call_delay.seconds }}"
                     - if:
                         - condition: template
                           value_template: "{{ state_attr(current_valve, 'temperature') != new_temperature }}"
@@ -1160,7 +1159,9 @@ action:
                             entity_id: "{{ current_valve }}"
                             temperature: "{{ new_temperature | float }}"
                         - delay:
-                            seconds: !input input_service_call_delay
+                            hours: "{{ input_service_call_delay.hours }}"
+                            minutes: "{{ input_service_call_delay.minutes }}"
+                            seconds: "{{ input_service_call_delay.seconds }}"
             else:
               - if:
                   - condition: template
@@ -1171,8 +1172,10 @@ action:
                       entity_id: "{{ trvs_mode_not_set }}"
                     data:
                       hvac_mode: "{{ mode }}"
-                  - delay:
-                      seconds: !input input_service_call_delay
+                  - delay: 
+                      hours: "{{ input_service_call_delay.hours }}"
+                      minutes: "{{ input_service_call_delay.minutes }}"
+                      seconds: "{{ input_service_call_delay.seconds }}"
               - if:
                   - condition: template
                     value_template: "{{ trvs_temp_not_set | count > 0 }}"
@@ -1181,6 +1184,8 @@ action:
                     data:
                       entity_id: "{{ trvs_temp_not_set }}"
                       temperature: "{{ temperature | float }}"
-                  - delay:
-                      seconds: !input input_service_call_delay
+                  - delay: 
+                      hours: "{{ input_service_call_delay.hours }}"
+                      minutes: "{{ input_service_call_delay.minutes }}"
+                      seconds: "{{ input_service_call_delay.seconds }}"
 mode: queued
