@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.6.2
+    **Version**: 3.7
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -285,15 +285,6 @@ blueprint:
           step: 1.0
           mode: slider
           unit_of_measurement: min
-
-    input_presence_detection_if_somebody_home:
-      name: Presence Detection When Home
-      description: >
-        Enable this option if you want presence detection is active only if somebody of the defined persons are home. 
-        Note: Heating is now presence detection based. A person who's home home doesnt result in heating. (Scheduler is required)
-      default: false
-      selector:
-        boolean: {}
 
     input_change_comfort_temperature_on_physical_change:
       name: Physical Comfort Temperature Change (experimental)
@@ -636,7 +627,6 @@ variables:
   input_reset_comfort_temperature: !input input_reset_comfort_temperature
   input_start_party_timer_on_physical_change: !input input_start_party_timer_on_physical_change
   input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
-  input_presence_detection_if_somebody_home: !input input_presence_detection_if_somebody_home
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -721,37 +711,44 @@ action:
       is_anybody_home: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count > 0 or state_mode_guest }}"
       is_mode_holiday_configured: "{{ input_scheduler_holiday != none and input_mode_holiday != none and is_state(input_mode_holiday, 'on') }}"
       is_scheduler_on: "{{ active_scheduler != none and states(active_scheduler) == 'on' }}"
-      no_person_is_defined: "{{ input_persons | count == 0 }}"
+      no_person_is_defined: "{{ input_persons | count == 0 and input_mode_guest == none }}"
 
       is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
       is_presence_scheduler_defined: "{{ input_scheduler_presence != none }}"
-      is_presence: >
-        {{
-          ((input_presence_detection_if_somebody_home == true and is_anybody_home == true)
-          or
-          (input_presence_detection_if_somebody_home == false))
-          and
-          ((is_presence_scheduler_defined == true and is_state(input_scheduler_presence,'on') and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on'))
-          or
-          (is_presence_scheduler_defined == false and is_presence_sensor_defined == true and is_state(input_presence_sensor, 'on')))
-        }}
+      is_presence: "{{ is_presence_sensor_defined and is_state(input_presence_sensor, 'on') }}"
+      is_presence_scheduler_on: "{{ is_presence_scheduler_defined and is_state(input_scheduler_presence, 'on') }}"
+
+      is_presence_heating: "{{ is_presence_sensor_defined }}"
+      is_presence_heating_with_scheduler: "{{ is_presence_heating and is_presence_scheduler_defined }}"
+      is_presence_heating_without_persons: "{{ is_presence_heating and no_person_is_defined }}"
+      is_presence_heating_with_persons: "{{ is_presence_heating and no_person_is_defined == false }}"
+      is_no_presence_heating_or_presence_with_scheduler: "{{ is_presence_heating == false or (is_presence_heating and is_presence_heating_with_scheduler)}}"
+
+      is_scheduled_heating: "{{ active_scheduler != none }}"
+      is_scheduled_heating_without_persons: "{{ is_scheduled_heating and no_person_is_defined }}"
+      is_scheduled_heating_with_persons: "{{ is_scheduled_heating and no_person_is_defined == false }}"
 
       # T R V - V A L U E S
       set_comfort: >
         {% if state_mode_party == true %}
           {{ true }}
         {% else %}
-          {% if ((is_scheduler_on == true and is_anybody_home) or 
-                  (active_scheduler == none and is_anybody_home and input_presence_detection_if_somebody_home == false) or 
-                  (no_person_is_defined and is_scheduler_on == true)) %}
-              {{ true }}
-          {% else %}
-            {% if (is_presence == true) %}
-              {{ true  }}
-            {% else %}
-              {{ false }}
-            {% endif %}
+          {% set heat = false %}
+          
+          {% if is_presence_heating %}
+            {% set heat = iif(heat == false and is_presence_heating_with_scheduler, is_presence and is_presence_scheduler_on, heat) %}
+            {% set heat = iif(heat == false and is_presence_heating_with_scheduler == false, is_presence, heat) %}
+            
+            {% set heat = iif(no_person_is_defined == false, heat and is_anybody_home, heat) %}
           {% endif %}
+
+          {% if heat == false and is_scheduled_heating %}
+            {% set heat = iif(is_scheduled_heating_with_persons, is_scheduler_on and is_anybody_home, is_scheduler_on) %}
+          {% elif heat == false and is_scheduled_heating == false %}
+            {% set heat = iif(is_no_presence_heating_or_presence_with_scheduler, is_anybody_home, heat) %}
+          {% endif %}
+
+          {{ heat }}
         {% endif %}
 
       mode: >
@@ -800,7 +797,17 @@ action:
         - trvs_temp_not_set: {{ trvs_temp_not_set }} {{" \n "}}
         - trvs_mode_not_set: {{ trvs_mode_not_set }} {{" \n "}}
         - trvs_mode_and_temp_not_set: {{ trvs_mode_and_temp_not_set }} {{" \n "}}
-        - trigger.id: {{ trigger.id }}
+        - trigger.id: {{ trigger.id }} {{" \n "}}
+        - is_presence_heating: {{ is_presence_sensor_defined }} {{" \n "}}
+        - is_presence_heating_with_scheduler: {{ is_presence_heating_with_scheduler }} {{" \n "}}
+        - is_presence_heating_without_persons: {{ is_presence_heating_without_persons }} {{" \n "}}
+        - is_presence_heating_with_persons: {{ is_presence_heating_with_persons }} {{" \n "}}
+        - is_no_presence_heating_or_presence_with_scheduler: {{ is_no_presence_heating_or_presence_with_scheduler }} {{" \n "}}
+        - is_scheduled_heating: {{ is_scheduled_heating }} {{" \n "}}
+        - is_scheduled_heating_without_persons: {{ is_scheduled_heating_without_persons }} {{" \n "}}
+        - is_scheduled_heating_with_persons: {{ is_scheduled_heating_with_persons }} {{" \n "}}
+        - no_person_is_defined: {{ no_person_is_defined }} {{" \n "}}
+        - input_persons_count: {{ input_persons | count == 0 }}
       level: debug
       logger: blueprints.panhans.heatingcontrol
 
