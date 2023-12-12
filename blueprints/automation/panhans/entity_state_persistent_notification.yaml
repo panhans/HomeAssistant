@@ -1,9 +1,31 @@
 blueprint:
   name: "Persistent entity state notification"
-  description: 'Creates a persitent notification when an entity is in defined state. Notification will disapear when entity leave this state.'
+  description: >
+
+    **Features**
+
+    - monitor entities for a specific state and triggering a notification
+
+    - modify message, title, icon, color, channel, group ect
+
+    - persistent notification until entity leave specified state
+
+    - periodical notification with stop funcionality
+
+
+    **Hints**
+
+    - if you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
+
+
+    **Help & FAQ**: [Yet not another door/window/sensor open warning notification with auto close and reminder](https://community.home-assistant.io/t/yet-not-another-door-window-sensor-open-warning-notification-with-auto-close-and-reminder)
+
+
+    **Version**: 2.2.1
+
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/entity_state_persistent_notification.yaml
   domain: automation
-  
+
   input:
     sensor_entity:
       name: "Entities"
@@ -11,14 +33,14 @@ blueprint:
       selector:
         entity:
           multiple: true
-          
+
     active_state:
       name: "Notification state"
       description: "State whicht triggers notification"
-      default: 'on'
-            
+      default: "on"
+
     for_time_m:
-      name: For Time Minutes
+      name: For Time
       description: Duration the sensor must be in state
       default: 0
       selector:
@@ -27,6 +49,7 @@ blueprint:
           max: 59
           step: 1
           mode: slider
+          unit_of_measurement: min
 
     notify_device:
       name: "Device to notify"
@@ -34,7 +57,8 @@ blueprint:
       default:
       selector:
         device:
-          integration: mobile_app
+          filter:
+            integration: mobile_app
 
     notify_group:
       name: Notification Group
@@ -50,14 +74,6 @@ blueprint:
       name: "Message"
       description: "Notification message"
       default: "Keep in mind: {{ entity_name }} is {{ active_state }}"
-      
-    status_bar_icon:
-      name: "Status bar icon"
-      description: "Sets the status bar icon. (Android only)"
-      default: mdi:home-assistant
-      selector:
-        icon:
-          placeholder: mdi:home-assistant
 
     ha_notification:
       name: Persistent HomeAssistant Notification
@@ -72,7 +88,7 @@ blueprint:
       default: true
       selector:
         boolean:
-        
+
     period:
       name: Periodical Notification
       description: Sends notification periodically
@@ -84,11 +100,48 @@ blueprint:
           step: 1
           mode: slider
           unit_of_measurement: min
-          
+
     stop_button_text:
       name: "Stop button text"
       description: "Text for stop button in notification to interrupt the periodical send notifications."
       default: "Stop notifying"
+
+    status_bar_icon:
+      name: "Status bar icon (Android specific)"
+      description: "Sets the status bar icon."
+      default: mdi:home-assistant
+      selector:
+        icon:
+          placeholder: mdi:home-assistant
+
+    notification_color:
+      name: "Notification color (Android specific)"
+      description: "Color of the notification"
+      default: [100, 200, 240]
+      selector:
+        color_rgb:
+
+    channel:
+      name: "Channel (Android specific)"
+      description: "Seperate this notifications by channel."
+      default: "General"
+
+    group:
+      name: "Notification group (Android specific)"
+      description: "Group notifications by using this identifier."
+      default: "zone-notification-group"
+
+    vibration_pattern:
+      name: "Vibration pattern (Android specific)"
+      description: "Pattern of the vibration when notification arrives."
+      default: "100, 100"
+
+    led_color:
+      name: "Notification LED color (Android specific)"
+      description: "Color of the phone LED after incoming notification."
+      default: [100, 200, 240]
+      selector:
+        color_rgb:
 
 variables:
   active_state: !input active_state
@@ -98,26 +151,30 @@ variables:
   notify_device: !input notify_device
   period: !input period
   action_prefix: "STOP_{{this.entity_id}}"
-  
+  notification_color: !input "notification_color"
+  notification_color_hex: "#{{ '%02x%02x%02x' | format(notification_color[0], notification_color[1], notification_color[2]) }}"
+  led_color: !input "led_color"
+  led_color_hex: "#{{ '%02x%02x%02x' | format(led_color[0], led_color[1], led_color[2]) }}"
+
 trigger_variables:
   for_time_m: !input for_time_m
-  for_time_m_t: "{{ for_time_m | default(0) | int  }}"
+  for_time_m_t: "{{ for_time_m | default(0) | int }}"
 
 trigger:
-- platform: state
-  entity_id: !input 'sensor_entity'
-  to: !input active_state
-  for:
-    minutes: "{{ for_time_m_t }}"
-  id: 'on'
-- platform: state
-  entity_id: !input 'sensor_entity'
-  from: !input active_state
-  id: 'off'
-- platform: event
-  event_type: pntc_event
-  id: 'period'
-  
+  - platform: state
+    entity_id: !input "sensor_entity"
+    to: !input active_state
+    for:
+      minutes: "{{ for_time_m_t }}"
+    id: "on"
+  - platform: state
+    entity_id: !input "sensor_entity"
+    from: !input active_state
+    id: "off"
+  - platform: event
+    event_type: pntc_event
+    id: "period"
+
 condition:
   - condition: or
     conditions:
@@ -129,132 +186,151 @@ condition:
         value_template: "{{ trigger.id == 'period' and trigger.event.data.automation == this.entity_id }}"
 
 action:
+  - variables:
+      is_period_trigger: "{{ trigger.id == 'period' }}"
+      sensor: |
+        {% if is_period_trigger %}
+          {{ trigger.event.data.s_entity }}
+        {% else %}
+          {{ trigger.from_state.entity_id }}
+        {% endif %}
+      entity_name: "{{ state_attr(sensor,'friendly_name') }}"
+      tag: "{{ this.entity_id.split('.')[1] + sensor.split('.')[1] }}"
+      action_tag: "{{ action_prefix }}_{{ sensor }}"
 
-- variables:
-    is_period_trigger: "{{ trigger.id == 'period' }}"
-    sensor: |
-      {% if is_period_trigger %}
-        {{ trigger.event.data.s_entity }}
-      {% else %}
-        {{ trigger.from_state.entity_id }}
-      {% endif %}
-    entity_name: "{{ state_attr(sensor,'friendly_name') }}"
-    tag: "{{ this.entity_id }}-pesn-{{ sensor }}"
-    action_tag: "{{ action_prefix }}_{{ sensor }}"
-
-- if:
-    - condition: template
-      value_template: "{{ is_period_trigger or trigger.to_state.state == active_state }}"
-  then:
-    - if:
-        - condition: template
-          value_template: "{{ notify_device != none }}"
-      then:
-      - if:
-        - condition: template
-          value_template: "{{ period > 0 }}"
-        then:
-        - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
-          data:
-            title: !input title
-            message: !input message
-            data:
-              ttl: 0
-              priority: high
-              notification_icon: !input 'status_bar_icon'
-              tag: "{{ tag }}"
-              persistent: !input persistent_notification
-              sticky: !input persistent_notification
-              actions:
-              - action: "{{ action_tag }}"
-                title: !input stop_button_text
-        else:
-        - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
-          data:
-            title: !input title
-            message: !input message
-            data:
-              ttl: 0
-              priority: high
-              notification_icon: !input 'status_bar_icon'
-              tag: "{{ tag }}"
-              persistent: !input persistent_notification
-              sticky: !input persistent_notification
-    - if:
-        - condition: template
-          value_template: "{{ group_target is defined and group_target != '' }}"
-      then:
-      - if:
-        - condition: template
-          value_template: "{{ period > 0 }}"
-        then:
-        - service: notify.{{ group_target }}
-          data:
-            title: !input title
-            message: !input message
-            data:
-              ttl: 0
-              priority: high
-              notification_icon: !input 'status_bar_icon'
-              tag: "{{ tag }}"
-              persistent: !input persistent_notification
-              sticky: !input persistent_notification
-              actions:
-              - action: "{{ action_tag }}"
-                title: !input stop_button_text
-        else:
-        - service: notify.{{ group_target }}
-          data:
-            title: !input title
-            message: !input message
-            data:
-              ttl: 0
-              priority: high
-              notification_icon: !input 'status_bar_icon'
-              tag: "{{ tag }}"
-              persistent: !input persistent_notification
-              sticky: !input persistent_notification
-    - if:
-        - condition: template
-          value_template: "{{ ha_notification }}"
-      then:
-        - service: persistent_notification.create
-          data:
-            title: !input title
-            message: !input message
-            notification_id: "{{ tag }}"
-  else:
-    - service: notify.notify
-      data:
-        data:
-          tag: "{{ tag }}"
-          ttl: 0
-          priority: high
-        message: clear_notification
-    - service: persistent_notification.dismiss
-      data:
-        notification_id: "{{ tag }}"
-        
-- if:
-  - condition: template
-    value_template: "{{ period > 0 }}"
-  then:
-  - wait_for_trigger:
-    - platform: event
-      event_type: mobile_app_notification_action
-      event_data:
-        action: "{{ action_tag }}"
-    timeout:
-      minutes: "{{ period }}"
   - if:
-    - condition: template
-      value_template: "{{ states(sensor) == active_state }}"
-    - condition: template
-      value_template: "{{ wait.trigger == none }}"
+      - condition: template
+        value_template: "{{ is_period_trigger or trigger.to_state.state == active_state }}"
     then:
-    - event: pntc_event
-      event_data:
-        s_entity: "{{ sensor }}"
-        automation: "{{ this.entity_id }}"
-          
+      - if:
+          - condition: template
+            value_template: "{{ notify_device != none }}"
+        then:
+          - if:
+              - condition: template
+                value_template: "{{ period > 0 }}"
+            then:
+              - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
+                data:
+                  title: !input title
+                  message: !input message
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    tag: "{{ tag }}"
+                    persistent: !input persistent_notification
+                    sticky: !input persistent_notification
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+                    actions:
+                      - action: "{{ action_tag }}"
+                        title: !input stop_button_text
+            else:
+              - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
+                data:
+                  title: !input title
+                  message: !input message
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    tag: "{{ tag }}"
+                    persistent: !input persistent_notification
+                    sticky: !input persistent_notification
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+      - if:
+          - condition: template
+            value_template: "{{ group_target is defined and group_target != '' }}"
+        then:
+          - if:
+              - condition: template
+                value_template: "{{ period > 0 }}"
+            then:
+              - service: notify.{{ group_target }}
+                data:
+                  title: !input title
+                  message: !input message
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    tag: "{{ tag }}"
+                    persistent: !input persistent_notification
+                    sticky: !input persistent_notification
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+                    actions:
+                      - action: "{{ action_tag }}"
+                        title: !input stop_button_text
+            else:
+              - service: notify.{{ group_target }}
+                data:
+                  title: !input title
+                  message: !input message
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    tag: "{{ tag }}"
+                    persistent: !input persistent_notification
+                    sticky: !input persistent_notification
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+      - if:
+          - condition: template
+            value_template: "{{ ha_notification }}"
+        then:
+          - service: persistent_notification.create
+            data:
+              title: !input title
+              message: !input message
+              notification_id: "{{ tag }}"
+    else:
+      - service: notify.notify
+        data:
+          data:
+            tag: "{{ tag }}"
+            ttl: 0
+            priority: high
+          message: clear_notification
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: "{{ tag }}"
+
+  - if:
+      - condition: template
+        value_template: "{{ period > 0 }}"
+    then:
+      - wait_for_trigger:
+          - platform: event
+            event_type: mobile_app_notification_action
+            event_data:
+              action: "{{ action_tag }}"
+        timeout:
+          minutes: "{{ period }}"
+      - if:
+          - condition: template
+            value_template: "{{ states(sensor) == active_state }}"
+          - condition: template
+            value_template: "{{ wait.trigger == none }}"
+        then:
+          - event: pntc_event
+            event_data:
+              s_entity: "{{ sensor }}"
+              automation: "{{ this.entity_id }}"
+
 mode: parallel

@@ -78,7 +78,7 @@ blueprint:
       default: 19
       selector:
         number:
-          min: 12.0
+          min: 4.0
           max: 24.0
           step: 0.5
           mode: slider
@@ -98,7 +98,7 @@ blueprint:
 
     input_temperature_comfort:
       name: Comfort temperature (optional)
-      description: If you want to set the comfort temperature in ui just provide an input number helper.
+      description: If you want to set the comfort temperature in the UI just provide an input number helper.
       default:
       selector:
         entity:
@@ -109,7 +109,7 @@ blueprint:
 
     input_reset_comfort_temperature:
       name: Reset Comfort Temperature
-      description: If a *scheduler* and am *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* when scheduler changes to *on* next time.
+      description: If a *scheduler* and an *input_number* for comfort temperature is defined. You can reset it to the value of the *Static Comfort Temperature* when the scheduler changes to *on* next time.
       default: false
       selector:
         boolean: {}
@@ -155,7 +155,7 @@ blueprint:
 
     input_windows:
       name: Windows / Doors (optional)
-      description: If open during airing TRVs will set to off.
+      description: If open during airing TRVs will be set to off.
       default: []
       selector:
         entity:
@@ -269,7 +269,7 @@ blueprint:
     input_start_party_timer_on_physical_change:
       name: Start Party Timer on Physical Comfort Temperature Change
       description: >
-        If enabled party mode going to be started if a timer is given and temperature changed on a TRV device.
+        If enabled party mode will be started if a timer is given and temperature changed on a TRV device.
       default: false
       selector:
         boolean: {}
@@ -277,9 +277,9 @@ blueprint:
     input_temperature_sensor:
       name: External Temperatur Sensor (optional)
       description: >
-        Temperature calibration for your TRVs. Following is supported:
+        Temperature calibration for your TRVs. The following is supported:
 
-          * TRVs must porvide calibration number entity (entity_id must contain *calibration* or *offset*)
+          * TRVs must provide calibration number entity (entity_id must contain *calibration* or *offset*)
           * TADO TRVs
 
         Note: This is an additional sensor inside your room usually next to your favourite spot.
@@ -295,7 +295,7 @@ blueprint:
 
     input_calibration_delta:
       name: Calibration Delta
-      description: If the difference between TRV temperature and the external sensor temperature is greater or less than the calibration delta the TRV calibration will be triggered. The lower the delta the often calibration gets triggered.
+      description: If the difference between the TRV temperature and the external sensor temperature is greater or less than the calibration delta the TRV calibration will be triggered. The lower the delta the often calibration gets triggered.
       default: 0.5
       selector:
         number:
@@ -307,7 +307,7 @@ blueprint:
 
     input_calibration_rounding_full_values:
       name: Calibration Full Rounding
-      description: Some integrations offer a calibration step size of e.g. *0.1* or *0.01* so theroretically calibration values of e.g. *2.3* or *3.45* are possible. But some TRVs can handle only full values. Just have a look into your devices. Enable this to force rounding to full values in order to prevent redundant calibration calls.
+      description: Some integrations offer a calibration step size of e.g. *0.1* or *0.01* so theoretically calibration values of e.g. *2.3* or *3.45* are possible. But some TRVs can handle only full values. Just have a look into your devices. Enable this to force rounding to full values in order to prevent redundant calibration calls.
       default: false
       selector:
         boolean: {}
@@ -335,21 +335,21 @@ blueprint:
 
     input_off_instead_min:
       name: Off Instead Of Minimum Temperature
-      description: If enabled your climates turn *off* instead of lower temperature when scheduler is off or no presence is detected.
+      description: If enabled your climates turn *off* instead of lower temperature when the scheduler is off or no presence is detected.
       default: false
       selector:
         boolean: {}
 
     input_force_minimum_temperature:
-      name: Force Mimimum Temperature
-      description: Activate this option if you have problems with OFF mode. Instead of setting them to off all TRVs will be set to their individual minimum temperature.
+      name: Force Minimum Temperature
+      description: Activate this option if you have problems with OFF mode. Instead of setting them to off, all TRVs will be set to their individual minimum temperature.
       default: false
       selector:
         boolean: {}
 
     input_split_service_calls:
       name: Split Service Calls
-      description: Mode and temperature are set in one service call. Some TRVs have problems by setting it this way. Activate this option to set mode and temperature in seperate service calls.
+      description: Mode and temperature are set in one service call. Some TRVs have problems by setting it this way. Activate this option to set mode and temperature in separate service calls.
       default: false
       selector:
         boolean: {}
@@ -357,7 +357,7 @@ blueprint:
     input_service_call_delay:
       name: Service Call Delay
       description:
-        Some TRVs have problems with setting mode and temperature. You can try to increas the
+        Some TRVs have problems with setting mode and temperature. You can try to increase the
         delay between the service calls. This could fix your problems.
       default:
         default:
