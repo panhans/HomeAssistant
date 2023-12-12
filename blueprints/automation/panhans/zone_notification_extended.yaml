@@ -20,7 +20,7 @@ blueprint:
 
     ## Additional Information
 
-    If you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
+    If you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
     **Version**: 3.3
@@ -69,7 +69,7 @@ blueprint:
 
     duration:
       name: Duration
-      description: "Duration the person must be in zone before notification gets fired."
+      description: "Duration the person must be in the zone before notification gets fired."
       default: 0
       selector:
         number:
@@ -95,17 +95,17 @@ blueprint:
 
     title_arriving:
       name: "Arriving Title"
-      description: "Notification title when someone arrives a zone."
+      description: "Notification title when someone arrives at a zone."
       default: "{{ person }} arrives"
 
     message_arriving:
       name: "Arriving Message"
-      description: "Notification message when someone arrives a zone."
+      description: "Notification message when someone arrives at a zone."
       default: "{{ person }} arrives at {{ zone }}."
 
     is_arriving_notification_enabled:
       name: "Enable arriving notification"
-      description: "If on notification will send when a person arrives at a zone."
+      description: "If on notification will be sent when a person arrives at a zone."
       default: true
       selector:
         boolean:
@@ -144,7 +144,7 @@ blueprint:
 
     channel:
       name: "Channel (Android specific)"
-      description: "Seperate this notifications by channel."
+      description: "Separate these notifications by channel."
       default: "General"
 
     group:
@@ -187,7 +187,7 @@ blueprint:
 
     custom_action_arriving:
       name: "Custom Action on arriving"
-      description: "An action which can be processed when a person arraives at a zone."
+      description: "An action which can be processed when a person arrives at a zone."
       default: []
       selector:
         action: {}
