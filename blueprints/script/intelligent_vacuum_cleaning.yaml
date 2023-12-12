@@ -1,6 +1,6 @@
 blueprint:
   name: Intelligent Vacuum Cleaning
-  description: This script starts a cleaning process of a vacuum cleaner robot depending on a device and its status. For this the device must remain in a defined status for a certain time. Furthermore a time period can be defined in which the process can start and the status must be fulfilled. In addition an air cleaner can be defined for the cleaning process.
+  description: This script starts a cleaning process of a vacuum cleaner robot depending on a device and its status. For this, the device must remain in a defined status for a certain time. Furthermore, a time period can be defined in which the process can start and the status must be fulfilled. In addition, an air cleaner can be defined for the cleaning process.
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/script/intelligent_vacuum_cleaning.yaml
   domain: script
 
@@ -35,7 +35,7 @@ blueprint:
           mode: slider
     trigger_timeout:
       name: Trigger timeout
-      description: Time to wait for the status of the trigger entity before canceling the cleaning process.
+      description: Time to wait for the status of the trigger entity before cancelling the cleaning process.
       default: 3
       selector:
         number:
@@ -77,7 +77,7 @@ blueprint:
           mode: slider
     fan_turn_off:
       name: Turn off purifier after cleaning process
-      description: If switched off the purifier will be set to mode auto. Otherwise it will be turned off after the cleaning process.
+      description: If switched off the purifier will be set to mode auto. Otherwise, it will be turned off after the cleaning process.
       default: true
       selector:
         boolean:
