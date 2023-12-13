@@ -55,7 +55,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 3.7.1
+    **Version**: 3.7.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -451,7 +451,7 @@ trigger:
   - platform: template
     value_template: >
       {% if input_temperature_comfort != none %}
-        {{ as_timestamp(now()) - as_timestamp(states.input_number[input_temperature_comfort.split('.')[1]].last_updated) >= 2 }}
+        {{ now() - states.input_number[input_temperature_comfort.split('.')[1]].last_updated >= timedelta(seconds=2) }}
       {% else %}
         {{ false }}
       {% endif %}
@@ -1017,7 +1017,7 @@ action:
           - condition: template
             value_template: "{{  input_temperature_comfort != none and float(states(input_temperature_comfort)) != float(input_temperature_comfort_static) }}"
           - condition: template
-            value_template: "{{ trigger.id in ['scheduler-off','party-off','person-presence-off','guest-presence-off','sensor-presence-off'] and set_comfort == false and input_reset_comfort_temperature == true }}"
+            value_template: "{{ trigger.id in ['party-off'] or (trigger.id in ['scheduler-off','person-presence-off','guest-presence-off','sensor-presence-off'] and set_comfort == false) and input_reset_comfort_temperature == true }}"
         sequence:
           - service: input_number.set_value
             data:
