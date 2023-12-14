@@ -315,7 +315,7 @@ blueprint:
     input_calibration_generic:
       name: Generic Calibration
       description:
-        If your valves doesn't support calibration or calibration doesn't work properly enable this option. An offset for every valve depending on your external temperature sensor will be calculated and added to your target temperature.
+        If your valves don't support calibration or calibration doesn't work properly enable this option. An offset for every valve depending on your external temperature sensor will be calculated and added to your target temperature.
         Note that the target temperatures of your valves will differ from your minimum or comfort temperature. Also have in mind that the calibration delta has no impact with this option.
       default: false
       selector:
