@@ -29,7 +29,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 4.0_alpha2
+    **Version**: 4.0_alpha3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -308,6 +308,15 @@ blueprint:
     input_calibration_rounding_full_values:
       name: Calibration Full Rounding
       description: Some integrations offer a calibration step size of e.g. *0.1* or *0.01* so theoretically calibration values of e.g. *2.3* or *3.45* are possible. But some TRVs can handle only full values. Just have a look into your devices. Enable this to force rounding to full values in order to prevent redundant calibration calls.
+      default: false
+      selector:
+        boolean: {}
+
+    input_calibration_generic:
+      name: Generic Calibration
+      description:
+        If your valves doesn't support calibration or calibration doesn't work properly enable this option. An offset for every valve depending on your external temperature sensor will be calculated and added to your target temperature.
+        Note that the target temperatures of your valves will differ from your minimum or comfort temperature. Also have in mind that the calibration delta has no impact with this option.
       default: false
       selector:
         boolean: {}
@@ -622,6 +631,7 @@ variables:
   input_calibration_rounding_full_values: !input input_calibration_rounding_full_values
   input_time_based_comfort_change: !input input_time_based_comfort_change
   input_service_call_delay: !input input_service_call_delay
+  input_calibration_generic: !input input_calibration_generic
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -681,8 +691,8 @@ condition:
 action:
   # DELAY AFTER HA START
   - if:
-        - condition: trigger
-          id: "hastart"
+      - condition: trigger
+        id: "hastart"
     then:
       - delay:
           seconds: 30
@@ -894,7 +904,7 @@ action:
               - condition: template
                 value_template: "{{ input_start_party_timer_on_physical_change and input_mode_party != none and input_mode_party.split('.')[0] == 'timer' and state_mode_party == false }}"
             then:
-              - delay: 
+              - delay:
                   hours: "{{ input_service_call_delay.hours }}"
                   minutes: "{{ input_service_call_delay.minutes }}"
                   seconds: "{{ input_service_call_delay.seconds }}"
@@ -902,7 +912,7 @@ action:
                 target:
                   entity_id: "{{ input_mode_party }}"
 
-          - delay: 
+          - delay:
               hours: "{{ input_service_call_delay.hours }}"
               minutes: "{{ input_service_call_delay.minutes }}"
               seconds: "{{ input_service_call_delay.seconds }}"
@@ -915,6 +925,8 @@ action:
                 id: "calibration_trv_temp"
               - condition: trigger
                 id: "calibration_sensor_temp"
+          - condition: template
+            value_template: "{{ input_calibration_generic == false }}"
           - condition: template
             value_template: "{{ mode == 'heat' }}"
 
@@ -935,7 +947,7 @@ action:
                       {{ iif (calibration_entity_id.id[0] is defined, calibration_entity_id.id, '')  }}
 
                 - condition: template
-                  value_template: "{{ calibration_entity != '' or current_valve in valves_tado }}"
+                  value_template: "{{ calibration_entity != '' or current_valve in valves_tado or input_calibration_generic }}"
 
                 - variables:
                     offset_old_r: >
@@ -1028,7 +1040,7 @@ action:
                         offset: "{{ offset_new }}"
                         entity_id: "{{ current_valve }}"
 
-                - delay: 
+                - delay:
                     hours: "{{ input_service_call_delay.hours }}"
                     minutes: "{{ input_service_call_delay.minutes }}"
                     seconds: "{{ input_service_call_delay.seconds }}"
@@ -1074,7 +1086,7 @@ action:
                           data:
                             entity_id: "{{ current_valve }}"
                             temperature: "{{ off_temperature | float }}"
-                        - delay: 
+                        - delay:
                             hours: "{{ input_service_call_delay.hours }}"
                             minutes: "{{ input_service_call_delay.minutes }}"
                             seconds: "{{ input_service_call_delay.seconds }}"
@@ -1107,7 +1119,7 @@ action:
                                   entity_id: "{{ current_valve }}"
                                 data:
                                   hvac_mode: "off"
-                              - delay: 
+                              - delay:
                                   hours: "{{ input_service_call_delay.hours }}"
                                   minutes: "{{ input_service_call_delay.minutes }}"
                                   seconds: "{{ input_service_call_delay.seconds }}"
@@ -1117,7 +1129,7 @@ action:
                             entity_id: "{{ (valves_off_mode | select('in', trvs_mode_not_set) | list)}}"
                           data:
                             hvac_mode: "off"
-                        - delay: 
+                        - delay:
                             hours: "{{ input_service_call_delay.hours }}"
                             minutes: "{{ input_service_call_delay.minutes }}"
                             seconds: "{{ input_service_call_delay.seconds }}"
@@ -1126,17 +1138,63 @@ action:
         else:
           - if:
               - condition: template
-                value_template: "{{ state_force_max_temperature or input_split_service_calls }}"
+                value_template: "{{ state_force_max_temperature or input_split_service_calls or input_calibration_generic }}"
             # FORCE MAX TEMP
             then:
               - variables:
-                  valves_to_be_set: "{{ iif(state_force_max_temperature, valves, trvs_mode_and_temp_not_set) }}"
+                  valves_to_be_set: "{{ iif(state_force_max_temperature or input_calibration_generic, valves, trvs_mode_and_temp_not_set) }}"
               - repeat:
                   count: "{{ valves_to_be_set | count | int }}"
                   sequence:
                     - variables:
                         current_valve: "{{ valves_to_be_set[repeat.index-1] }}"
-                        new_temperature: "{{ iif(state_force_max_temperature,state_attr(current_valve,'max_temp'),temperature) }}"
+                        current_valve_temp: "{{ state_attr(current_valve,'current_temperature') }}"
+                        sensor_temp: >
+                          {% if input_temperature_sensor != none %}
+                            {{ states(input_temperature_sensor) }}
+                          {% else %}
+                            {{ current_valve_temp }}
+                          {% endif %}
+                        step_r: "{{ state_attr(current_valve,'target_temp_step') }}"
+                        min_temp_r: "{{ state_attr(current_valve,'min_temp') }}"
+                        max_temp_r: "{{ state_attr(current_valve,'max_temp') }}"
+                        new_temperature: >
+                          {% if state_force_max_temperature %}
+                            {{ state_attr(current_valve,'max_temp') }}
+                          {% elif input_calibration_generic and current_valve_temp != sensor_temp %}
+                            {% set offset = sensor_temp | float(0) - current_valve_temp | float(0) %}
+                            {% set temp_with_offset = float(temperature) + float(offset) %}
+
+                            {% set min_temp = min_temp_r | float(0) %}
+                            {% set max_temp = max_temp_r | float(0) %}
+                            {% set step = step_r | float(1) %}
+
+                            {% set temp_with_offset = (temp_with_offset | float(0) / step) | round(0) * step %}
+
+                            {% if(temp_with_offset > max_temp) %}
+                              {% set temp_with_offset = max_temp %}
+                            {% elif (temp_with_offset < min_temp) %}
+                              {% set temp_with_offset = min_temp %}
+                            {% endif %}
+
+                            {{ iif(input_calibration_rounding_full_values == true, float(temp_with_offset) | round(), temp_with_offset) }}
+
+                          {% else %}
+                            {{ temperature }}
+                          {% endif %}
+
+                    - condition: template
+                      value_template: >
+                        {{ input_calibration_generic == false or 
+                          ( 
+                            is_number(current_valve_temp) and 
+                            is_number(sensor_temp) and 
+                            is_number(step_r) and 
+                            is_number(min_temp_r) and 
+                            is_number(max_temp_r)
+                          ) 
+                        }}
+
                     - if:
                         - condition: template
                           value_template: "{{ states(current_valve) != mode }}"
@@ -1146,7 +1204,7 @@ action:
                             entity_id: "{{ current_valve }}"
                           data:
                             hvac_mode: "{{ mode }}"
-                        - delay: 
+                        - delay:
                             hours: "{{ input_service_call_delay.hours }}"
                             minutes: "{{ input_service_call_delay.minutes }}"
                             seconds: "{{ input_service_call_delay.seconds }}"
@@ -1172,7 +1230,7 @@ action:
                       entity_id: "{{ trvs_mode_not_set }}"
                     data:
                       hvac_mode: "{{ mode }}"
-                  - delay: 
+                  - delay:
                       hours: "{{ input_service_call_delay.hours }}"
                       minutes: "{{ input_service_call_delay.minutes }}"
                       seconds: "{{ input_service_call_delay.seconds }}"
@@ -1184,7 +1242,7 @@ action:
                     data:
                       entity_id: "{{ trvs_temp_not_set }}"
                       temperature: "{{ temperature | float }}"
-                  - delay: 
+                  - delay:
                       hours: "{{ input_service_call_delay.hours }}"
                       minutes: "{{ input_service_call_delay.minutes }}"
                       seconds: "{{ input_service_call_delay.seconds }}"
