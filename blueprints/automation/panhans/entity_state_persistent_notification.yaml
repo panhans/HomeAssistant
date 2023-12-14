@@ -4,18 +4,18 @@ blueprint:
 
     **Features**
 
-    - monitor entities for a specific state and triggering a notification
+    - monitor entities for a specific state and trigger a notification
 
-    - modify message, title, icon, color, channel, group ect
+    - modify message, title, icon, color, channel, group etc
 
-    - persistent notification until entity leave specified state
+    - persistent notification until entity leaves specified state
 
-    - periodical notification with stop funcionality
+    - periodical notification with stop functionality
 
 
     **Hints**
 
-    - if you want to test this automation, you need to change the state of an observerd person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
+    - if you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
     **Help & FAQ**: [Yet not another door/window/sensor open warning notification with auto close and reminder](https://community.home-assistant.io/t/yet-not-another-door-window-sensor-open-warning-notification-with-auto-close-and-reminder)
@@ -36,7 +36,7 @@ blueprint:
 
     active_state:
       name: "Notification state"
-      description: "State whicht triggers notification"
+      description: "State which triggers notification"
       default: "on"
 
     for_time_m:
@@ -77,7 +77,7 @@ blueprint:
 
     ha_notification:
       name: Persistent HomeAssistant Notification
-      description: Creates an notification in your home assistant frontend.
+      description: Creates a notification in your home assistant frontend.
       default: false
       selector:
         boolean:
@@ -103,7 +103,7 @@ blueprint:
 
     stop_button_text:
       name: "Stop button text"
-      description: "Text for stop button in notification to interrupt the periodical send notifications."
+      description: "Text for stop button in the notification to interrupt the periodical send notifications."
       default: "Stop notifying"
 
     status_bar_icon:
@@ -123,7 +123,7 @@ blueprint:
 
     channel:
       name: "Channel (Android specific)"
-      description: "Seperate this notifications by channel."
+      description: "Separate these notifications by channel."
       default: "General"
 
     group:

@@ -1,6 +1,6 @@
 # Rounded
 
-This templates and theme is inspired by [rounded](https://community.home-assistant.io/t/rounded-dashboard-guide) by LE0N.
+This template and theme is inspired by [rounded](https://community.home-assistant.io/t/rounded-dashboard-guide) by LE0N.
 
 <img src="images/screenshots/header.png">
 
@@ -35,7 +35,7 @@ This templates and theme is inspired by [rounded](https://community.home-assista
 
 ## Requirements
 
-You need some custom cards. Best way to install them is using [HACS](https://hacs.xyz/).
+You need some custom cards. The best way to install them is using [HACS](https://hacs.xyz/).
 
 - [button card](https://github.com/custom-cards/button-card)
 - [card mod](https://github.com/thomasloven/lovelace-card-mod)
@@ -54,7 +54,7 @@ You need some custom cards. Best way to install them is using [HACS](https://hac
 | | ├── templates
 ```
 
-2. open your *ui-lovelace.yaml* and add following line at the top:
+2. open your *ui-lovelace.yaml* and add the following line at the top:
 
 ```yaml
 button_card_templates: !include_dir_merge_named "ui/templates"
@@ -68,7 +68,7 @@ You can find language files here:
 | | ├── languages
 ```
 
-If you want to add a new one, just duplicate a existing language file and rename it. Open it and change the name on top, e.G. *de-DE*
+If you want to add a new one, just duplicate an existing language file and rename it. Open it and change the name on top, e.G. *de-DE*
 Edit the state values for your needs. When you're ready open the *state_engine.yaml* and replace the language template with yours:
 
 ```yaml
@@ -119,7 +119,7 @@ service: frontend.set_theme
 data:
   name: Rounded
 ```
-4. Go to your profile settings and select the theme *rounded* if you're not using default theme.
+4. Go to your profile settings and select the theme *rounded* if you're not using the default theme.
 
 ## Cards
 
@@ -378,7 +378,7 @@ template: pill
 show_icon: true
 icon: mdi:sofa-single
 entity: sensor.wohnzimmer_temperatur
-name: "[[[ return states['sensor.wohnzimmer_temperatur'].state + ' °C'; ]]]" # If you don't define name and label, the state of the entity including its unit will be shown.
+name: "[[[ return states['sensor.wohnzimmer_temperatur'].state + ' °C'; ]]]" # If you don't define the name and label, the state of the entity including its unit will be shown.
 label: "[[[ return states['sensor.wohnzimmer_luftfeuchtigkeit'].state + '%'; ]]]"
 ```
 
@@ -394,17 +394,17 @@ entity: weather.dwd_weather_schwerin
 ## Modifieres 
 
 ### Variables
-Here are some varaibles to modify the shown values:
+Here are some variables to modify the shown values:
 
 ```yaml
 variables:
-  round: 2 # round state value if it's nummeric
-  multiplier: 1 # multiply state if its nummeric
+  round: 2 # round state value if it's numeric
+  multiplier: 1 # multiply state if it's numeric
   show_last_changed: false # show last_changes instead of state
-  force_date: false # activate this if state is a date but treaten like a string
+  force_date: false # activate this if the state is a date but treat it like a string
   show_unit: false # show / hide unit
   max_height: false # maximize height if needed
-  on_state: heat # define a state, except 'on' which enables activation color of your card
+  on_state: heat # define a state, except 'on' which enables the activation color of your card
   active_color: #if your entity is 'on' or the state matches the on_state this background color will be set
 ```
 
@@ -426,7 +426,7 @@ name: Name
 template: base
 entity: sensor.test
 custom_fields:
-  es: Extra Information #here you can add extra information. it will be displayed in the upper right corner
+  es: Extra Information #here you can add extra information. It will be displayed in the upper right corner
 ```
 
 ### Background Color
@@ -439,8 +439,8 @@ name: Name
 template: 
 - sensor
 - background_color
-variabels:
-  background_color: red # delete this for a random color
+variables:
+  background_color: red # Delete this for a random color
 entity: sensor.test
 ```
 
@@ -451,7 +451,7 @@ entity: sensor.test
 ```yaml
 type: horizontal-stack
 cards:
-- type: 'custom:button-card' #put this at start and end to center the cards between
+- type: 'custom:button-card' # put this at the start and end to center the cards between
   color_type: blank-card
   
 - type: 'custom:button-card'

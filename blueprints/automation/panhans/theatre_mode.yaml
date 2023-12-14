@@ -4,9 +4,9 @@ blueprint:
 
     **Features**
 
-    - activates playing or paused scene depending on media player state
+    - activates playing or paused scene depending on the media player state
     
-    - stores the states of the entities of the playing scene before it gets activated and restores states after you finished the movie
+    - stores the states of the entities of the playing scene before it gets activated and restores states after you finish the movie
 
     - transition time for switching scenes
 
@@ -46,7 +46,7 @@ blueprint:
 
     reaction_time:
       name: Reaction time
-      description: Time (seconds) the player must be in state before the scenes get triggered.
+      description: Time (seconds) the player must be in the state before the scenes get triggered.
       default: 2
       selector:
         number:
