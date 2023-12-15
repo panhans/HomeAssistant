@@ -1,6 +1,6 @@
 blueprint:
   name: "Binary Sensor Notification"
-  description: 'Send a notification or trigger a custom action depending of the state switch of a binary_sensor'
+  description: 'Send a notification or trigger a custom action depending on the state switch of a binary_sensor'
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/binary_sensor_notification.yaml
   domain: automation
   input:
@@ -13,7 +13,7 @@ blueprint:
 
     from:
       name: "From"
-      description: "State whitch triggers the notification"
+      description: "State which triggers the notification"
       default: 'on'
       selector:
         select:
@@ -23,7 +23,7 @@ blueprint:
           
     to:
       name: "To"
-      description: "State whitch triggers the notification"
+      description: "State which triggers the notification"
       default: 'off'
       selector:
         select:
@@ -33,7 +33,7 @@ blueprint:
     
     debounce_duration:
       name: "Debounce duration"
-      description: "Duration time the notification won't be send again after sensor changed its state."
+      description: "Duration time the notification won't be sent again after sensor changed its state."
       default: 10
       selector:
         number:
@@ -61,7 +61,7 @@ blueprint:
       description: "Notification title"
     message:
       name: "Message"
-      description: "Message to be send"
+      description: "Message to be sent"
       
     tag:
       name: "Tag"
