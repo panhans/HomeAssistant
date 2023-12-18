@@ -29,7 +29,7 @@ blueprint:
 
     ## Additional Information
 
-    **Version**: 4.0_alpha3
+    **Version**: 4.0_alpha4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -71,8 +71,16 @@ blueprint:
           multiple: true
 
     input_scheduler_selector:
-      name: Holiday mode (optional)
-      description: If on the defined holiday scheduler is active instead of the default one.
+      name: Scheduler Selector
+      description: >
+        Define an entity to choose from your schedulers. If you only use one scheduler you can ignore this. If you use more than one scheduler you have multiple possibilities to setup your selection: <br/>
+
+        * toggle (input_boolean) or binary_sensor: If *off* first defined scheduler is active. If *on* second scheduler is activer (other schedulers have no impact).
+
+        * text (input_text), drop down (input_select) or sensor:
+          * The value has to match the friendly name of the selected scheduler partially. Example: If you provide three schedulers called *work*, *holiday/sick*, *guest* you can select the holiday scheduler while setting the selection entity to *sick* or *holiday*. This option is case insensitive.
+          * You also can go with numbers: if you want to choose the first scheduler the selector entity must return the number *1*
+
       default:
       selector:
         entity:
@@ -449,37 +457,60 @@ trigger:
       {% endif %}
 
   # S C H E D U L E R   O N / O F F
-  # TODO: revise scheduler logic
   - platform: template
     value_template: >
-      {% if is_default_scheduler_configured %}
-        {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_schedulers) %} 
-        {{ is_state(active_scheduler, 'on') }}
-      {% else %}
-        false
+      {% set trigger_state = 'on' %}
+      {% set selected_scheduler = '' %}
+
+      {% if input_schedulers | count == 0 %}
+        {% set selected_scheduler = '' %}
+      {% elif input_schedulers | count == 1 or input_scheduler_selector == none %}
+        {% set selected_scheduler = input_schedulers[0] %}
+      {% elif input_schedulers | count > 1 %}
+        {% set selected_scheduler = input_schedulers[0] %}
+        {% set selector_value = states(input_scheduler_selector) %}
+
+        {% if is_number(selector_value) %}
+          {% set selector_value = iif(selector_value | int > (input_schedulers | count), input_schedulers | count, selector_value) %}
+          {% set selector_value = iif(selector_value | int <= 0, 1, selector_value) %}
+          {% set selected_scheduler = input_schedulers[(selector_value | int) - 1] %}
+        {% elif selector_value in ['on','off'] %}
+          {% set selected_scheduler = iif(selector_value == 'off', input_schedulers[0], input_schedulers[1]) %}
+        {% else %}
+          {% set selected_scheduler = input_schedulers | expand | selectattr('attributes.friendly_name', 'search', '(?i)'+selector_value) | map(attribute='entity_id') | first %}
+        {% endif %}
+
       {% endif %}
+
+      {{ iif(selected_scheduler != '', is_state(selected_scheduler, trigger_state), false) }}
 
   - platform: template
     id: scheduler-off
     value_template: >
-      {% if is_default_scheduler_configured %}
-        {% set active_scheduler = iif(is_mode_holiday_configured and is_state(input_mode_holiday,'on'), input_scheduler_holiday, input_schedulers) %} 
-        {{ is_state(active_scheduler, 'off') }}
-      {% else %}
-        false
+      {% set trigger_state = 'off' %}
+      {% set selected_scheduler = '' %}
+
+      {% if input_schedulers | count == 0 %}
+        {% set selected_scheduler = '' %}
+      {% elif input_schedulers | count == 1 or input_scheduler_selector == none %}
+        {% set selected_scheduler = input_schedulers[0] %}
+      {% elif input_schedulers | count > 1 %}
+        {% set selected_scheduler = input_schedulers[0] %}
+        {% set selector_value = states(input_scheduler_selector) %}
+
+        {% if is_number(selector_value) %}
+          {% set selector_value = iif(selector_value | int > (input_schedulers | count), input_schedulers | count, selector_value) %}
+          {% set selector_value = iif(selector_value | int <= 0, 1, selector_value) %}
+          {% set selected_scheduler = input_schedulers[(selector_value | int) - 1] %}
+        {% elif selector_value in ['on','off'] %}
+          {% set selected_scheduler = iif(selector_value == 'off', input_schedulers[0], input_schedulers[1]) %}
+        {% else %}
+          {% set selected_scheduler = input_schedulers | expand | selectattr('attributes.friendly_name', 'search', '(?i)'+selector_value) | map(attribute='entity_id') | first %}
+        {% endif %}
+
       {% endif %}
 
-  # M O D E   -   H O L I D A Y
-  # TODO: trigger on scheduler switch
-  - platform: template
-    value_template: "{{ is_mode_holiday_configured and is_state(input_mode_holiday, 'on') }}"
-    for:
-      seconds: 2
-
-  - platform: template
-    value_template: "{{ is_mode_holiday_configured and is_state(input_mode_holiday, 'off') }}"
-    for:
-      seconds: 2
+      {{ iif(selected_scheduler != '', is_state(selected_scheduler, trigger_state), false) }}
 
   # P E R S O N  P R E S E N C E
   - platform: template
@@ -501,8 +532,6 @@ trigger:
   - platform: template
     value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count == 0 }}"
     for: !input input_windows_reaction_time
-
-
 
   # M O D E   -   W I N T E R
   - platform: template
@@ -602,11 +631,13 @@ variables:
   input_temperature_comfort: !input input_temperature_comfort
   input_temperature_comfort_static: !input input_temperature_comfort_static
   input_temperature_minimum: !input input_temperature_minimum
-  
+
   # heating scheduler
   input_schedulers: !input input_schedulers
   input_scheduler_selector: !input input_scheduler_selector
-  
+
+  input_scheduler_presence: !input input_scheduler_presence
+
   input_windows: !input input_windows
 
   input_mode_winter: !input input_mode_winter
@@ -631,38 +662,9 @@ variables:
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
-  valves_off_mode: >
-    {% set climates_off = namespace(name=[]) %} 
-
-    {% for climate in valves %}
-      {% if state_attr(climate,'hvac_modes') | regex_search('off', ignorecase=True) %}
-        {% set climates_off.name = climates_off.name + [climate] %}
-      {% endif %}
-    {% endfor %} 
-
-    {{ climates_off.name }}
-
-  valves_without_off_mode: >
-    {% set climates_not_off = namespace(name=[]) %} 
-
-    {% for climate in valves %}
-      {% if climate not in valves_off_mode %}
-        {% set climates_not_off.name = climates_not_off.name + [climate] %}
-      {% endif %}
-    {% endfor %} 
-
-    {{ climates_not_off.name }}
-
-  valves_tado: |
-    {% set climates_tado = namespace(name=[]) %}
-
-    {% for climate in valves %}
-      {% if device_attr(climate,'manufacturer') | regex_search('tado', ignorecase=True)%}
-        {% set climates_tado.name = climates_tado.name + [climate] %}
-      {% endif %}
-    {% endfor %}
-
-    {{ climates_tado.name }}
+  valves_off_mode: "{{ valves | expand | selectattr('attributes.hvac_modes','search','(?i)off') | map(attribute='entity_id') | list }}"
+  valves_without_off_mode: "{{ valves | reject('in',valves_off_mode) | list }}"
+  valves_tado: "{{ valves | select('is_device_attr', 'manufacturer', 'Tado') | list }}"
 
 ##################################################
 ########### C O N D I T I O N S ##################
@@ -710,21 +712,28 @@ action:
         {% endif %}
 
       active_scheduler: >
+        {% set selected_scheduler = none %}
+
         {% if input_schedulers | count == 0 %}
-          {{ none }}
-        {% elif input_schedulers | count == 1 %}
-          {{ input_schedulers[0] }}
-        {% else %}
-          {% if input_scheduler_selector == none %}
-            {{ input_schedulers[0] }}
-          {% elif is_number(states(input_scheduler_selector)) %}
-            {{ input_schedulers[input_scheduler_selector | int] }}
-          {% elif states(input_scheduler_selector) in ['on','off'] %}
-            {{ iif(states(input_scheduler_selector) == 'off', input_schedulers[0], input_schedulers[1]) }}
+          {% set selected_scheduler = none %}
+        {% elif input_schedulers | count == 1 or input_scheduler_selector == none %}
+          {% set selected_scheduler = input_schedulers[0] %}
+        {% elif input_schedulers | count > 1 %}
+          {% set selected_scheduler = input_schedulers[0] %}
+          {% set selector_value = states(input_scheduler_selector) %}
+
+          {% if is_number(selector_value) %}
+            {% set selector_value = iif(selector_value | int > (input_schedulers | count), input_schedulers | count, selector_value) %}
+            {% set selector_value = iif(selector_value | int <= 0, 1, selector_value) %}
+            {% set selected_scheduler = input_schedulers[(selector_value | int) - 1] %}
+          {% elif selector_value in ['on','off'] %}
+            {% set selected_scheduler = iif(selector_value == 'off', input_schedulers[0], input_schedulers[1]) %}
           {% else %}
-            {{ input_schedulers | expand | selectattr('attributes.friendly_name', 'search', '(?i)'+input_scheduler_selector) | map(attribute='entity_id') | first }}
+            {% set selected_scheduler = input_schedulers | expand | selectattr('attributes.friendly_name', 'search', '(?i)'+selector_value) | map(attribute='entity_id') | first %}
           {% endif %}
         {% endif %}
+
+        {{ selected_scheduler }}
 
       # People Configuration
       is_person_based: "{{ input_mode_guest != none or input_persons | count > 0 }}"
@@ -732,50 +741,32 @@ action:
 
       # Presence Configuration
       is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
-      is_presence_scheduler_defined: "{{ input_scheduler_selector != none }}"
+      is_presence_scheduler_defined: "{{ input_scheduler_presence != none }}"
       state_presence_sensor: "{{ is_presence_sensor_defined and is_state(input_presence_sensor, 'on') }}"
-      state_presence_scheduler: "{{ is_presence_scheduler_defined and is_state(input_scheduler_selector, 'on') }}"
+      state_presence_scheduler: "{{ is_presence_scheduler_defined and is_state(input_scheduler_presence, 'on') }}"
 
       is_presence_on: >
-        {% if is_presence_sensor_defined == false %}
-          {{ false }}
-        {% elif is_presence_scheduler_defined %}
-          {{ state_presence_scheduler and state_presence_sensor }}
-        {% elif is_person_based %}
-          {{ is_anybody_home and state_presence_sensor }}
-        {% else %}
-          {{ state_presence_sensor }}
+        {% set result = false %}
+        {% if is_presence_sensor_defined %}
+          {% set result = iif(is_presence_scheduler_defined, state_presence_scheduler and state_presence_sensor, state_presence_sensor) %}
         {% endif %}
+        {{ iif(is_person_based, result and is_anybody_home, result) }}
 
       # Scheduler Configuration
       is_scheduled_heating: "{{ active_scheduler != none }}"
       state_scheduler: "{{ is_scheduled_heating and is_state(active_scheduler,'on') }}"
 
       is_scheduled_heating_on: >
-        {% if is_scheduled_heating == false %}
-          {{ false }}
-        {% elif is_person_based %}
-          {{ state_scheduler and is_anybody_home }}
-        {% else %}
-          {{ state_scheduler }}
-        {% endif %}
+        {{ iif(is_person_based, state_scheduler and is_anybody_home, state_scheduler) }}
 
       # T R V - V A L U E S
       set_comfort: >
         {% if state_mode_party == true %}
           {{ true }}
+        {% elif is_person_based and is_presence_sensor_defined == false and is_scheduled_heating == false %}
+          {{ is_anybody_home }}
         {% else %}
-          {% if is_presence_sensor_defined and is_scheduled_heating %}
-            {{ is_presence_on or is_scheduled_heating_on }}
-          {% elif is_presence_sensor_defined and is_scheduled_heating == false %}
-            {{ is_presence_on }}
-          {% elif is_presence_sensor_defined == false and is_scheduled_heating %}
-            {{ is_scheduled_heating_on }}
-          {% elif is_person_based %}
-            {{ is_anybody_home }}
-          {% else %}
-            {{ false }}
-          {% endif %}
+          {{ is_scheduled_heating_on or is_presence_on }}
         {% endif %}
 
       mode: >
@@ -799,40 +790,24 @@ action:
   - service: system_log.write
     data:
       message: >
-        {{" \n "}}
-        - state_mode_party: {{ state_mode_party }} {{" \n "}}
-        - state_mode_guest: {{state_mode_guest }} {{" \n "}}
-        - state_mode_winter: {{ state_mode_winter }} {{" \n "}}
-        - state_force_max_temperature: {{ state_force_max_temperature }} {{" \n "}}
-        - state_window: {{ state_window }} {{" \n "}}
-        - state_presence_sensor: {{ state_presence_sensor }} {{" \n "}}
-        - state_temperature_comfort: {{ state_temperature_comfort }} {{" \n "}}
-        - mode: {{ mode }} {{" \n "}}
+        >>> {{" \n "}}
         - active_scheduler: {{ active_scheduler }} {{" \n "}}
-        - is_anybody_home: {{ is_anybody_home }} {{" \n "}}
-        - is_scheduler_on: {{ is_scheduler_on }} {{" \n "}}
-        - is_presence_sensor_defined: {{ is_presence_sensor_defined }} {{" \n "}}
-        - is_presence_scheduler_defined: {{ is_presence_scheduler_defined }} {{" \n "}}
-        - is_presence: {{ is_presence }} {{" \n "}}
+        - mode: {{ mode }} {{" \n "}}
         - temperature: {{ temperature }} {{" \n "}}
-        - valves: {{ valves }} {{" \n "}}
-        - valves_off_mode: {{ valves_off_mode }} {{" \n "}}
-        - valves_without_off_mode: {{ valves_without_off_mode }} {{" \n "}}
-        - valves_tado: {{ valves_tado }} {{" \n "}}
-        - trvs_temp_not_set: {{ trvs_temp_not_set }} {{" \n "}}
-        - trvs_mode_not_set: {{ trvs_mode_not_set }} {{" \n "}}
-        - trvs_mode_and_temp_not_set: {{ trvs_mode_and_temp_not_set }} {{" \n "}}
-        - trigger.id: {{ trigger.id }} {{" \n "}}
-        - is_presence_heating: {{ is_presence_sensor_defined }} {{" \n "}}
-        - is_presence_heating_with_scheduler: {{ is_presence_heating_with_scheduler }} {{" \n "}}
-        - is_presence_heating_without_persons: {{ is_presence_heating_without_persons }} {{" \n "}}
-        - is_presence_heating_with_persons: {{ is_presence_heating_with_persons }} {{" \n "}}
-        - is_no_presence_heating_or_presence_with_scheduler: {{ is_no_presence_heating_or_presence_with_scheduler }} {{" \n "}}
-        - is_scheduled_heating: {{ is_scheduled_heating }} {{" \n "}}
-        - is_scheduled_heating_without_persons: {{ is_scheduled_heating_without_persons }} {{" \n "}}
-        - is_scheduled_heating_with_persons: {{ is_scheduled_heating_with_persons }} {{" \n "}}
-        - no_person_is_defined: {{ no_person_is_defined }} {{" \n "}}
-        - input_persons_count: {{ input_persons | count == 0 }}
+        - set_comfort: {{ set_comfort }} {{" \n "}}
+        - is_person_based: {{ is_person_based }} {{ " \n " }}
+        - is_anybody_home: {{ is_anybody_home }} {{ " \n " }}
+        - is_presence_sensor_defined: {{ is_presence_sensor_defined }} {{ " \n " }}
+        - is_presence_scheduler_defined {{ is_presence_scheduler_defined }} {{ " \n " }}
+        - state_presence_sensor: {{ state_presence_sensor }} {{ " \n " }}
+        - state_presence_scheduler: {{ state_presence_scheduler }} {{ " \n " }}
+        - is_presence_on: {{ is_presence_on }} {{ " \n " }}
+        - is_scheduled_heating: {{ is_scheduled_heating }} {{ " \n " }}
+        - state_scheduler: {{ state_scheduler }} {{ " \n " }}
+        - is_scheduled_heating_on: {{ is_scheduled_heating_on }} {{ " \n " }}
+        - valves_off_mode: {{ valves_off_mode }} {{ " \n " }}
+        - valves_without_off_mode: {{ valves_without_off_mode }} {{ " \n " }}
+        - valves_tado: {{ valves_tado }}
       level: debug
       logger: blueprints.panhans.heatingcontrol
 
