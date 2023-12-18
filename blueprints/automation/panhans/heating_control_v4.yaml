@@ -363,6 +363,13 @@ blueprint:
       selector:
         boolean: {}
 
+    input_not_heat_but_auto:
+      name: Not Heat But Auto
+      description: If mode *Auto* is the common mode of your valves for default heating instead of mode *Heat*.
+      default: false
+      selector:
+        boolean: {}
+
     input_service_call_delay:
       name: Service Call Delay
       description:
@@ -659,6 +666,7 @@ variables:
   input_time_based_comfort_change: !input input_time_based_comfort_change
   input_service_call_delay: !input input_service_call_delay
   input_calibration_generic: !input input_calibration_generic
+  input_not_heat_but_auto: !input input_not_heat_but_auto
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
@@ -774,7 +782,7 @@ action:
           {% if input_off_instead_min == true and set_comfort == false %}
             off
           {% else %}
-            heat
+            {{ iif(input_not_heat_but_auto,'auto','heat') }}
           {% endif %}
         {% else %}
           off
