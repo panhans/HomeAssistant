@@ -957,8 +957,10 @@ action:
                             {% set new_calibration_value = min_calibration_value %}
                           {% endif %}
 
+                          {% set round_size = iif('.' in (step | string) and input_calibration_rounding_full_values == false, (step | string).split('.')[1] | length, 0) %}
+
                           {% set offset = (new_calibration_value | float(0) / step) | round(0) * step %}
-                          {{ iif(input_calibration_rounding_full_values == true, float(offset) | round(), offset) }}
+                          {{ float(offset) | round(round_size) }}
 
                     - service: system_log.write
                       data:
