@@ -23,7 +23,7 @@ blueprint:
     If you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.3
+    **Version**: 3.4
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
@@ -311,10 +311,6 @@ action:
             color: "{{ notification_color_hex }}"
             vibrationPattern: !input "vibration_pattern"
             ledColor: "{{led_color_hex}}"
-            push:
-              sound:
-                name: "default"
-                critical: 1
 
   - if:
       - condition: template
@@ -341,10 +337,6 @@ action:
             color: "{{ notification_color_hex }}"
             vibrationPattern: !input "vibration_pattern"
             ledColor: "{{led_color_hex}}"
-            push:
-              sound:
-                name: "default"
-                critical: 1
 
   - if:
       - condition: template
@@ -353,7 +345,11 @@ action:
         value_template: "{{ custom_action_leaving is defined }}"
       - condition: and
         conditions: !input custom_conditions_leaving
-    then: !input "custom_action_leaving"
+    then: 
+      - variables:
+          zone: "{{ zone_from }}"
+      - choose: []
+        default: !input "custom_action_leaving"
 
   - if:
       - condition: template
@@ -362,6 +358,10 @@ action:
         value_template: "{{ custom_action_arriving is defined }}"
       - condition: and
         conditions: !input custom_conditions_arriving
-    then: !input "custom_action_arriving"
+    then: 
+      - variables:
+          zone: "{{ zone_to }}"
+      - choose: []
+        default: !input "custom_action_arriving"
 
 mode: parallel
