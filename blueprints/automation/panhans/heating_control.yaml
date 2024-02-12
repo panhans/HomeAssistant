@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0
+    **Version**: 4.0.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -2180,9 +2180,8 @@ action:
                   value_template: "{{ states(thermostat) != mode }}"
               then:
                 - service: climate.set_hvac_mode
-                  target:
-                    entity_id: "{{ thermostat }}"
                   data:
+                    entity_id: "{{ thermostat }}"
                     hvac_mode: "{{ mode }}"
 
                 - delay:
