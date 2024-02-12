@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.1
+    **Version**: 4.0.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -2177,7 +2177,7 @@ action:
 
             - if:
                 - condition: template
-                  value_template: "{{ states(thermostat) != mode }}"
+                  value_template: "{{ states(thermostat) | lower != mode | lower  }}"
               then:
                 - service: climate.set_hvac_mode
                   data:
