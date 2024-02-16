@@ -1536,11 +1536,11 @@ variables:
 
   is_temperature_change: >
     {{
-      is_automation_change or is_ui_change or is_physical_change
+      is_ui_change or is_physical_change
     }}
 
   temperature_change_temperature: >
-    {% if is_automation_change or is_ui_change or is_physical_change %}
+    {% if is_ui_change or is_physical_change %}
       {{ trigger.to_state.attributes.temperature }}
     {% else %}
       {{ none }}
@@ -1954,7 +1954,7 @@ condition:
       - condition: template
         value_template: "{{ is_reset }}"
       - condition: template
-        value_template: "{{ is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change_entity }}"
+        value_template: "{{ is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change }}"
 
 ##################################################
 ################## A C T I O N ###################
