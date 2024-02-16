@@ -1,5 +1,5 @@
 blueprint:
-  name: Advanced Heating Control DEV
+  name: Advanced Heating Control ~~dev~~
   author: panhans
   homeassistant:
     min_version: "2024.2.0"
@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.3_dev
+    **Version**: 4.0.3_dev_2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1954,7 +1954,7 @@ condition:
       - condition: template
         value_template: "{{ is_reset }}"
       - condition: template
-        value_template: "{{ is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change }}"
+        value_template: "{{ is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change_entity }}"
 
 ##################################################
 ################## A C T I O N ###################
@@ -2042,93 +2042,86 @@ action:
             target:
               entity_id: !input input_temperature_comfort
 
-      # MANUAL CHANGE / TIMER START
-      - conditions:
-          - condition: template
-            value_template: "{{ is_manual_timer_start or 
-                                is_refresh_comfort_entity or 
-                                is_refresh_eco_entity or
-                                is_temperature_change }}"
-        sequence:
-          # CHANGE COMFORT
-          - if:
-              - condition: template
-                value_template: "{{ (is_temperature_change and set_comfort) or is_refresh_comfort_entity }}"
-            then:
-              - variables:
-                  max_comfort_temp: "{{ state_attr(input_temperature_comfort,'max') | float }}"
-                  min_comfort_temp: "{{ state_attr(input_temperature_comfort,'min') | float }}"
-
-                  new_manual_temp: >
-                    {% if is_refresh_comfort_entity %}
-                      {{ new_comfort_temperature }}
-                    {% else %}
-                      {{ temperature_change_temperature }}
-                    {% endif %}
-                  real_manual_temp: >
-                    {% if (new_manual_temp > max_comfort_temp) %}
-                      {{ max_comfort_temp }}
-                    {% elif (new_manual_temp < min_comfort_temp ) %}
-                      {{ min_comfort_temp }}
-                    {% else %}
-                      {{ new_manual_temp }}
-                    {% endif %}
-
-              - condition: template
-                value_template: "{{  real_manual_temp != state_temperature_comfort }}"
-
-              - service: input_number.set_value
-                data:
-                  value: "{{ real_manual_temp }}"
-                target:
-                  entity_id: !input input_temperature_comfort
-          
-          # CHANGE ECO
-          - if:
-              - condition: template
-                value_template: "{{ (is_temperature_change and set_comfort == false) or is_refresh_eco_entity }}"
-            then:
-              - variables:
-                  max_eco_temp: "{{ state_attr(input_temperature_minimum,'max') | float }}"
-                  min_eco_temp: "{{ state_attr(input_temperature_minimum,'min') | float }}"
-                  
-                  new_manual_temp: >
-                    {% if is_refresh_eco_entity %}
-                      {{ new_eco_temperature }}
-                    {% else %}
-                      {{ temperature_change_temperature }}
-                    {% endif %}
-                  real_manual_temp: >
-                    {% if (new_manual_temp > max_eco_temp) %}
-                      {{ max_eco_temp }}
-                    {% elif (new_manual_temp < min_eco_temp ) %}
-                      {{ min_eco_temp }}
-                    {% else %}
-                      {{ new_manual_temp }}
-                    {% endif %}
-
-              - condition: template
-                value_template: "{{  real_manual_temp != state_temperature_comfort }}"
-
-              - service: input_number.set_value
-                data:
-                  value: "{{ real_manual_temp }}"
-                target:
-                  entity_id: !input input_temperature_minimum
-
-          - if:
-              - condition: template
-                value_template: "{{ is_manual_timer_start }}"
-            then:
-              - service: timer.start
-                target:
-                  entity_id: "{{ input_mode_party }}"
-              - delay:
-                  hours: "{{ input_service_call_delay.hours }}"
-                  minutes: "{{ input_service_call_delay.minutes }}"
-                  seconds: "{{ input_service_call_delay.seconds }}"
-
     default:
+      # UPDATE TEMPERATURE ENTITIES
+      - if: # COMFORT ENTITY
+          - condition: template
+            value_template: "{{ input_temperature_comfort != none and 
+                                ((is_temperature_change and set_comfort) or is_refresh_comfort_entity) }}"
+        then:
+          - variables:
+              max_comfort_temp: "{{ state_attr(input_temperature_comfort,'max') | float }}"
+              min_comfort_temp: "{{ state_attr(input_temperature_comfort,'min') | float }}"
+
+              new_manual_temp: >
+                {% if is_refresh_comfort_entity %}
+                  {{ new_comfort_temperature }}
+                {% else %}
+                  {{ temperature_change_temperature }}
+                {% endif %}
+              real_manual_temp: >
+                {% if (new_manual_temp > max_comfort_temp) %}
+                  {{ max_comfort_temp }}
+                {% elif (new_manual_temp < min_comfort_temp ) %}
+                  {{ min_comfort_temp }}
+                {% else %}
+                  {{ new_manual_temp }}
+                {% endif %}
+
+          - condition: template
+            value_template: "{{  real_manual_temp != state_temperature_comfort }}"
+
+          - service: input_number.set_value
+            data:
+              value: "{{ real_manual_temp }}"
+            target:
+              entity_id: !input input_temperature_comfort
+
+      - if: #ECO ENTITY
+          - condition: template
+            value_template: "{{ input_temperature_minimum != none and
+                                ((is_temperature_change and set_comfort == false) or is_refresh_eco_entity) }}"
+        then:
+          - variables:
+              max_eco_temp: "{{ state_attr(input_temperature_minimum,'max') | float }}"
+              min_eco_temp: "{{ state_attr(input_temperature_minimum,'min') | float }}"
+              
+              new_manual_temp: >
+                {% if is_refresh_eco_entity %}
+                  {{ new_eco_temperature }}
+                {% else %}
+                  {{ temperature_change_temperature }}
+                {% endif %}
+              real_manual_temp: >
+                {% if (new_manual_temp > max_eco_temp) %}
+                  {{ max_eco_temp }}
+                {% elif (new_manual_temp < min_eco_temp ) %}
+                  {{ min_eco_temp }}
+                {% else %}
+                  {{ new_manual_temp }}
+                {% endif %}
+
+          - condition: template
+            value_template: "{{  real_manual_temp != state_temperature_comfort }}"
+
+          - service: input_number.set_value
+            data:
+              value: "{{ real_manual_temp }}"
+            target:
+              entity_id: !input input_temperature_minimum
+
+      - if: # MANUAL TIMER START
+          - condition: template
+            value_template: "{{ is_manual_timer_start }}"
+        then:
+          - service: timer.start
+            target:
+              entity_id: "{{ input_mode_party }}"
+          - delay:
+              hours: "{{ input_service_call_delay.hours }}"
+              minutes: "{{ input_service_call_delay.minutes }}"
+              seconds: "{{ input_service_call_delay.seconds }}"
+
       # NUMBER CALIBRATION
       - repeat:
           count: "{{ calibration_number | count | int }}"
