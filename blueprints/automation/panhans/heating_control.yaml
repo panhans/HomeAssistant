@@ -794,7 +794,7 @@ blueprint:
         > Start your party timer when you change the temperature via your thermostats.
 
 
-        **HINT**: This feature doesn't work properly since there is a [bug](https://github.com/home-assistant/core/issues/68047) in home assistant.
+        **HINT**: This features may won't work properly since there is a [bug](https://github.com/home-assistant/core/issues/99914) in home assistant.
 
         "
 
