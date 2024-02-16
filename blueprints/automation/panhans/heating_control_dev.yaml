@@ -601,6 +601,9 @@ blueprint:
 
         > Enable this if you thermostat calibration entity accept floating values but only save them as integers.
 
+
+        **NOTE:** Don't set temperature by your climate entities when using generic calibration but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
+
         "
 
       default: []
@@ -690,6 +693,8 @@ blueprint:
         Define a range when your real target temperature shall be set. E.g. you target temperature is 20°C and your room temperature is 19.5°C.
         If your range is set to 0.5°C the real target temperature (20°C) will be set when room temperature is between 19.5°C and 20.5°C.
         If the room temperature is above or lower that range it gets some offset in order to force your thermostat to react. (see Aggressive Mode - Offset)
+
+        **NOTE:** Don't set temperature by your climate entities when using aggressive mode but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
       default: 0
       selector:
         number:
