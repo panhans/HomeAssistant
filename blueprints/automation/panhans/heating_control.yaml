@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.2
+    **Version**: 4.0.3_dev
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1497,14 +1497,29 @@ variables:
 
     {{ iif(is_auto_means_heat and heating_mode == 'heat', 'auto', heating_mode) }}
 
-  is_manual_change: >
+  is_physical_change: >
     {{
       trigger.id == 'temperature_change_valve_target' and
-      input_temperature_comfort != none and
       trigger.to_state.context.id != none and
       trigger.to_state.context.parent_id == none and
       trigger.to_state.context.user_id == none and
       is_physical_temperature_change == true
+    }}
+
+  is_automation_change: >
+    {{
+      trigger.id == 'temperature_change_valve_target' and
+      trigger.to_state.context.id != none and
+      trigger.to_state.context.parent_id != none and
+      trigger.to_state.context.user_id == none
+    }}
+
+  is_ui_change: >
+    {{
+      trigger.id == 'temperature_change_valve_target' and
+      trigger.to_state.context.id != none and
+      trigger.to_state.context.parent_id == none and
+      trigger.to_state.context.user_id != none
     }}
 
   is_manual_timer_start: >
@@ -1518,6 +1533,18 @@ variables:
       input_mode_party.split('.')[0] == 'timer' and
       state_mode_party == false
     }}
+
+  is_temperature_change: >
+    {{
+      is_automation_change or is_ui_change or is_physical_change
+    }}
+
+  temperature_change_temperature: >
+    {% if is_automation_change or is_ui_change or is_physical_change %}
+      {{ trigger.to_state.attributes.temperature }}
+    {% else %}
+      {{ none }}
+    {% endif %}
 
   is_reset: >
     {{
@@ -1662,7 +1689,11 @@ variables:
     {% endif %}
 
   temperature: >
-    {{ iif(set_comfort, state_temperature_comfort, state_temperature_min) }}
+    {% if is_temperature_change %}
+      {{ temperature_change_temperature }}
+    {% else %}
+      {{ iif(set_comfort, state_temperature_comfort, state_temperature_min) }}
+    {% endif %}
 
   changes: >
     {% set n = namespace(dict=[]) %}
@@ -1919,11 +1950,11 @@ condition:
       - condition: template
         value_template: "{{ changes | count > 0 }}"
       - condition: template
-        value_template: "{{ is_manual_change or is_manual_timer_start }}"
+        value_template: "{{ is_manual_timer_start }}"
       - condition: template
         value_template: "{{ is_reset }}"
       - condition: template
-        value_template: "{{ is_refresh_comfort_entity or is_refresh_eco_entity }}"
+        value_template: "{{ is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change }}"
 
 ##################################################
 ################## A C T I O N ###################
@@ -1945,7 +1976,7 @@ action:
         TRIGGER {{" \n "}}
         is_calibration: {{ calibration_number | count > 0 or calibration_tado | count > 0 }} {{" \n "}}
         is_changes: {{ changes | count > 0 }} {{" \n "}}
-        is_manual: {{ is_manual_change or is_manual_timer_start }} {{" \n "}}
+        is_manual: {{ is_physical_change or is_manual_timer_start }} {{" \n "}}
         is_reset: {{ is_reset }} {{" \n "}}
         is_refresh_comfort_entity: {{ is_refresh_comfort_entity or is_refresh_eco_entity }} {{" \n "}}
         {{" \n "}}
@@ -1982,7 +2013,7 @@ action:
         set_comfort: {{ set_comfort }} {{ " \n " }}
         mode: {{ mode }} {{ " \n " }}
         temperature: {{ temperature }} {{ " \n " }}
-        is_manual_change: {{ is_manual_change }} {{ " \n " }}
+        is_physical_change: {{ is_physical_change }} {{ " \n " }}
         is_manual_timer_start: {{ is_manual_timer_start }} {{ " \n " }}
         is_calibration: {{ is_calibration }} {{ " \n " }}
         changes: {{ changes }} {{ " \n " }}
@@ -2014,12 +2045,15 @@ action:
       # MANUAL CHANGE / TIMER START
       - conditions:
           - condition: template
-            value_template: "{{ is_manual_change or is_manual_timer_start or is_refresh_comfort_entity or is_refresh_eco_entity }}"
+            value_template: "{{ is_manual_timer_start or 
+                                is_refresh_comfort_entity or 
+                                is_refresh_eco_entity or
+                                is_temperature_change }}"
         sequence:
           # CHANGE COMFORT
           - if:
               - condition: template
-                value_template: "{{ (is_manual_change and set_comfort) or is_refresh_comfort_entity }}"
+                value_template: "{{ (is_temperature_change and set_comfort) or is_refresh_comfort_entity }}"
             then:
               - variables:
                   max_comfort_temp: "{{ state_attr(input_temperature_comfort,'max') | float }}"
@@ -2029,7 +2063,7 @@ action:
                     {% if is_refresh_comfort_entity %}
                       {{ new_comfort_temperature }}
                     {% else %}
-                      {{ trigger.to_state.attributes.temperature }}
+                      {{ temperature_change_temperature }}
                     {% endif %}
                   real_manual_temp: >
                     {% if (new_manual_temp > max_comfort_temp) %}
@@ -2052,7 +2086,7 @@ action:
           # CHANGE ECO
           - if:
               - condition: template
-                value_template: "{{ (is_manual_change and set_comfort == false) or is_refresh_eco_entity }}"
+                value_template: "{{ (is_temperature_change and set_comfort == false) or is_refresh_eco_entity }}"
             then:
               - variables:
                   max_eco_temp: "{{ state_attr(input_temperature_minimum,'max') | float }}"
@@ -2062,7 +2096,7 @@ action:
                     {% if is_refresh_eco_entity %}
                       {{ new_eco_temperature }}
                     {% else %}
-                      {{ trigger.to_state.attributes.temperature }}
+                      {{ temperature_change_temperature }}
                     {% endif %}
                   real_manual_temp: >
                     {% if (new_manual_temp > max_eco_temp) %}
