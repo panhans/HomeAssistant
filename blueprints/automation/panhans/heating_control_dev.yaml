@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.3_dev_3
+    **Version**: 4.0.3_dev_4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1286,6 +1286,8 @@ variables:
   input_scheduler_presence: !input input_scheduler_presence
 
   input_windows: !input input_windows
+  input_windows_reaction_time_open: !input input_windows_reaction_time_open
+  input_windows_reaction_time_close: !input input_windows_reaction_time_close
 
   input_mode_winter: !input input_mode_winter
   input_mode_outside_temperature: !input input_mode_outside_temperature
@@ -1351,7 +1353,45 @@ variables:
     {% endif %}
 
   state_force_max_temperature: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'on') }}"
-  state_window: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
+  state_window: >
+    {% set on_time_delta = now() - timedelta(**input_windows_reaction_time_open) %}
+    {% set off_time_delta = now() - timedelta(**input_windows_reaction_time_close) %}
+
+    {% set result = namespace(r=false) %}
+
+    {% set on_windows = expand(input_windows) | selectattr('state', 'eq', 'on') | map(attribute='entity_id') | list %}
+    {% for window in on_windows %}
+      {% set last_changed = states.binary_sensor[window.split('.')[1]].last_changed %}
+      {% set in_delta = last_changed <= on_time_delta %}
+      {% if result.r == false %}
+        {% set result.r = in_delta %}
+      {% endif %}  
+    {% endfor %}
+
+    {% set thermostats_off = namespace(r=false) %}
+    {% for thermostat in input_trvs %}
+      {% set min_temp = state_attr(thermostat,'min_temp') %}
+      {% set current_temp = state_attr(thermostat,'temperature') %}
+      {% if current_temp == min_temp %}
+        {% set thermostats_off.r = true %}
+      {% endif %}
+    {% endfor %}
+
+    {% set is_thermostats_off = (expand(input_trvs) | selectattr('state','eq','off') | map(attribute='entity_id') | list | count > 0)
+                                or thermostats_off.r %}
+
+    {% if is_thermostats_off %}
+      {% set off_windows =  expand(input_windows) | selectattr('state', 'eq', 'off') | map(attribute='entity_id') | list %}
+      {% for window in off_windows %}
+        {% set last_changed = states.binary_sensor[window.split('.')[1]].last_changed %}
+        {% set in_delta = last_changed >= off_time_delta %}
+        {% if result.r == false %}
+          {% set result.r = in_delta %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {{ result.r }}
 
   active_scheduler: >
     {% set selected_scheduler = none %}
