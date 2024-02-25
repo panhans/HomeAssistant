@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.3_dev_4
+    **Version**: 4.0.3_dev_5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1297,7 +1297,11 @@ variables:
   input_mode_party: !input input_mode_party
   input_mode_guest: !input input_mode_guest
   input_force_max_temperature: !input input_force_max_temperature
+
   input_persons: !input input_persons
+  input_people_entering_home_duration: !input input_people_entering_home_duration
+  input_people_leaving_home_duration: !input input_people_leaving_home_duration
+
   input_presence_sensor: !input input_presence_sensor
   input_presence_reaction_off_time: !input input_presence_reaction_off_time
   input_presence_reaction_on_time: !input input_presence_reaction_on_time
@@ -1417,9 +1421,52 @@ variables:
 
     {{ selected_scheduler }}
 
+  up_time_sensor: "{{ integration_entities('uptime') | first | default(none) }}"
   # People Configuration
   is_person_based: "{{ input_mode_guest != none or input_persons | count > 0 }}"
-  is_anybody_home: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count > 0 or state_mode_guest }}"
+  is_anybody_home: >
+    {% set on_time_delta = now() - timedelta(**input_people_entering_home_duration) %}
+    {% set off_time_delta = now() - timedelta(**input_people_leaving_home_duration) %}
+
+    {% set uptime = now() %}
+
+    {% if up_time_sensor != none %}
+      {% set uptime = states(up_time_sensor) | as_datetime %}
+    {% endif %}
+
+    {% set uptime_on = uptime + timedelta(**input_people_entering_home_duration) %}
+    {% set uptime_off = uptime + timedelta(**input_people_leaving_home_duration) %}
+
+    {% if (uptime_on > on_time_delta or uptime_off > off_time_delta ) %}
+
+      {{ expand(input_persons) | selectattr('state', 'eq', 'home') | map(attribute='entity_id') | list | count > 0 }}
+
+    {% else %}
+
+      {% set result = namespace(r=false) %}
+
+      {% set persons_home = expand(input_persons) | selectattr('state', 'eq', 'home') | map(attribute='entity_id') | list %}
+      {% for person in persons_home %}
+        {% set last_changed = states.person[person.split('.')[1]].last_changed %}
+        {% set in_delta = last_changed <= on_time_delta %}
+        {% if result.r == false %}
+          {% set result.r = in_delta %}
+        {% endif %}  
+      {% endfor %}
+
+      {% set persons_not_home = expand(input_persons) | rejectattr('state', 'eq', 'home') | map(attribute='entity_id') | list %}
+
+      {% for person in persons_not_home %}
+        {% set last_changed = states.person[person.split('.')[1]].last_changed %}
+        {% set in_delta = last_changed >= off_time_delta %}
+        {% if result.r == false %}
+          {% set result.r = in_delta %}
+        {% endif %}
+      {% endfor %}
+
+      {{ result.r or state_mode_guest }}
+
+    {% endif %}
 
   # Presence Configuration
   is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
@@ -1822,7 +1869,7 @@ variables:
 
   is_metric: "{{ input_temperature_sensor == none or (input_temperature_sensor != none and state_attr(input_temperature_sensor,VAR_UNIT_OF_MEASUREMENT) == '°C') }}"
 
-  rounding: "{{ iif(is_rounded_values, 0, 2)  | float }}"
+  rounding: "{{ iif(is_rounded_values, 0, 2) | int }}"
 
   # TADO
   valves_tado: "{{ valves | select('is_device_attr', 'manufacturer', 'Tado') | list }}"
@@ -1832,12 +1879,12 @@ variables:
     {% if is_calibration and is_generic_calibration == false and entry_calibration %}
       {% for valve in valves_tado %}
 
-        {% set offset_old = state_attr(valve, iif(is_metric, 'offset_celsius', 'offset_fahrenheit')) | float %}
+        {% set offset_old = state_attr(valve, iif(is_metric, 'offset_celsius', 'offset_fahrenheit')) | float(0) %}
         {% set local_temperature = state_attr(valve, 'current_temperature') | float %}
         {% set calibration_sensor_temperature = states(input_temperature_sensor) %}
 
         {% set offset = float(calibration_sensor_temperature) - float(local_temperature) %}
-        {% set offset_new = ( float(offset) + (offset_old | float(0)) ) | round(rounding) %}
+        {% set offset_new = (float(offset) + float(offset_old)) | round(rounding | int) %}
 
         {% if (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) %}
           {% set n.dict = n.dict + [(valve, [{'value': offset_new}])] %}
@@ -2012,6 +2059,29 @@ action:
     then:
       - delay:
           seconds: 10
+
+  - if:
+    - condition: template
+      value_template: "{{ up_time_sensor == none }}"
+    then:
+      - service: system_log.write
+        data:
+          level: warning
+          logger: blueprints.panhans.heatingcontrol
+          message: AHC - To make Advance Heating Control work properly just setup the Uptime integration. 
+
+  - if:
+    - condition: template
+      value_template: "{{ (is_generic_calibration or (input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0)) 
+                          and is_physical_change }}"
+    then:
+      - service: system_log.write
+        data:
+          level: warning
+          logger: blueprints.panhans.heatingcontrol
+          message: >
+            AHC - You've enabled generic calibration / aggressive mode in combination with the physical change feature. 
+            Unwanted side effects may occur with this configuration. This combination is therefore not recommended.
 
   - service: system_log.write
     data:
