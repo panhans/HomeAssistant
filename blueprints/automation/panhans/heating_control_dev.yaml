@@ -1,22 +1,22 @@
 blueprint:
-  name: Advanced Heating Control ~~dev~~
+  name: Advanced Heating Control
   author: panhans
   homeassistant:
     min_version: "2024.2.0"
   description: "
 
-    
+
 
     🔥 heating based on
 
 
     > 👥 people presence
 
-      🗓️ multiple schedulers
+    🗓️ multiple schedulers
 
-      🚶 presence sensor
+    🚶 presence sensor
 
-      ↔️ proximity aka geo fencing
+    ↔️ proximity aka geo fencing
 
 
     ❄ frost protection
@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.3_dev_5
+    **Version**: 4.0.4_dev1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -149,36 +149,36 @@ blueprint:
         <br/>
 
         > 🕔 **time**
-        
+
         > Timestamp when the adjustment should kick in. (required)
 
 
         > 📆 **days**
-        
+
         > Select days where this setting shall be enabled.
-        
+
         > ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
 
         > 🗓️ **scheduler**
-        
+
         > Only enable this entry if this string is part of the name of your active scheduler.
 
 
         > 🛋️ **comfort**
-        
+
         > Adjust comfort temperature
 
 
         > 🌱 **eco**
-       
+
         > Adjust eco temperature
 
 
         > 🧭 **calibration**
-        
+
         > Toggle calibration 
-        
+
         > on/off
 
 
@@ -751,7 +751,7 @@ blueprint:
 
         > Turn off your thermostats instead of lower the temperature to eco temperature
 
-        > ### 🌱 Eco Temperature Instead Of *OFF*
+        > ### ⬇️ Min Temperature Instead Of *OFF*
 
         > Lower the temperature instead of turning them *OFF*, e.g. during airing
 
@@ -773,7 +773,7 @@ blueprint:
               value: reset_temperature
             - label: "🛑 Off Instead Of Eco"
               value: off_instead_min
-            - label: "🌱 Eco Instead Of Off"
+            - label: "⬇️ Min Instead Of Off"
               value: not_off_but_min
             - label: "🅰️ Auto Means Heat"
               value: auto_means_heat
@@ -1490,34 +1490,34 @@ variables:
 
   # Proximity
   is_somebody_on_way_home_state: >
-      {% set proximity_entities = device_entities(input_proximity) %}
+    {% set proximity_entities = device_entities(input_proximity) %}
 
-      {% set is_arrived = proximity_entities  | expand 
-                                                | selectattr('attributes.device_class', 'eq', 'enum') 
-                                                | map(attribute='entity_id') | select('is_state','arrived') 
-                                                | list | count > 0 %}
-
-      {% set entities_towards = proximity_entities  | expand 
+    {% set is_arrived = proximity_entities  | expand 
                                               | selectattr('attributes.device_class', 'eq', 'enum') 
-                                              | map(attribute='entity_id') | select('is_state','towards') 
-                                              | list %}
+                                              | map(attribute='entity_id') | select('is_state','arrived') 
+                                              | list | count > 0 %}
 
-      {% set entities_distances = proximity_entities  | expand 
-                                              | selectattr('attributes.device_class', 'eq', 'distance')
-                                              | map(attribute='entity_id')
-                                              | list %}
+    {% set entities_towards = proximity_entities  | expand 
+                                            | selectattr('attributes.device_class', 'eq', 'enum') 
+                                            | map(attribute='entity_id') | select('is_state','towards') 
+                                            | list %}
 
-      {% set result = namespace(is_towards=false) %}
-      {% for t in entities_towards %}
-        {% set name = t.split('_')[:-1] | join('_') %}
-        {% set entities_distances_filtered = entities_distances | expand | selectattr('entity_id','search',name) | map(attribute='entity_id') | list %}
-        {% if result.is_towards == false and entities_distances_filtered | count > 0 %}
-          {% set result.is_towards = states(entities_distances_filtered | first) | int <= input_proximity_distance | int %}
-        {% endif %}
-      {% endfor %}
-      {% set is_towards = result.is_towards %}
+    {% set entities_distances = proximity_entities  | expand 
+                                            | selectattr('attributes.device_class', 'eq', 'distance')
+                                            | map(attribute='entity_id')
+                                            | list %}
 
-      {{ (is_scheduled_heating == false and is_presence_sensor_defined == false and is_arrived == true) or is_towards == true}}
+    {% set result = namespace(is_towards=false) %}
+    {% for t in entities_towards %}
+      {% set name = t.split('_')[:-1] | join('_') %}
+      {% set entities_distances_filtered = entities_distances | expand | selectattr('entity_id','search',name) | map(attribute='entity_id') | list %}
+      {% if result.is_towards == false and entities_distances_filtered | count > 0 %}
+        {% set result.is_towards = states(entities_distances_filtered | first) | int <= input_proximity_distance | int %}
+      {% endif %}
+    {% endfor %}
+    {% set is_towards = result.is_towards %}
+
+    {{ (is_scheduled_heating == false and is_presence_sensor_defined == false and is_arrived == true) or is_towards == true}}
 
   is_somebody_on_way_home: >
     {% if is_somebody_on_way_home_state == false %}
@@ -1800,9 +1800,9 @@ variables:
       {% set valve_mode = iif(mode == 'off' and (valve in valves_without_off_mode or is_not_off_but_min), 'heat', mode) %}
       {% set valve_temp = temperature %}
       {% set valve_temp = iif(is_not_off_but_min and mode == 'off', min_temp, temperature) %}
-      {% set valve_temp = iif(state_force_max_temperature and mode != 'off', max_temp, temperature) %}
+      {% set valve_temp = iif(state_force_max_temperature and mode != 'off', max_temp, valve_temp) %}
 
-      {% if valve_mode != 'off' %}
+      {% if mode != 'off' %}
 
         {% if input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0 %}
           {% set temp_diff = valve_temp - current_valve_temp %}
@@ -1843,13 +1843,6 @@ variables:
           {% endif %}
         {% endif %}
 
-      {% endif %}
-
-      {% if state_window == true %}
-
-        {% set valve_temp = iif(mode == 'off' and valve in valves_without_off_mode, min_temp, valve_temp) %}
-        {% set valve_mode = iif(mode == 'off' and valve in valves_without_off_mode, 'heat', 'off') %}
-      
       {% endif %}
 
       {% if current_valve_mode != valve_mode or 
@@ -2055,25 +2048,26 @@ condition:
 action:
   - if:
       - condition: template
-        value_template: "{{ trigger.id in ['hastart','reload'] }}"
+        value_template: "{{ trigger.id in ['hastart'] }}"
     then:
       - delay:
           seconds: 10
 
   - if:
-    - condition: template
-      value_template: "{{ up_time_sensor == none }}"
+      - condition: template
+        value_template: "{{ up_time_sensor == none }}"
     then:
       - service: system_log.write
         data:
           level: warning
           logger: blueprints.panhans.heatingcontrol
-          message: AHC - To make Advance Heating Control work properly just setup the Uptime integration. 
+          message: AHC - To make Advance Heating Control work properly just setup the Uptime integration.
 
   - if:
-    - condition: template
-      value_template: "{{ (is_generic_calibration or (input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0)) 
-                          and is_physical_change }}"
+      - condition: template
+        value_template:
+          "{{ (is_generic_calibration or (input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0))
+          and is_physical_change }}"
     then:
       - service: system_log.write
         data:
@@ -2161,8 +2155,8 @@ action:
       # UPDATE TEMPERATURE ENTITIES
       - if: # COMFORT ENTITY
           - condition: template
-            value_template: "{{ input_temperature_comfort != none and 
-                                ((is_temperature_change and set_comfort) or is_refresh_comfort_entity) }}"
+            value_template: "{{ input_temperature_comfort != none and
+              ((is_temperature_change and set_comfort) or is_refresh_comfort_entity) }}"
         then:
           - variables:
               max_comfort_temp: "{{ state_attr(input_temperature_comfort,'max') | float }}"
@@ -2195,12 +2189,12 @@ action:
       - if: #ECO ENTITY
           - condition: template
             value_template: "{{ input_temperature_minimum != none and
-                                ((is_temperature_change and set_comfort == false) or is_refresh_eco_entity) }}"
+              ((is_temperature_change and set_comfort == false) or is_refresh_eco_entity) }}"
         then:
           - variables:
               max_eco_temp: "{{ state_attr(input_temperature_minimum,'max') | float }}"
               min_eco_temp: "{{ state_attr(input_temperature_minimum,'min') | float }}"
-              
+
               new_manual_temp: >
                 {% if is_refresh_eco_entity %}
                   {{ new_eco_temperature }}
