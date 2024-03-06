@@ -23,7 +23,7 @@ blueprint:
     If you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.4
+    **Version**: 3.5
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
@@ -49,7 +49,7 @@ blueprint:
 
     zones:
       name: Zones
-      description: "Define Zones you want to observe for arriving (and leaving notifications / actions."
+      description: "Define Zones you want to observe for arriving (and leaving notifications / actions. Leave blank for all zones."
       default: []
       selector:
         entity:
@@ -164,6 +164,13 @@ blueprint:
       selector:
         color_rgb:
 
+    critical_notification:
+      name: Critical Notification (iOS only)
+      description: "If enabled notifications will appear no matter of phone state."
+      default: off
+      selector:
+        boolean:
+
     custom_conditions:
       name: "Conditions"
       description: "Custom conditions when all notifications and actions are active"
@@ -199,8 +206,28 @@ blueprint:
       selector:
         action: {}
 
+    custom_button_arriving_text:
+      name: "Custom Button Text (Arriving Notifications)"
+      description: "Text for a custom button to navigate to open a URL, e.g. a lovelace view"
+      default: ''
+
+    custom_button_arriving_url:
+      name: "Custom Button URL (Arriving Notifications)"
+      description: "Lovelace path to your view or another URL. E.g. */todo?entity_id=todo.shoppinglist*"
+      default: ''
+
 variables:
-  zones: !input zones
+  custom_button_arriving_text: !input custom_button_arriving_text
+  custom_button_arriving_url: !input custom_button_arriving_url
+
+  zone_inputs: !input zones
+  zones: >
+    {% if zone_inputs | count > 0 %}
+      {{ zone_inputs }}
+    {% else %}
+      {{ integration_entities('zone') | default([]) }}
+    {% endif %}
+
   home_zone_name: "{{ 'home' | lower }}"
   home_zone: "{{ 'zone.home' | lower }}"
   not_home: "{{ 'not_home' | lower }}"
@@ -243,6 +270,8 @@ variables:
 
   custom_action_arriving: !input custom_action_arriving
   custom_action_leaving: !input custom_action_leaving
+
+  critical_notification: !input critical_notification
 
 trigger:
   platform: state
@@ -324,19 +353,91 @@ action:
     then:
       - variables:
           zone: "{{ zone_to }}"
-      - service: "{{ notify_service }}"
-        data:
-          title: !input title_arriving
-          message: !input message_arriving
-          data:
-            ttl: 0
-            priority: high
-            notification_icon: !input "status_bar_icon"
-            channel: !input "channel"
-            group: !input "group"
-            color: "{{ notification_color_hex }}"
-            vibrationPattern: !input "vibration_pattern"
-            ledColor: "{{led_color_hex}}"
+      - if:
+        - condition: template
+          value_template: "{{ custom_button_arriving_text == '' or custom_button_arriving_url == '' }}"
+        then:
+          - if:
+            - condition: template
+              value_template: "{{ critical_notification }}"
+            then:
+            - service: "{{ notify_service }}"
+              data:
+                title: !input title_arriving
+                message: !input message_arriving
+                data:
+                  ttl: 0
+                  priority: high
+                  notification_icon: !input "status_bar_icon"
+                  channel: !input "channel"
+                  group: !input "group"
+                  color: "{{ notification_color_hex }}"
+                  vibrationPattern: !input "vibration_pattern"
+                  ledColor: "{{led_color_hex}}"
+                  push:
+                    sound:
+                      name: "default"
+                      critical: 1
+                      volume: 1.0
+            else:
+            - service: "{{ notify_service }}"
+              data:
+                title: !input title_arriving
+                message: !input message_arriving
+                data:
+                  ttl: 0
+                  priority: high
+                  notification_icon: !input "status_bar_icon"
+                  channel: !input "channel"
+                  group: !input "group"
+                  color: "{{ notification_color_hex }}"
+                  vibrationPattern: !input "vibration_pattern"
+                  ledColor: "{{led_color_hex}}"
+        else:
+          - if:
+              - condition: template
+                value_template: "{{ critical_notification }}"
+            then:
+              - service: "{{ notify_service }}"
+                data:
+                  title: !input title_arriving
+                  message: !input message_arriving
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+                    push:
+                      sound:
+                        name: "default"
+                        critical: 1
+                        volume: 1.0
+                    actions:
+                      - action: URI
+                        title: !input custom_button_arriving_text
+                        uri: !input custom_button_arriving_url
+            else:
+              - service: "{{ notify_service }}"
+                data:
+                  title: !input title_arriving
+                  message: !input message_arriving
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+                    actions:
+                      - action: URI
+                        title: !input custom_button_arriving_text
+                        uri: !input custom_button_arriving_url
 
   - if:
       - condition: template
