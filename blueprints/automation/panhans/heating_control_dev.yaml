@@ -1589,6 +1589,8 @@ variables:
 
     {{ iif(is_auto_means_heat and heating_mode == 'heat', 'auto', heating_mode) }}
 
+  is_physical_change: >
+    {{ false }}
   # is_physical_change: >
   #   {{
   #     trigger.id == 'temperature_change_valve_target' and
@@ -1614,6 +1616,8 @@ variables:
   #     trigger.to_state.context.user_id != none
   #   }}
 
+  is_manual_timer_start: >
+    {{ false }}
   # is_manual_timer_start: >
   #   {{
   #     trigger.id == 'temperature_change_valve_target' and
@@ -2091,7 +2095,6 @@ action:
         TRIGGER {{" \n "}}
         is_calibration: {{ calibration_number | count > 0 or calibration_tado | count > 0 }} {{" \n "}}
         is_changes: {{ changes | count > 0 }} {{" \n "}}
-        is_manual: {{ is_physical_change or is_manual_timer_start }} {{" \n "}}
         is_reset: {{ is_reset }} {{" \n "}}
         is_refresh_comfort_entity: {{ is_refresh_comfort_entity or is_refresh_eco_entity }} {{" \n "}}
         {{" \n "}}
@@ -2129,7 +2132,6 @@ action:
         mode: {{ mode }} {{ " \n " }}
         temperature: {{ temperature }} {{ " \n " }}
         is_physical_change: {{ is_physical_change }} {{ " \n " }}
-        is_manual_timer_start: {{ is_manual_timer_start }} {{ " \n " }}
         is_calibration: {{ is_calibration }} {{ " \n " }}
         changes: {{ changes }} {{ " \n " }}
         valves_tado: {{ valves_tado }} {{ " \n " }}
