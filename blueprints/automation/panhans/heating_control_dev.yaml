@@ -1823,10 +1823,16 @@ variables:
 
         {% if is_generic_calibration and input_temperature_sensor != none %}
 
-          {% set sensor_temp = states(input_temperature_sensor) %}
+          {% set sensor_temp = states(input_temperature_sensor) | float(current_valve_temp) %}
 
           {% if current_valve_temp != sensor_temp %}
-            {% set offset = sensor_temp | float(0) - current_valve_temp | float(0) %}
+            {% set offset = sensor_temp - current_valve_temp %}
+            {% if(offset > 2) %}
+              {% set offset = 2 %}
+            {% elif (offset < -2) %}
+              {% set offset = -2 %}
+            {% endif %}
+
             {% set temp_with_offset = float(valve_temp) - float(offset) %}
             {% set step = state_attr(valve, 'target_temp_step') | float(0.5) %}
 
