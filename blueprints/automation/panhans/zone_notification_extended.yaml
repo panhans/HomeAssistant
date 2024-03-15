@@ -2,28 +2,24 @@ blueprint:
   name: Zone Notification Extended
   description: "
 
-    ## Features
+    ✉️ notification when a person enters / leaves a zone
 
-    - notification / custom action triggered by persons entering / leaving zones
+    🎬 custom action when a person enters /leaves a zone
 
-    - notifications can be modified in color, channel group, ect.
+    🎛️ modify your notifications in color, channel, group, ect.
 
-    - notification can be turned on / off easily
+    📴 enable / disable notifications easily
 
-    - custom condition for blocking / allowing notifications
+    ❌ custom condition for blocking / allowing notifications
 
-    ## New in v3
+    🌎 notification button support to open a url, e.g. shopping list
 
-    - define zones for arriving and/or leaving notifications / actions
-
-    - custom conditions for leaving and arriving actions / notifications
-
-    ## Additional Information
+    ### Hints
 
     If you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.4
+    **Version**: 3.5.1
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
@@ -39,8 +35,9 @@ blueprint:
 
   input:
     persons:
-      name: Persons
-      description: "Observed persons."
+      name: 👥 Persons
+      description: > 
+        People who trigger the automation when they enter or leave the specified zones.
       selector:
         entity:
           filter:
@@ -48,8 +45,10 @@ blueprint:
           multiple: true
 
     zones:
-      name: Zones
-      description: "Define Zones you want to observe for arriving (and leaving notifications / actions."
+      name: 🌐 Zones
+      description: > 
+        Define the zones you want to observe for arriving and leaving. Leave the field blank to select all your defined zones.
+        If your define no *Leaving Zones* all zone you define here will taken for arriving and leaving notifications / actions.
       default: []
       selector:
         entity:
@@ -58,8 +57,12 @@ blueprint:
           multiple: true
 
     zones_leaving:
-      name: Leaving Zones
-      description: "Define zones for leaving notifications only. Hint: If set the default Zones above only will be triggered arriving notifications / actions."
+      name: 🌐 Leaving Zones
+      description: >
+        `optional`
+
+
+        Zones specified here are used exclusively for leaving notifications / actions.
       default: []
       selector:
         entity:
@@ -68,8 +71,9 @@ blueprint:
           multiple: true
 
     duration:
-      name: Duration
-      description: "Duration the person must be in the zone before notification gets fired."
+      name: ⏱️ Duration
+      description: >
+        Duration the person must be in or out of the zone before notification gets fired.
       default: 0
       selector:
         number:
@@ -80,8 +84,12 @@ blueprint:
           unit_of_measurement: min
 
     notify_device:
-      name: "Device to notify"
-      description: "Device which gets a notification."
+      name: 📱 Device to notify
+      description: >
+        `optional`
+
+
+        Device that is to receive the notifications.
       default:
       selector:
         device:
@@ -89,118 +97,212 @@ blueprint:
             integration: mobile_app
 
     notify_group:
-      name: Notification Group
-      description: "The name of the notification group to call. ('notify' for all devices) If 'Notification Group' is defined 'Device to notify' will be ignored."
+      name: 📱📱 Notification Group
+      description: >
+        `optional`
+
+
+        If several devices are to receive a notification, a [notify group](https://www.home-assistant.io/integrations/group/#notify-groups) can be used. Enter *notify* for all devices. If 'Notification Group' is defined 'Device to notify' will be ignored."
       default: ""
 
     title_arriving:
-      name: "Arriving Title"
-      description: "Notification title when someone arrives at a zone."
+      name: "📩 Notification Arriving Title"
+      description: >
+        Title for entering notifications.
       default: "{{ person }} arrives"
 
     message_arriving:
-      name: "Arriving Message"
-      description: "Notification message when someone arrives at a zone."
+      name: "📨 Notification Arriving Message"
+      description: >
+        Notification message when someone enters a zone.
       default: "{{ person }} arrives at {{ zone }}."
 
     is_arriving_notification_enabled:
-      name: "Enable arriving notification"
-      description: "If on notification will be sent when a person arrives at a zone."
+      name: "🎚️ Enable Arriving Notification"
+      description: >
+        If *on* notification will be sent when a person enters a zone.
       default: true
       selector:
         boolean:
 
     title_leaving:
-      name: "Leaving Title"
-      description: "Notification title when someone is leaving a zone."
+      name: "📩 Notification Leaving Title"
+      description: >
+        Notification title when someone is leaving a zone.
       default: "{{ person }} leaves"
 
     message_leaving:
-      name: "Leaving Message"
-      description: "Notification message when someone is leaving a zone."
+      name: "📨 Notification Leaving Message"
+      description: >
+        Notification message when someone is leaving a zone.
       default: "{{ person }} leaves {{ zone }}."
 
     is_leaving_notification_enabled:
-      name: "Enable leaving notification"
-      description: "If on notification will send when a person leaves a zone."
+      name: "🎚️ Enable Leaving Notification"
+      description: >
+        If *on* notification will send when a person leaves a zone.
       default: true
       selector:
         boolean:
 
     status_bar_icon:
-      name: "Status bar icon"
-      description: "Sets the status bar icon. (Android specific)"
+      name: "🌠 Status Bar Icon"
+      description: >
+        `Android` `optional`
+
+
+        Sets the status bar icon.
       default: mdi:map-marker
       selector:
         icon:
           placeholder: mdi:map-marker
 
     notification_color:
-      name: "Notification color (Android specific)"
-      description: "Color of the notification"
+      name: "🎨 Notification Color"
+      description: >
+        `Android` `optional`
+
+
+        Color of the notification
       default: [100, 200, 240]
       selector:
         color_rgb:
 
     channel:
-      name: "Channel (Android specific)"
-      description: "Separate these notifications by channel."
+      name: "📭 Notification Channel"
+      description: >
+        `Android` `optional`
+
+
+        You can set a notification channel. In your companion app you can set e.g. a custom sound for notifications in this channel.
       default: "General"
 
     group:
-      name: "Notification group (Android specific)"
-      description: "Group notifications by using this identifier."
+      name: "📑 Notification Group"
+      description: >
+        `Android` `optional`
+
+
+        Group notifications by using this identifier.
       default: "zone-notification-group"
 
     vibration_pattern:
-      name: "Vibration pattern (Android specific)"
-      description: "Pattern of the vibration when notification arrives."
+      name: "📳 Vibration Pattern"
+      description: >
+        `Android` `optional`
+
+
+        Pattern of the vibration when notification arrives."
       default: "100, 100"
 
     led_color:
-      name: "Notification LED color (Android specific)"
-      description: "Color of the phone LED after incoming notification."
+      name: "💡 Notification LED Color"
+      description: >
+        `Android` `optional`
+
+
+        Color of the phone LED after incoming notification."
       default: [100, 200, 240]
       selector:
         color_rgb:
 
+    critical_notification:
+      name: Critical Notification
+      description: >
+        `iOS`
+
+
+        If enabled notifications will appear no matter of phone state.
+      default: off
+      selector:
+        boolean:
+
     custom_conditions:
-      name: "Conditions"
-      description: "Custom conditions when all notifications and actions are active"
+      name: "❌ Custom Conditions"
+      description: >
+        `optional`
+
+
+        Custom conditions when the automation action part should be triggered."
       default: []
       selector:
         condition:
 
     custom_conditions_arriving:
-      name: "Conditions Arriving"
-      description: "Custom conditions when notifications / actions for arriving are active"
+      name: "❌ Conditions Arriving"
+      description: >
+        `optional`
+
+
+        Custom conditions only for arriving notifications / actions.
       default: []
       selector:
         condition:
 
     custom_conditions_leaving:
-      name: "Conditions Leaving"
-      description: "Custom conditions when notifications / actions for leaving are active"
+      name: "❌ Conditions Leaving"
+      description: >
+        `optional`
+
+      
+        Custom conditions when notifications / actions for leaving are active.
       default: []
       selector:
         condition:
 
     custom_action_arriving:
-      name: "Custom Action on arriving"
-      description: "An action which can be processed when a person arrives at a zone."
+      name: "🎬 Entering Custom Action"
+      description: >
+        `optional`
+
+      
+        Custom action when a person enters a zone.
       default: []
       selector:
         action: {}
 
     custom_action_leaving:
-      name: "Custom Action on leaving"
-      description: "An action which can be processed when a person leaves a zone"
+      name: "🎬 Leaving Custom Action"
+      description: >
+        `optional`
+
+      
+        Custom action when a person leaves a zone.
       default: []
       selector:
         action: {}
 
+    custom_button_arriving_text:
+      name: "🎛️ Custom Button Text"
+      description: >
+        `optional`
+        
+      
+        Text for a custom button to navigate to open a URL, e.g. a lovelace view.
+        For arriving notifications.
+      default: ''
+
+    custom_button_arriving_url:
+      name: "🌎 Custom Button URL"
+      description: > 
+        `optional`
+
+        Lovelace path to your view or another URL. E.g. */todo?entity_id=todo.shoppinglist*
+        For arriving notifications.
+      default: ''
+
 variables:
-  zones: !input zones
+  custom_button_arriving_text: !input custom_button_arriving_text
+  custom_button_arriving_url: !input custom_button_arriving_url
+
+  zone_inputs: !input zones
+  zones: >
+    {% if zone_inputs | count > 0 %}
+      {{ zone_inputs }}
+    {% else %}
+      {{ integration_entities('zone') | default([]) }}
+    {% endif %}
+
   home_zone_name: "{{ 'home' | lower }}"
   home_zone: "{{ 'zone.home' | lower }}"
   not_home: "{{ 'not_home' | lower }}"
@@ -243,6 +345,8 @@ variables:
 
   custom_action_arriving: !input custom_action_arriving
   custom_action_leaving: !input custom_action_leaving
+
+  critical_notification: !input critical_notification
 
 trigger:
   platform: state
@@ -324,19 +428,91 @@ action:
     then:
       - variables:
           zone: "{{ zone_to }}"
-      - service: "{{ notify_service }}"
-        data:
-          title: !input title_arriving
-          message: !input message_arriving
-          data:
-            ttl: 0
-            priority: high
-            notification_icon: !input "status_bar_icon"
-            channel: !input "channel"
-            group: !input "group"
-            color: "{{ notification_color_hex }}"
-            vibrationPattern: !input "vibration_pattern"
-            ledColor: "{{led_color_hex}}"
+      - if:
+        - condition: template
+          value_template: "{{ custom_button_arriving_text == '' or custom_button_arriving_url == '' }}"
+        then:
+          - if:
+            - condition: template
+              value_template: "{{ critical_notification }}"
+            then:
+            - service: "{{ notify_service }}"
+              data:
+                title: !input title_arriving
+                message: !input message_arriving
+                data:
+                  ttl: 0
+                  priority: high
+                  notification_icon: !input "status_bar_icon"
+                  channel: !input "channel"
+                  group: !input "group"
+                  color: "{{ notification_color_hex }}"
+                  vibrationPattern: !input "vibration_pattern"
+                  ledColor: "{{led_color_hex}}"
+                  push:
+                    sound:
+                      name: "default"
+                      critical: 1
+                      volume: 1.0
+            else:
+            - service: "{{ notify_service }}"
+              data:
+                title: !input title_arriving
+                message: !input message_arriving
+                data:
+                  ttl: 0
+                  priority: high
+                  notification_icon: !input "status_bar_icon"
+                  channel: !input "channel"
+                  group: !input "group"
+                  color: "{{ notification_color_hex }}"
+                  vibrationPattern: !input "vibration_pattern"
+                  ledColor: "{{led_color_hex}}"
+        else:
+          - if:
+              - condition: template
+                value_template: "{{ critical_notification }}"
+            then:
+              - service: "{{ notify_service }}"
+                data:
+                  title: !input title_arriving
+                  message: !input message_arriving
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+                    push:
+                      sound:
+                        name: "default"
+                        critical: 1
+                        volume: 1.0
+                    actions:
+                      - action: URI
+                        title: !input custom_button_arriving_text
+                        uri: !input custom_button_arriving_url
+            else:
+              - service: "{{ notify_service }}"
+                data:
+                  title: !input title_arriving
+                  message: !input message_arriving
+                  data:
+                    ttl: 0
+                    priority: high
+                    notification_icon: !input "status_bar_icon"
+                    channel: !input "channel"
+                    group: !input "group"
+                    color: "{{ notification_color_hex }}"
+                    vibrationPattern: !input "vibration_pattern"
+                    ledColor: "{{led_color_hex}}"
+                    actions:
+                      - action: URI
+                        title: !input custom_button_arriving_text
+                        uri: !input custom_button_arriving_url
 
   - if:
       - condition: template
