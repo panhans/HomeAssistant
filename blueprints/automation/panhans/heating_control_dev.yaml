@@ -1412,7 +1412,10 @@ variables:
       {% elif selector_value in ['on','off'] %}
         {% set selected_scheduler = iif(selector_value == 'off', input_schedulers[0], input_schedulers[1]) %}
       {% else %}
-        {% set selected_scheduler = input_schedulers | expand | selectattr('attributes.friendly_name', 'search', '(?i)'+selector_value) | map(attribute='entity_id') | first %}
+        {% set selected_scheduler = input_schedulers | expand | selectattr('attributes.friendly_name', 'eq', selector_value) | map(attribute='entity_id') | first | default(none) %}
+        {% if (selected_scheduler == none) %}
+          {% set selected_scheduler = input_schedulers | expand | selectattr('attributes.friendly_name', 'search', '(?i)'+selector_value) | map(attribute='entity_id') | first %}
+        {% endif %}
       {% endif %}
     {% endif %}
 
