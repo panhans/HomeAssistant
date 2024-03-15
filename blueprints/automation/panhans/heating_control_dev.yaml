@@ -1657,7 +1657,7 @@ variables:
     {% set plan = input_time_based_temperature_change_valve_target | rejectattr('time', 'undefined') | list %}
     {% set day = now().strftime('%a') %}
     {% set current_time = now().strftime('%H%M') | int %}
-    {% set result = namespace(entry=none) %}
+    {% set result = namespace(entry=none,last_entry=none) %}
 
     {% for e in plan %}
       {% if 'days' in e.keys() and day not in e['days'] %}
@@ -1675,11 +1675,14 @@ variables:
               (result.entry == none or 
                 e_time >= result.entry['time'].replace(':','') | int) %}
           {% set result.entry = e %}
+        {% elif result.last_entry == none or
+                e_time >= result.last_entry['time'].replace(':','') | int %}
+          {% set result.last_entry = e %}
         {% endif %}
       {% endif %}
     {% endfor %}
-
-    {{ result.entry }}
+      
+    {{ iif(result.entry == none, result.last_entry, result.entry) }}
 
   entry_time: >
     {% if (entry is defined) and entry  %}
