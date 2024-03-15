@@ -1323,8 +1323,8 @@ variables:
   is_generic_calibration: "{{ 'generic_calibration' in input_calibration_options}}"
   is_rounded_values: "{{ 'rounded_values' in input_calibration_options}}"
 
-  is_physical_temperature_change: "{{ 'physical_temperature_change' in input_tweaks_experimental}}"
-  is_physical_party_timer: "{{ 'physical_party_timer' in input_tweaks_experimental}}"
+  # is_physical_temperature_change: "{{ 'physical_temperature_change' in input_tweaks_experimental}}"
+  # is_physical_party_timer: "{{ 'physical_party_timer' in input_tweaks_experimental}}"
 
   # V A L V E   G R O U P S
   valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
