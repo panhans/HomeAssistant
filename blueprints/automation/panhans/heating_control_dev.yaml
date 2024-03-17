@@ -1,5 +1,5 @@
 blueprint:
-  name: Advanced Heating Control
+  name: Advanced Heating Control DEV
   author: panhans
   homeassistant:
     min_version: "2024.2.0"
