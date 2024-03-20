@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.4_dev3
+    **Version**: 4.0.4_dev4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1668,7 +1668,9 @@ variables:
         {% set e = none %}
       {% endif %}
 
-      {% if e != none and 'scheduler' in e.keys() and active_scheduler != e['scheduler'] %}
+      {% if e != none and 'scheduler' in e.keys() and 
+            active_scheduler != none and 
+            state_attr(active_scheduler,'friendly_name') != e['scheduler'] %}
         {% set e = none %}
       {% endif %}
 
