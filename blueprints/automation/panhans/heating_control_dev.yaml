@@ -1,5 +1,5 @@
 blueprint:
-  name: Advanced Heating Control DEV
+  name: 🔥 Advanced Heating Control DEV
   author: panhans
   homeassistant:
     min_version: "2024.2.0"
@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.0.4_dev4
+    **Version**: 4.1.0_dev1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -418,7 +418,7 @@ blueprint:
 
 
         Create your timer [here](https://my.home-assistant.io/redirect/helpers/).
-      default:
+      default: []
       selector:
         entity:
           filter:
@@ -426,7 +426,7 @@ blueprint:
                 - input_boolean
                 - binary_sensor
                 - timer
-          multiple: false
+          multiple: true
 
     input_mode_guest:
       name: 🤝 Guest mode
@@ -1134,12 +1134,12 @@ trigger:
   # M O D E   -   P A R T Y
   - platform: template
     id: temperature_change_party_on
-    value_template: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
+    value_template: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | list | count > 0 }}"
     for:
       seconds: 2
 
   - platform: template
-    value_template: "{{ input_mode_party != none and states(input_mode_party) in ['off','idle','paused'] }}"
+    value_template: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | list | count == 0 }}"
     id: temperature_change_party_off
     for:
       seconds: 2
@@ -1334,7 +1334,19 @@ variables:
   # E V A L U A T I O N --------------------------------------------------------------
 
   # STATES
-  state_mode_party: "{{ input_mode_party != none and states(input_mode_party) in ['on','active'] }}"
+  active_party_entity: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | map(attribute='entity_id') | first | default(none) }}"
+  state_mode_party: "{{ active_party_entity != none }}"
+  party_temp: > 
+    {% set pos_party_temp = none %}
+    {% if state_mode_party == true %}
+      {% set name = state_attr(active_party_entity,'friendly_name') %}
+      {% set pos_temp = name.split(' ') | last %}
+      {% if is_number(pos_temp) %}
+        {% set pos_party_temp = pos_temp | float %}
+      {% endif %}
+    {% endif %}
+    {{ pos_party_temp }}
+
   state_mode_guest: "{{ input_mode_guest != none and states(input_mode_guest) in ['on','active'] }}"
 
   state_mode_winter: >
@@ -1759,7 +1771,9 @@ variables:
         new_eco_temperature | float != states(input_temperature_minimum) | float }}
 
   state_temperature_comfort: >
-    {% if input_temperature_comfort != none %}
+    {% if party_temp != none %}
+      {{ party_temp }}
+    {% elif input_temperature_comfort != none %}
       {{ states(input_temperature_comfort) }}
     {% elif new_comfort_temperature != none and new_comfort_temperature != '' %}
         {{ new_comfort_temperature }}
