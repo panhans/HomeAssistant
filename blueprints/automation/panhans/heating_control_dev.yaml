@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.1.0_dev1
+    **Version**: 4.1.0_dev2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -69,6 +69,23 @@ blueprint:
             - domain:
                 - climate
           multiple: true
+
+    input_hvac_mode:
+      name: 🎛️ Operation / HVAC Mode
+      description: >
+        `hvac`
+
+
+        Select the hvac mode for your thermostats. Be sure your selected thermostats support the hvac mode you've chosen.
+        AHC will log a warning if there is a miss match. For radiator thermostats the default is mostly *heat*.
+        If you own an air conditioner it will support auto or heat, too. 
+      default: 'heat'
+      selector:
+        select:
+          options:
+            - heat
+            - cool
+            - auto
 
     input_temperature_minimum_static:
       name: 🌱 Static Eco Temperature
@@ -756,10 +773,6 @@ blueprint:
 
         > Lower the temperature instead of turning them *OFF*, e.g. during airing
 
-        > ### 🅰️ *AUTO* means *HEAT*
-
-        > Enable this if *AUTO* is the heat mode of your thermostat
-
         > ### 🇫 Fahrenheit
 
         > Enable this if your unit of measurement is Fahrenheit (untested)
@@ -776,8 +789,6 @@ blueprint:
               value: off_instead_min
             - label: "⬇️ Min Instead Of Off"
               value: not_off_but_min
-            - label: "🅰️ Auto Means Heat"
-              value: auto_means_heat
             - label: "🇫 Fahrenheit"
               value: fahrenheit
           multiple: true
@@ -1311,13 +1322,13 @@ variables:
   input_custom_action: !input input_custom_action
   input_tweaks: !input input_tweaks
   input_calibration_options: !input input_calibration_options
+  input_hvac_mode: !input input_hvac_mode
   # input_tweaks_experimental: !input input_tweaks_experimental
 
   # TWEAKS
   is_reset_temperature: "{{ 'reset_temperature' in input_tweaks}}"
   is_off_instead_min: "{{ 'off_instead_min' in input_tweaks}}"
   is_not_off_but_min: "{{ 'not_off_but_min' in input_tweaks}}"
-  is_auto_means_heat: "{{ 'auto_means_heat' in input_tweaks}}"
   is_fahrenheit: "{{ 'fahrenheit' in input_tweaks}}"
   is_aggresive_mode: "{{ input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0 }}"
 
@@ -1328,7 +1339,8 @@ variables:
   # is_physical_party_timer: "{{ 'physical_party_timer' in input_tweaks_experimental}}"
 
   # V A L V E   G R O U P S
-  valves: "{{ expand(input_trvs) | map(attribute='entity_id') | list }}"
+  valves: "{{ expand(input_trvs) | selectattr('attributes.hvac_modes','search','(?i)'+input_hvac_mode) | map(attribute='entity_id') | list }}"
+  valves_unsupported: "{{ input_trvs | reject('in',valves) | list }}"
   valves_off_mode: "{{ valves | expand | selectattr('attributes.hvac_modes','search','(?i)off') | map(attribute='entity_id') | list }}"
   valves_without_off_mode: "{{ valves | reject('in',valves_off_mode) | list }}"
 
@@ -1591,16 +1603,16 @@ variables:
     {% set heating_mode = 'off' %}
 
     {% if state_force_max_temperature == true %}
-      {% set heating_mode = 'heat' %}
+      {% set heating_mode = input_hvac_mode %}
     {% elif state_mode_winter == false or state_outside_temp == false or state_window == true %}
       {% set heating_mode = 'off' %}
     {% elif set_comfort == false %}
-      {% set heating_mode = iif(is_off_instead_min == true, 'off', 'heat') %}
+      {% set heating_mode = iif(is_off_instead_min == true, 'off', input_hvac_mode) %}
     {% elif set_comfort == true %}
-      {% set heating_mode = 'heat' %}
+      {% set heating_mode = input_hvac_mode %}
     {% endif %}
 
-    {{ iif(is_auto_means_heat and heating_mode == 'heat', 'auto', heating_mode) }}
+    {{ heating_mode }}
 
   is_physical_change: >
     {{ false }}
@@ -2048,6 +2060,8 @@ variables:
 
   is_heating: "{{ set_comfort and mode != 'off' }}"
 
+  is_warning: "{{ valves_unsupported | count > 0 }}"
+
 ##################################################
 ########### C O N D I T I O N S ##################
 ##################################################
@@ -2055,6 +2069,8 @@ variables:
 condition:
   - condition: or
     conditions:
+      - condition: template
+        value_template: "{{ is_warning }}"
       - condition: template
         value_template: "{{ calibration_number | count > 0 }}"
       - condition: template
@@ -2079,6 +2095,17 @@ action:
     then:
       - delay:
           seconds: 10
+
+  - if:
+      - condition: template
+        value_template: "{{ valves_unsupported | count > 0 }}"
+    then:
+      - service: system_log.write
+        data:
+          level: warning
+          logger: blueprints.panhans.heatingcontrol
+          message: > 
+            AHC - Your selected HVAC mode isn't support by this clima entities: {{ valves_unsupported }}
 
   - if:
       - condition: template
