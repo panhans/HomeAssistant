@@ -414,7 +414,8 @@ blueprint:
         `optional`
 
 
-        If on, all settings are ignored and heating takes place.
+        If on, all settings are ignored and heating takes place. You can define multiple timers or boolean entities.
+        If you put a number at the end of the friendly name like *Party Timer 20* this number will be taken as the desired comfort temperature for this timer.
 
 
         Create your timer [here](https://my.home-assistant.io/redirect/helpers/).
