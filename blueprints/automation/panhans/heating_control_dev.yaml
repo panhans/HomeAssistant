@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.1.0_dev2
+    **Version**: 4.1.0_dev3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1830,7 +1830,7 @@ variables:
         {% set min_temp = state_attr(valve, 'min_temp') | float(5) %}
         {% set max_temp = state_attr(valve, 'max_temp') | float(30) %}
 
-        {% set valve_mode = iif(mode == 'off' and (valve in valves_without_off_mode or is_not_off_but_min), 'heat', mode) %}
+        {% set valve_mode = iif(mode == 'off' and (valve in valves_without_off_mode or is_not_off_but_min), current_valve_mode, mode) %}
         {% set valve_temp = temperature %}
         {% set valve_temp = iif((valve in valves_without_off_mode or is_not_off_but_min) and mode == 'off', min_temp, temperature) %}
         {% set valve_temp = iif(state_force_max_temperature and mode != 'off', max_temp, valve_temp) %}
