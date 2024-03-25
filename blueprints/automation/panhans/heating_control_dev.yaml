@@ -1811,7 +1811,9 @@ variables:
     {{ iif(set_comfort, state_temperature_comfort, state_temperature_min) }}
 
   is_temperature_change: >
-    {{  "temperature_change" in trigger.id or 
+    {{  
+        trigger.platform == none or
+        "temperature_change" in trigger.id or 
         is_calibration and is_generic_calibration or 
         is_aggresive_mode and "aggressive_mode" in trigger.id
     }}
