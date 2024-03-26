@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.1.0_dev3
+    **Version**: 4.1.0_dev4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -773,6 +773,10 @@ blueprint:
 
         > Lower the temperature instead of turning them *OFF*, e.g. during airing
 
+        > ### ↕️ Off If Above/Below Room Temperature
+
+        > Turns your climate entity *off* if the target temperature is below(cooling) / above(heating) the room temperature
+
         > ### 🇫 Fahrenheit
 
         > Enable this if your unit of measurement is Fahrenheit (untested)
@@ -789,6 +793,8 @@ blueprint:
               value: off_instead_min
             - label: "⬇️ Min Instead Of Off"
               value: not_off_but_min
+            - label: "↕️ Off If Above/Below Room Temperature"
+              value: heat_only_if_below_real_temp
             - label: "🇫 Fahrenheit"
               value: fahrenheit
           multiple: true
@@ -907,6 +913,9 @@ trigger_variables:
   input_mode_outside_temperature_threshold: !input input_mode_outside_temperature_threshold
 
   input_frost_protection_duration: !input input_frost_protection_duration
+
+  input_tweaks: !input input_tweaks
+  is_heat_only_if_below_real_temp: "{{ 'heat_only_if_below_real_temp' in input_tweaks}}"
 
 trigger:
   # S Y S T E M   T R I G G E R S
@@ -1270,6 +1279,21 @@ trigger:
           {{ iif(is_person_based, person_fp, presence_fp) }}
         {% endif %}
       {% endif %}
+  
+# HEATING / COOLING WHEN ABOVE/BELOW ROOM TEMPERATURE
+  - platform: template
+    id: temperature_change_room_temp_above_target
+    value_template: >
+        {{ is_heat_only_if_below_real_temp == true and 
+            input_temperature_sensor != none and
+            states(input_temperature_sensor) > temperature }}
+
+  - platform: template
+    id: temperature_change_room_temp_below_target
+    value_template: >
+        {{ is_heat_only_if_below_real_temp == true and 
+            input_temperature_sensor != none and
+            states(input_temperature_sensor) < temperature }}
 
 ##################################################
 ############### V A R I A B L E S ################
@@ -1329,6 +1353,7 @@ variables:
   is_reset_temperature: "{{ 'reset_temperature' in input_tweaks}}"
   is_off_instead_min: "{{ 'off_instead_min' in input_tweaks}}"
   is_not_off_but_min: "{{ 'not_off_but_min' in input_tweaks}}"
+  is_heat_only_if_below_real_temp: "{{ 'heat_only_if_below_real_temp' in input_tweaks}}"
   is_fahrenheit: "{{ 'fahrenheit' in input_tweaks}}"
   is_aggresive_mode: "{{ input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0 }}"
 
@@ -1590,6 +1615,13 @@ variables:
     {% endif %}
 
   # T R V - V A L U E S
+  is_heat_only_if_diff: >
+    {% if is_temp_higher_lower_target == true and input_temperature_sensor != none and mode in ['cool','heat'] %}
+      {{ iif(input_hvac_mode == 'cool', states(input_temperature_sensor) < temperature, states(input_temperature_sensor) > temperature) }}
+    {% else %}
+      {{ false }}
+    {% endif %}
+
   set_comfort: >
     {% if state_mode_party == true or is_somebody_on_way_home %}
       {{ true }}
@@ -1610,6 +1642,16 @@ variables:
       {% set heating_mode = iif(is_off_instead_min == true, 'off', input_hvac_mode) %}
     {% elif set_comfort == true %}
       {% set heating_mode = input_hvac_mode %}
+    {% endif %}
+
+    {% if is_heat_only_if_below_real_temp == true and 
+          input_temperature_sensor != none and 
+          heating_mode in ['cool','heat'] %}
+      {% if heating_mode == 'cool' and states(input_temperature_sensor) > temperature %}
+        {% set heating_mode = 'off' %}
+      {% elif heating_mode == 'heat' and states(input_temperature_sensor) < temperature %}
+        {% set heating_mode = 'off' %}
+      {% endif %}
     {% endif %}
 
     {{ heating_mode }}
