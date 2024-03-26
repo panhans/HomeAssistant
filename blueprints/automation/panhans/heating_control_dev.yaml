@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.1.0_dev4
+    **Version**: 4.1.0_dev4b
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1366,7 +1366,10 @@ variables:
 
   # E V A L U A T I O N --------------------------------------------------------------
 
-  # STATES
+  # ------------------------------------------------------------------------------------
+  # ------------- PRESENCE, SCHEDULER, FROST PROTECTION, WINDOWS, PERSONS --------------
+  # ------------------------------------------------------------------------------------
+
   active_party_entity: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | map(attribute='entity_id') | first | default(none) }}"
   state_mode_party: "{{ active_party_entity != none }}"
   party_temp: > 
@@ -1609,112 +1612,6 @@ variables:
       {% endif %}
     {% endif %}
 
-  # T R V - V A L U E S
-  is_heat_only_if_diff: >
-    {% if is_temp_higher_lower_target == true and input_temperature_sensor != none and mode in ['cool','heat'] %}
-      {{ iif(input_hvac_mode == 'cool', states(input_temperature_sensor) < temperature, states(input_temperature_sensor) > temperature) }}
-    {% else %}
-      {{ false }}
-    {% endif %}
-
-  set_comfort: >
-    {% if state_mode_party == true or is_somebody_on_way_home %}
-      {{ true }}
-    {% elif is_person_based and is_presence_sensor_defined == false and is_scheduled_heating == false %}
-      {{ is_anybody_home }}
-    {% else %}
-      {{ is_scheduled_heating_on or is_presence_on }}
-    {% endif %}
-
-  mode: >
-    {% set heating_mode = 'off' %}
-
-    {% if state_force_max_temperature == true %}
-      {% set heating_mode = input_hvac_mode %}
-    {% elif state_mode_winter == false or state_outside_temp == false or state_window == true %}
-      {% set heating_mode = 'off' %}
-    {% elif set_comfort == false %}
-      {% set heating_mode = iif(is_off_instead_min == true, 'off', input_hvac_mode) %}
-    {% elif set_comfort == true %}
-      {% set heating_mode = input_hvac_mode %}
-    {% endif %}
-
-    {% if is_heat_only_if_below_real_temp == true and 
-          input_temperature_sensor != none and 
-          heating_mode in ['cool','heat'] %}
-      {% if heating_mode == 'cool' and states(input_temperature_sensor) > temperature %}
-        {% set heating_mode = 'off' %}
-      {% elif heating_mode == 'heat' and states(input_temperature_sensor) < temperature %}
-        {% set heating_mode = 'off' %}
-      {% endif %}
-    {% endif %}
-
-    {{ heating_mode }}
-
-  is_physical_change: >
-    {{ false }}
-  # is_physical_change: >
-  #   {{
-  #     trigger.id == 'temperature_change_valve_target' and
-  #     trigger.to_state.context.id != none and
-  #     trigger.to_state.context.parent_id == none and
-  #     trigger.to_state.context.user_id == none and
-  #     is_physical_temperature_change == true
-  #   }}
-
-  # is_automation_change: >
-  #   {{
-  #     trigger.id == 'temperature_change_valve_target' and
-  #     trigger.to_state.context.id != none and
-  #     trigger.to_state.context.parent_id != none and
-  #     trigger.to_state.context.user_id == none
-  #   }}
-
-  # is_ui_change: >
-  #   {{
-  #     trigger.id == 'temperature_change_valve_target' and
-  #     trigger.to_state.context.id != none and
-  #     trigger.to_state.context.parent_id == none and
-  #     trigger.to_state.context.user_id != none
-  #   }}
-
-  is_manual_timer_start: >
-    {{ false }}
-  # is_manual_timer_start: >
-  #   {{
-  #     trigger.id == 'temperature_change_valve_target' and
-  #     trigger.to_state.context.id != none and
-  #     trigger.to_state.context.parent_id == none and
-  #     trigger.to_state.context.user_id == none and
-  #     is_physical_party_timer == true and
-  #     input_mode_party != none and
-  #     input_mode_party.split('.')[0] == 'timer' and
-  #     state_mode_party == false
-  #   }}
-
-  is_reset: >
-    {{
-      input_temperature_comfort != none and
-      float(states(input_temperature_comfort)) != float(input_temperature_comfort_static) and
-      (
-        trigger.id in ['temperature_change_party_off'] or
-        (trigger.id in ['temperature_change_scheduler_off',
-                        'temperature_change_person_off',
-                        'temperature_change_person_guest_off',
-                        'temperature_change_presence_off'] and
-        set_comfort == false)
-      ) and
-      is_reset_temperature == true
-    }}
-
-  # EVLAUATING TRIGGER IDs
-  is_calibration: >
-    {{
-      mode != 'off' and
-      'calibration' in trigger.id and
-      input_temperature_sensor != none
-    }}
-
   # ------------------------------------------------------------------------------------
   # ----------------------------- TIME BASED MODIFIERS ---------------------------------
   # ------------------------------------------------------------------------------------
@@ -1806,19 +1703,22 @@ variables:
       {{ none }}
     {% endif %}
 
-  # ------------------------------------------------------------------------------------
-  # ----------------------------- CHANGES & CALIBRATION --------------------------------
-  # ------------------------------------------------------------------------------------
+  # T R V - V A L U E S
+  is_heat_only_if_diff: >
+    {% if is_temp_higher_lower_target == true and input_temperature_sensor != none and mode in ['cool','heat'] %}
+      {{ iif(input_hvac_mode == 'cool', states(input_temperature_sensor) < temperature, states(input_temperature_sensor) > temperature) }}
+    {% else %}
+      {{ false }}
+    {% endif %}
 
-  is_refresh_comfort_entity: >
-    {{ input_temperature_comfort != none and 
-        new_comfort_temperature != none and
-        new_comfort_temperature | float != states(input_temperature_comfort) | float }}
-
-  is_refresh_eco_entity: >
-    {{ input_temperature_minimum != none and 
-        new_eco_temperature != none and
-        new_eco_temperature | float != states(input_temperature_minimum) | float }}
+  set_comfort: >
+    {% if state_mode_party == true or is_somebody_on_way_home %}
+      {{ true }}
+    {% elif is_person_based and is_presence_sensor_defined == false and is_scheduled_heating == false %}
+      {{ is_anybody_home }}
+    {% else %}
+      {{ is_scheduled_heating_on or is_presence_on }}
+    {% endif %}
 
   state_temperature_comfort: >
     {% if party_temp != none %}
@@ -1846,6 +1746,109 @@ variables:
 
   temperature: >
     {{ iif(set_comfort, state_temperature_comfort, state_temperature_min) }}
+
+  mode: >
+    {% set heating_mode = 'off' %}
+
+    {% if state_force_max_temperature == true %}
+      {% set heating_mode = input_hvac_mode %}
+    {% elif state_mode_winter == false or state_outside_temp == false or state_window == true %}
+      {% set heating_mode = 'off' %}
+    {% elif set_comfort == false %}
+      {% set heating_mode = iif(is_off_instead_min == true, 'off', input_hvac_mode) %}
+    {% elif set_comfort == true %}
+      {% set heating_mode = input_hvac_mode %}
+    {% endif %}
+
+    {% if is_heat_only_if_below_real_temp == true and 
+          input_temperature_sensor != none and 
+          heating_mode in ['cool','heat'] %}
+      {% if heating_mode == 'cool' and states(input_temperature_sensor) > temperature %}
+        {% set heating_mode = 'off' %}
+      {% elif heating_mode == 'heat' and states(input_temperature_sensor) < temperature %}
+        {% set heating_mode = 'off' %}
+      {% endif %}
+    {% endif %}
+
+    {{ heating_mode }}
+
+  is_physical_change: >
+    {{ false }}
+  # is_physical_change: >
+  #   {{
+  #     trigger.id == 'temperature_change_valve_target' and
+  #     trigger.to_state.context.id != none and
+  #     trigger.to_state.context.parent_id == none and
+  #     trigger.to_state.context.user_id == none and
+  #     is_physical_temperature_change == true
+  #   }}
+
+  # is_automation_change: >
+  #   {{
+  #     trigger.id == 'temperature_change_valve_target' and
+  #     trigger.to_state.context.id != none and
+  #     trigger.to_state.context.parent_id != none and
+  #     trigger.to_state.context.user_id == none
+  #   }}
+
+  # is_ui_change: >
+  #   {{
+  #     trigger.id == 'temperature_change_valve_target' and
+  #     trigger.to_state.context.id != none and
+  #     trigger.to_state.context.parent_id == none and
+  #     trigger.to_state.context.user_id != none
+  #   }}
+
+  is_manual_timer_start: >
+    {{ false }}
+  # is_manual_timer_start: >
+  #   {{
+  #     trigger.id == 'temperature_change_valve_target' and
+  #     trigger.to_state.context.id != none and
+  #     trigger.to_state.context.parent_id == none and
+  #     trigger.to_state.context.user_id == none and
+  #     is_physical_party_timer == true and
+  #     input_mode_party != none and
+  #     input_mode_party.split('.')[0] == 'timer' and
+  #     state_mode_party == false
+  #   }}
+
+  is_reset: >
+    {{
+      input_temperature_comfort != none and
+      float(states(input_temperature_comfort)) != float(input_temperature_comfort_static) and
+      (
+        trigger.id in ['temperature_change_party_off'] or
+        (trigger.id in ['temperature_change_scheduler_off',
+                        'temperature_change_person_off',
+                        'temperature_change_person_guest_off',
+                        'temperature_change_presence_off'] and
+        set_comfort == false)
+      ) and
+      is_reset_temperature == true
+    }}
+
+  # EVLAUATING TRIGGER IDs
+  is_calibration: >
+    {{
+      mode != 'off' and
+      'calibration' in trigger.id and
+      input_temperature_sensor != none
+    }}
+
+  # ------------------------------------------------------------------------------------
+  # ----------------------------- CHANGES & CALIBRATION --------------------------------
+  # ------------------------------------------------------------------------------------
+
+  is_refresh_comfort_entity: >
+    {{ input_temperature_comfort != none and 
+        new_comfort_temperature != none and
+        new_comfort_temperature | float != states(input_temperature_comfort) | float }}
+
+  is_refresh_eco_entity: >
+    {{ input_temperature_minimum != none and 
+        new_eco_temperature != none and
+        new_eco_temperature | float != states(input_temperature_minimum) | float }}
 
   is_temperature_change: >
     {{  
