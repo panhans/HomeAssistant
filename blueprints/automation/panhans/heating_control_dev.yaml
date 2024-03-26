@@ -1745,7 +1745,7 @@ variables:
     {% endif %}
 
   temperature: >
-    {{ iif(set_comfort, state_temperature_comfort, state_temperature_min) }}
+    {{ iif(set_comfort, state_temperature_comfort, state_temperature_min) | float }}
 
   mode: >
     {% set heating_mode = 'off' %}
@@ -1763,9 +1763,11 @@ variables:
     {% if is_heat_only_if_below_real_temp == true and 
           input_temperature_sensor != none and 
           heating_mode in ['cool','heat'] %}
-      {% if heating_mode == 'cool' and states(input_temperature_sensor) > temperature %}
+      {% set sensor_temp = states(input_temperature_sensor) | float %}
+
+      {% if heating_mode == 'cool' and sensor_temp < temperature %}
         {% set heating_mode = 'off' %}
-      {% elif heating_mode == 'heat' and states(input_temperature_sensor) < temperature %}
+      {% elif heating_mode == 'heat' and sensor_temp > temperature %}
         {% set heating_mode = 'off' %}
       {% endif %}
     {% endif %}
@@ -1831,6 +1833,7 @@ variables:
   # EVLAUATING TRIGGER IDs
   is_calibration: >
     {{
+      trigger.platform != none and
       mode != 'off' and
       'calibration' in trigger.id and
       input_temperature_sensor != none
