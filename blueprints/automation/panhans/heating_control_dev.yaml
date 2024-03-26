@@ -1284,16 +1284,11 @@ trigger:
   - platform: template
     id: temperature_change_room_temp_above_target
     value_template: >
-        {{ is_heat_only_if_below_real_temp == true and 
-            input_temperature_sensor != none and
-            states(input_temperature_sensor) > temperature }}
-
-  - platform: template
-    id: temperature_change_room_temp_below_target
-    value_template: >
-        {{ is_heat_only_if_below_real_temp == true and 
-            input_temperature_sensor != none and
-            states(input_temperature_sensor) < temperature }}
+        {% if input_temperature_sensor != none and is_heat_only_if_below_real_temp == true %}
+          {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(hours=0, minutes=0, seconds=2) }}
+        {% else %}
+          {{ false }}
+        {% endif %}
 
 ##################################################
 ############### V A R I A B L E S ################
