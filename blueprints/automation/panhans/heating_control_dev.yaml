@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.1.0_dev4b
+    **Version**: 4.1.0_dev5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1485,9 +1485,11 @@ variables:
     {% set uptime_on = uptime + timedelta(**input_people_entering_home_duration) %}
     {% set uptime_off = uptime + timedelta(**input_people_leaving_home_duration) %}
 
+    {% set result = false %}
+
     {% if (uptime_on > on_time_delta or uptime_off > off_time_delta ) %}
 
-      {{ expand(input_persons) | selectattr('state', 'eq', 'home') | map(attribute='entity_id') | list | count > 0 }}
+      {% set result = expand(input_persons) | selectattr('state', 'eq', 'home') | map(attribute='entity_id') | list | count > 0 %}
 
     {% else %}
 
@@ -1512,9 +1514,11 @@ variables:
         {% endif %}
       {% endfor %}
 
-      {{ result.r or state_mode_guest }}
+      {% set result = result.r%}
 
     {% endif %}
+
+    {{ result or state_mode_guest  }}
 
   # Presence Configuration
   is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
