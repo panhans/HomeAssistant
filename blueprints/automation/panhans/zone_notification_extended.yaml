@@ -19,7 +19,7 @@ blueprint:
     If you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.5.1
+    **Version**: 3.5.2
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
@@ -176,6 +176,16 @@ blueprint:
 
         You can set a notification channel. In your companion app you can set e.g. a custom sound for notifications in this channel.
       default: "General"
+
+    tag:
+      name: "🏷️ Notification Tag"
+      description: >
+        `Android` `optional`
+
+
+        A notification can replace an existing one if they share the same tag. You also can use variables like *person* or *zone*.
+        E.g. ˙zne-{person}˙ to only display the recent zone swtich of a single person. 
+      default: ''
 
     group:
       name: "📑 Notification Group"
@@ -412,6 +422,7 @@ action:
             notification_icon: !input "status_bar_icon"
             channel: !input "channel"
             group: !input "group"
+            tag: !input tag
             color: "{{ notification_color_hex }}"
             vibrationPattern: !input "vibration_pattern"
             ledColor: "{{led_color_hex}}"
@@ -446,6 +457,7 @@ action:
                   notification_icon: !input "status_bar_icon"
                   channel: !input "channel"
                   group: !input "group"
+                  tag: !input tag
                   color: "{{ notification_color_hex }}"
                   vibrationPattern: !input "vibration_pattern"
                   ledColor: "{{led_color_hex}}"
@@ -465,6 +477,7 @@ action:
                   notification_icon: !input "status_bar_icon"
                   channel: !input "channel"
                   group: !input "group"
+                  tag: !input tag
                   color: "{{ notification_color_hex }}"
                   vibrationPattern: !input "vibration_pattern"
                   ledColor: "{{led_color_hex}}"
@@ -483,6 +496,7 @@ action:
                     notification_icon: !input "status_bar_icon"
                     channel: !input "channel"
                     group: !input "group"
+                    tag: !input tag
                     color: "{{ notification_color_hex }}"
                     vibrationPattern: !input "vibration_pattern"
                     ledColor: "{{led_color_hex}}"
@@ -506,6 +520,7 @@ action:
                     notification_icon: !input "status_bar_icon"
                     channel: !input "channel"
                     group: !input "group"
+                    tag: !input tag
                     color: "{{ notification_color_hex }}"
                     vibrationPattern: !input "vibration_pattern"
                     ledColor: "{{led_color_hex}}"
