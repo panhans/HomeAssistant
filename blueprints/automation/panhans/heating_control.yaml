@@ -1756,7 +1756,7 @@ variables:
     {% endif %}
 
   is_away_temperature: >
-    {{ state_scheduler == 'on' and is_person_based and is_anybody_home == false and input_hvac_mode in ['cool','heat'] }}
+    {{ state_scheduler and is_person_based and is_anybody_home == false and input_hvac_mode in ['cool','heat'] }}
 
   state_temperature_min: >
     {% if is_frost_protection %}
