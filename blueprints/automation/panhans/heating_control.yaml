@@ -2266,7 +2266,7 @@ action:
         valves_calibration_common: {{ valves_calibration_common }} {{ " \n " }}
         calibration_common: {{ calibration_common }} {{ " \n " }}
         is_heating: {{ is_heating }} {{ " \n " }}
-        is_metric: {{ is_heating }} {{ " \n " }}
+        is_metric: {{ is_metric }} {{ " \n " }}
         input_hvac_mode in ['cool','heat']: {{ input_hvac_mode in ['cool','heat'] }}
       level: !input input_log_level
       logger: blueprints.panhans.heatingcontrol
@@ -2490,6 +2490,8 @@ action:
           state_presence_scheduler: "{{ is_presence_scheduler_defined and state_presence_scheduler }}"
           is_presence_on: "{{ is_presence_on }}"
           is_frost_protection: "{{ is_frost_protection }}"
+          is_change: "{{ changes | count > 0 }}"
+          is_calibration: "{{ is_calibration }}"
 
       - if:
           - condition: template
