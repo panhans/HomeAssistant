@@ -19,6 +19,8 @@ blueprint:
     ↔️ proximity aka geo fencing
 
 
+    🏃 away temperature offset
+    
     🥶 frost protection
 
     😡 adjustable aggressive mode
@@ -364,7 +366,7 @@ blueprint:
           multiple: false
 
     input_scheduler_offset:
-      name: ↔️ Schedule Away Temperature
+      name: 🏃 Schedule Away Temperature
       description: >
         `scheduler` `persons`
 
