@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.1.0
+    **Version**: 4.3.0
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -362,6 +362,25 @@ blueprint:
                 - input_number
                 - input_select
           multiple: false
+
+    input_scheduler_offset:
+      name: ↔️ Schedule Away Temperature
+      description: >
+        `scheduler` `persons`
+
+
+        You can define an offset if your [scheduler](https://www.home-assistant.io/integrations/schedule/) is active but nobody is at home. 
+        This makes sense if you leave your home and don't want to cool down your room to eco temperature.
+        This only works if you use a [scheduler](https://www.home-assistant.io/integrations/schedule/) combined with [people/persons](https://www.home-assistant.io/integrations/person/).
+        Note: If you'd select hvac mode *heat* the offset value will be substracted from your current comfort temperature if you'd select *cool* it will be added.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.5
+          mode: slider
+          unit_of_measurement: °C / °F
 
     # P R E S E N C E
     input_presence_sensor:
@@ -1342,6 +1361,7 @@ variables:
   input_tweaks: !input input_tweaks
   input_calibration_options: !input input_calibration_options
   input_hvac_mode: !input input_hvac_mode
+  input_scheduler_offset: !input input_scheduler_offset
   # input_tweaks_experimental: !input input_tweaks_experimental
 
   # TWEAKS
@@ -1739,13 +1759,20 @@ variables:
     {% if is_frost_protection %}
       {{ input_frost_protection_temp }}
     {% else %}
+      {% set min_temp = input_temperature_minimum_static %}
+
       {% if input_temperature_minimum != none %}
-        {{ states(input_temperature_minimum) }}
+        {% set min_temp = states(input_temperature_minimum) %}
       {% elif new_eco_temperature != none and new_eco_temperature != '' %}
-        {{ new_eco_temperature }}
-      {% else %}
-        {{ input_temperature_minimum_static }}
+        {% set min_temp = new_eco_temperature %}
       {% endif %}
+
+      {% if state_scheduler == 'on' and is_person_based and is_anybody_home == false and input_hvac_mode in ['cool','heat'] %}
+        {% set faktor = iif(input_hvac_mode == 'heat', -1, 1) %}
+        {% set min_temp = state_temperature_comfort | float + input_scheduler_offset | float * faktor %}
+      {% endif %}
+
+      {{ min_temp }}
     {% endif %}
 
   temperature: >
@@ -2237,6 +2264,7 @@ action:
         calibration_common: {{ calibration_common }} {{ " \n " }}
         is_heating: {{ is_heating }} {{ " \n " }}
         is_metric: {{ is_heating }} {{ " \n " }}
+        input_hvac_mode in ['cool','heat']: {{ input_hvac_mode in ['cool','heat'] }}
       level: !input input_log_level
       logger: blueprints.panhans.heatingcontrol
 
