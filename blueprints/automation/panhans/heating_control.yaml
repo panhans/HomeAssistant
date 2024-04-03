@@ -2475,6 +2475,8 @@ action:
         event_data:
           automation: "{{ this.entity_id }}"
           target_temperature: "{{ temperature }}"
+          comfort_temperature: "{{ state_temperature_comfort }}"
+          eco_temperature: "{{ state_temperature_min }}"
           mode: "{{ mode }}"
           is_comfort: "{{ is_heating }}"
           is_away_temperature: "{{ is_away_temperature }}"
