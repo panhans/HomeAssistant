@@ -1757,6 +1757,9 @@ variables:
       {{ input_temperature_comfort_static }}
     {% endif %}
 
+  is_away_temperature: >
+    {{ state_scheduler == 'on' and is_person_based and is_anybody_home == false and input_hvac_mode in ['cool','heat'] }}
+
   state_temperature_min: >
     {% if is_frost_protection %}
       {{ input_frost_protection_temp }}
@@ -1769,7 +1772,7 @@ variables:
         {% set min_temp = new_eco_temperature %}
       {% endif %}
 
-      {% if state_scheduler == 'on' and is_person_based and is_anybody_home == false and input_hvac_mode in ['cool','heat'] %}
+      {% if is_away_temperature %}
         {% set faktor = iif(input_hvac_mode == 'heat', -1, 1) %}
         {% set min_temp = state_temperature_comfort | float + input_scheduler_offset | float * faktor %}
       {% endif %}
@@ -2469,6 +2472,26 @@ action:
                     hours: "{{ input_service_call_delay.hours }}"
                     minutes: "{{ input_service_call_delay.minutes }}"
                     seconds: "{{ input_service_call_delay.seconds }}"
+
+      - event: ahc_event
+        event_data:
+          automation: "{{ this.entity_id }}"
+          target_temperature: "{{ temperature }}"
+          mode: "{{ mode }}"
+          is_comfort: "{{ is_heating }}"
+          is_away_temperature: "{{ is_away_temperature }}"
+          is_somebody_on_way_home_state: "{{ is_somebody_on_way_home_state }}"
+          is_party: "{{ state_mode_party }}"
+          is_guest: "{{ state_mode_guest }}"
+          is_window_open: "{{ state_window }}"
+          active_scheduler: "{{ active_scheduler }}"
+          state_scheduler: "{{ state_scheduler }}"
+          is_person_based: "{{ is_person_based }}"
+          is_anybody_home: "{{ is_person_based and is_anybody_home }}"
+          state_presence_sensor: "{{ state_presence_sensor and is_presence_scheduler_defined }}"
+          state_presence_scheduler: "{{ is_presence_scheduler_defined and state_presence_scheduler }}"
+          is_presence_on: "{{ is_presence_on }}"
+          is_frost_protection: "{{ is_frost_protection }}"
 
       - if:
           - condition: template
