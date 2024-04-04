@@ -2545,7 +2545,7 @@ action:
           is_frost_protection: "{{ is_frost_protection }}"
           is_change: "{{ changes | count > 0 }}"
           is_calibration: "{{ is_calibration }}"
-          state_force_max_temperature: "{{ state_force_max_temperature }}"
+          is_force_max_temperature: "{{ state_force_max_temperature }}"
 
       - if:
           - condition: template
