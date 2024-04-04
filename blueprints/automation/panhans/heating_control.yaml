@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.2
+    **Version**: 4.3.4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -363,25 +363,6 @@ blueprint:
                 - input_select
           multiple: false
 
-    input_scheduler_offset:
-      name: 🏃 Schedule Away Temperature
-      description: >
-        `scheduler` `persons`
-
-
-        You can define an offset if your [scheduler](https://www.home-assistant.io/integrations/schedule/) is active but nobody is at home. 
-        This makes sense if you leave your home and don't want to cool down your room to eco temperature.
-        This only works if you use a [scheduler](https://www.home-assistant.io/integrations/schedule/) combined with [people/persons](https://www.home-assistant.io/integrations/person/).
-        Note: If you'd select hvac mode *heat* the offset value will be substracted from your current comfort temperature if you'd select *cool* it will be added.
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 10
-          step: 0.5
-          mode: slider
-          unit_of_measurement: °C / °F
-
     # P R E S E N C E
     input_presence_sensor:
       name: 🚶 Presence Sensor / On/Off-Entity
@@ -442,6 +423,56 @@ blueprint:
         seconds: 0
       selector:
         duration:
+
+    # A W A Y   O F F S E T 
+    input_away_offset:
+      name: 🏃 Away Temperature
+      description: >
+        `scheduler` `persons` `presence` `away mode`
+
+
+        First: This feature only works for [schedule](https://www.home-assistant.io/integrations/schedule/) and/or presence based heating combined with [people/persons](https://www.home-assistant.io/integrations/person/). You can define an offset for your comfort temperature that will be subtracted (heating) from or added (cooling) to your comfort temperature.
+
+        If you enable this option for [scheduling](https://www.home-assistant.io/integrations/schedule/)  the away offset will be set if your scheduler is *on* but nobody is at home.
+        For presence detection the offset will be set if you are at home but no presence is detected.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.5
+          mode: slider
+          unit_of_measurement: °C / °F
+
+    input_away_options:
+      name: ⚙️ Away Mode
+      description: "
+        `scheduler` `persons` `presence` `away mode`
+
+        > ### ⏲️ Scheduler Away Mode
+
+        > Enable/Disable the Away Offset for [scheduled](https://www.home-assistant.io/integrations/schedule/) based heating/cooling
+
+        > ### 🚶 Presence Away Mode
+
+        > Enable/Disable the Away Offset for presence based heating/cooling
+
+
+        **NOTE:** Don't set temperature by your [climate](https://www.home-assistant.io/integrations/climate/) entities when using generic calibration but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
+
+        "
+
+      default: []
+      selector:
+        select:
+          options:
+            - label: "⏲️ Scheduler Away Mode"
+              value: scheduler
+            - label: "🚶 Presence Away Mode"
+              value: presence
+          multiple: true
+          custom_value: false
+          mode: list
 
     # M O D E S
     input_mode_party:
@@ -1361,7 +1392,8 @@ variables:
   input_tweaks: !input input_tweaks
   input_calibration_options: !input input_calibration_options
   input_hvac_mode: !input input_hvac_mode
-  input_scheduler_offset: !input input_scheduler_offset
+  input_away_offset: !input input_away_offset
+  input_away_options: !input input_away_options
   # input_tweaks_experimental: !input input_tweaks_experimental
 
   # TWEAKS
@@ -1374,6 +1406,9 @@ variables:
 
   is_generic_calibration: "{{ 'generic_calibration' in input_calibration_options}}"
   is_rounded_values: "{{ 'rounded_values' in input_calibration_options}}"
+
+  is_scheduler_away_mode: "{{ 'scheduler' in input_away_options}}"
+  is_presence_away_mode: "{{ 'presence' in input_away_options}}"
 
   # is_physical_temperature_change: "{{ 'physical_temperature_change' in input_tweaks_experimental}}"
   # is_physical_party_timer: "{{ 'physical_party_timer' in input_tweaks_experimental}}"
@@ -1546,12 +1581,15 @@ variables:
   state_presence_sensor: "{{ is_presence_sensor_defined and is_state(input_presence_sensor, 'on') }}"
   state_presence_scheduler: "{{ is_presence_scheduler_defined and is_state(input_scheduler_presence, 'on') }}"
 
-  is_presence_on: >
+  state_presence_sensor_presence_scheduler_combined: >
     {% set result = false %}
     {% if is_presence_sensor_defined %}
       {% set result = iif(is_presence_scheduler_defined, state_presence_scheduler and state_presence_sensor, state_presence_sensor) %}
     {% endif %}
-    {{ iif(is_person_based, result and is_anybody_home, result) }}
+    {{ result }}
+
+  is_presence_on: >
+    {{ iif(is_person_based, state_presence_sensor_presence_scheduler_combined and is_anybody_home, state_presence_sensor_presence_scheduler_combined) }}
 
   # Scheduler Configuration
   is_scheduled_heating: "{{ active_scheduler != none }}"
@@ -1606,11 +1644,13 @@ variables:
       {{ is_somebody_on_way_home_state }}
     {% endif %}
 
+  is_presence_based: >
+    {{ input_presence_sensor != none }}
+
   is_frost_protection: >
     {% set is_frost_protection_configured = input_frost_protection_duration.hours | int > 0 or input_frost_protection_duration.minutes | int > 0 or input_frost_protection_duration.seconds | int > 0 %}
     {% set is_frost_protection_configured = iif(is_frost_protection_configured,is_frost_protection_configured,days in input_frost_protection_duration) %}
     {% set is_person_based = input_persons | count > 0 %}
-    {% set is_presence_based = input_presence_sensor != none %}
 
     {% if is_frost_protection_configured == false or ( is_person_based == false and is_presence_based == false ) %}
       {{ false }}
@@ -1756,7 +1796,16 @@ variables:
     {% endif %}
 
   is_away_temperature: >
-    {{ state_scheduler and is_person_based and is_anybody_home == false and input_hvac_mode in ['cool','heat'] }}
+    {% set result = false %}
+    {% if is_person_based and input_hvac_mode in ['cool','heat'] %}
+      {% if is_scheduled_heating and is_scheduler_away_mode %}
+        {% set result = state_scheduler and is_anybody_home == false %}
+      {% endif %}
+      {% if result == false and is_presence_based and is_presence_away_mode %}
+        {% set result = is_anybody_home == true and state_presence_sensor_presence_scheduler_combined == false %}
+      {% endif %}
+    {% endif %}
+    {{ result }}
 
   state_temperature_min: >
     {% if is_frost_protection %}
@@ -1772,7 +1821,7 @@ variables:
 
       {% if is_away_temperature %}
         {% set faktor = iif(input_hvac_mode == 'heat', -1, 1) %}
-        {% set min_temp = state_temperature_comfort | float + input_scheduler_offset | float * faktor %}
+        {% set min_temp = state_temperature_comfort | float + input_away_offset | float * faktor %}
       {% endif %}
 
       {{ min_temp }}
@@ -2487,6 +2536,8 @@ action:
           active_scheduler: "{{ active_scheduler }}"
           state_scheduler: "{{ state_scheduler }}"
           is_person_based: "{{ is_person_based }}"
+          is_presence_based: "{{ is_presence_based }}"
+          state_presence_sensor_presence_scheduler_combined: "{{ state_presence_sensor_presence_scheduler_combined }}"
           is_anybody_home: "{{ is_person_based and is_anybody_home }}"
           state_presence_sensor: "{{ state_presence_sensor and is_presence_scheduler_defined }}"
           state_presence_scheduler: "{{ is_presence_scheduler_defined and state_presence_scheduler }}"
@@ -2494,6 +2545,7 @@ action:
           is_frost_protection: "{{ is_frost_protection }}"
           is_change: "{{ changes | count > 0 }}"
           is_calibration: "{{ is_calibration }}"
+          state_force_max_temperature: "{{ state_force_max_temperature }}"
 
       - if:
           - condition: template
