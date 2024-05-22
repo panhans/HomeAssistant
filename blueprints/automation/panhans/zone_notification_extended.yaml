@@ -19,7 +19,7 @@ blueprint:
     If you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
 
 
-    **Version**: 3.5.2
+    **Version**: 3.5.3
 
     **Help & FAQ**: [Zone Notification Extended](https://community.home-assistant.io/t/zone-notification-extended)
 
@@ -74,14 +74,12 @@ blueprint:
       name: ⏱️ Duration
       description: >
         Duration the person must be in or out of the zone before notification gets fired.
-      default: 0
+      default:
+        hours: 0
+        minutes: 0
+        seconds: 0
       selector:
-        number:
-          min: 0
-          max: 10
-          step: 1
-          mode: slider
-          unit_of_measurement: min
+        duration:
 
     notify_device:
       name: 📱 Device to notify
@@ -361,8 +359,7 @@ variables:
 trigger:
   platform: state
   entity_id: !input persons
-  for:
-    minutes: !input duration
+  for: !input duration
 
 condition:
   - condition: template
@@ -399,6 +396,8 @@ action:
       led_color_hex: "#{{ '%02x%02x%02x' | format(led_color[0], led_color[1], led_color[2]) }}"
       zone_names_arriving: "{{ zone_names }}"
       zone_names_leaving: "{{ iif(zones_leaving | count == 0, zone_names, zones_leaving_names) }}"
+      input_tag: !input tag
+      tag: "{{ iif(tag != '', tag, 'zne'+(range(1, 99999) | random | string)) }}"
 
   - if:
       - condition: template
@@ -422,7 +421,7 @@ action:
             notification_icon: !input "status_bar_icon"
             channel: !input "channel"
             group: !input "group"
-            tag: !input tag
+            tag: "{{ tag }}"
             color: "{{ notification_color_hex }}"
             vibrationPattern: !input "vibration_pattern"
             ledColor: "{{led_color_hex}}"
@@ -457,7 +456,7 @@ action:
                   notification_icon: !input "status_bar_icon"
                   channel: !input "channel"
                   group: !input "group"
-                  tag: !input tag
+                  tag: "{{ tag }}"
                   color: "{{ notification_color_hex }}"
                   vibrationPattern: !input "vibration_pattern"
                   ledColor: "{{led_color_hex}}"
@@ -477,7 +476,7 @@ action:
                   notification_icon: !input "status_bar_icon"
                   channel: !input "channel"
                   group: !input "group"
-                  tag: !input tag
+                  tag: "{{ tag }}"
                   color: "{{ notification_color_hex }}"
                   vibrationPattern: !input "vibration_pattern"
                   ledColor: "{{led_color_hex}}"
@@ -496,7 +495,7 @@ action:
                     notification_icon: !input "status_bar_icon"
                     channel: !input "channel"
                     group: !input "group"
-                    tag: !input tag
+                    tag: "{{ tag }}"
                     color: "{{ notification_color_hex }}"
                     vibrationPattern: !input "vibration_pattern"
                     ledColor: "{{led_color_hex}}"
@@ -520,7 +519,7 @@ action:
                     notification_icon: !input "status_bar_icon"
                     channel: !input "channel"
                     group: !input "group"
-                    tag: !input tag
+                    tag: "{{ tag }}"
                     color: "{{ notification_color_hex }}"
                     vibrationPattern: !input "vibration_pattern"
                     ledColor: "{{led_color_hex}}"
