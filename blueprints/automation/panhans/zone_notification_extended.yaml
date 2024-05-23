@@ -397,7 +397,7 @@ action:
       zone_names_arriving: "{{ zone_names }}"
       zone_names_leaving: "{{ iif(zones_leaving | count == 0, zone_names, zones_leaving_names) }}"
       input_tag: !input tag
-      tag: "{{ iif(tag != '', tag, 'zne'+(range(1, 99999) | random | string)) }}"
+      tag: "{{ iif(input_tag != '', input_tag, 'zne'+(range(1, 99999) | random | string)) }}"
 
   - if:
       - condition: template
