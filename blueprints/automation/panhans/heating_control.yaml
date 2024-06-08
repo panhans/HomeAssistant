@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.2.5
+    **Version**: 4.2.7
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -53,7 +53,7 @@ blueprint:
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
 
     "
-  source_url: https://github.com/panhans/HomeAssistant/blob/dev_v4/blueprints/automation/panhans/heating_control.yaml
+  source_url: https://github.com/panhans/HomeAssistant/blob/main/blueprints/automation/panhans/heating_control.yaml
   domain: automation
   input:
     input_trvs:
@@ -938,6 +938,7 @@ trigger_variables:
   input_mode_party: !input input_mode_party
   input_mode_guest: !input input_mode_guest
   input_force_max_temperature: !input input_force_max_temperature
+  input_hvac_mode: !input input_hvac_mode
 
   input_temperature_comfort: !input input_temperature_comfort
   input_temperature_minimum: !input input_temperature_minimum
@@ -967,6 +968,8 @@ trigger_variables:
 
   input_tweaks: !input input_tweaks
   is_heat_only_if_below_real_temp: "{{ 'heat_only_if_below_real_temp' in input_tweaks}}"
+
+  factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
 
 trigger:
   # S Y S T E M   T R I G G E R S
@@ -1174,7 +1177,7 @@ trigger:
       {% if input_mode_outside_temperature != none %}
         {% set state = states(input_mode_outside_temperature) %}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-        {{ state | int <= input_mode_outside_temperature_threshold | int }}
+        {{ (state | int - input_mode_outside_temperature_threshold | int) * factor < 0 }}
       {% endif %}
     for:
       seconds: 2
@@ -1185,7 +1188,7 @@ trigger:
       {% if input_mode_outside_temperature != none %}
         {% set state = states(input_mode_outside_temperature) %}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-        {{ state | int > input_mode_outside_temperature_threshold | int }}
+        {{ (state | int - input_mode_outside_temperature_threshold | int) * factor >= 0 }}
       {% endif %}
     for:
       seconds: 2
@@ -1422,6 +1425,8 @@ variables:
 
   # E V A L U A T I O N --------------------------------------------------------------
 
+  factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
+
   # ------------------------------------------------------------------------------------
   # ------------- PRESENCE, SCHEDULER, FROST PROTECTION, WINDOWS, PERSONS --------------
   # ------------------------------------------------------------------------------------
@@ -1452,7 +1457,7 @@ variables:
     {% if input_mode_outside_temperature != none %}
       {% set state = states(input_mode_outside_temperature) %}
       {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-      {{ state | int <= input_mode_outside_temperature_threshold | int }}
+      {{ (state | int - input_mode_outside_temperature_threshold | int) * factor < 0 }}
     {% else %}
       {{ true }}
     {% endif %}
@@ -1821,8 +1826,7 @@ variables:
       {% endif %}
 
       {% if is_away_temperature %}
-        {% set faktor = iif(input_hvac_mode == 'heat', -1, 1) %}
-        {% set min_temp = state_temperature_comfort | float + input_away_offset | float * faktor %}
+        {% set min_temp = state_temperature_comfort | float + input_away_offset | float * factor %}
       {% endif %}
 
       {{ min_temp }}
@@ -1920,7 +1924,8 @@ variables:
       trigger.platform != none and
       mode != 'off' and
       'calibration' in trigger.id and
-      input_temperature_sensor != none
+      input_temperature_sensor != none and
+      is_number(states(input_temperature_sensor))
     }}
 
   # ------------------------------------------------------------------------------------
@@ -1967,11 +1972,16 @@ variables:
         {% if mode != 'off' %}
 
           {% if is_aggresive_mode %}
+
+            {% if is_generic_calibration and input_temperature_sensor != none %}
+              {% set current_valve_temp = states(input_temperature_sensor) | float %}
+            {% endif %}
+
             {% set temp_diff = valve_temp - current_valve_temp %}
 
-            {% if temp_diff < input_aggressive_mode_range * -1 %}
+            {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
               {% set valve_temp = valve_temp - input_aggressive_mode_offset %}
-            {% elif temp_diff > input_aggressive_mode_range %}
+            {% elif temp_diff * factor > input_aggressive_mode_range %}
               {% set valve_temp = valve_temp + input_aggressive_mode_offset %}
             {% endif %}
 
