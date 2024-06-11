@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.2.7
+    **Version**: 4.2.8
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -1177,7 +1177,10 @@ trigger:
       {% if input_mode_outside_temperature != none %}
         {% set state = states(input_mode_outside_temperature) %}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-        {{ (state | int - input_mode_outside_temperature_threshold | int) * factor < 0 }}
+        
+        {% if is_number(state) %}
+          {{ (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 }}
+        {% endif %}
       {% endif %}
     for:
       seconds: 2
@@ -1188,7 +1191,10 @@ trigger:
       {% if input_mode_outside_temperature != none %}
         {% set state = states(input_mode_outside_temperature) %}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-        {{ (state | int - input_mode_outside_temperature_threshold | int) * factor >= 0 }}
+
+        {% if is_number(state) %}
+          {{ (state | float - input_mode_outside_temperature_threshold | float) * factor >= 0 }}
+        {% endif %}
       {% endif %}
     for:
       seconds: 2
@@ -1457,7 +1463,12 @@ variables:
     {% if input_mode_outside_temperature != none %}
       {% set state = states(input_mode_outside_temperature) %}
       {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-      {{ (state | int - input_mode_outside_temperature_threshold | int) * factor < 0 }}
+
+      {% if is_number(state) %}
+        {{ (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 }}
+      {% else %}
+        {{ true }}
+      {% endif %}
     {% else %}
       {{ true }}
     {% endif %}
