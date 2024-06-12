@@ -1,6 +1,6 @@
 blueprint:
-  name: "Persistent entity state notification"
-  description: >
+  name: "Entity State Notification"
+  description: "
 
     **Features**
 
@@ -12,6 +12,10 @@ blueprint:
 
     - periodical notification with stop functionality
 
+    - custom actions
+
+    - custom conditions
+
 
     **Hints**
 
@@ -21,27 +25,44 @@ blueprint:
     **Help & FAQ**: [Yet not another door/window/sensor open warning notification with auto close and reminder](https://community.home-assistant.io/t/yet-not-another-door-window-sensor-open-warning-notification-with-auto-close-and-reminder)
 
 
-    **Version**: 2.2.1
+    **Version**: 2.3.0
+
+
+    If you like my work and support feel free to support me.
+
+    [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
+    "
 
   source_url: https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/entity_state_persistent_notification.yaml
   domain: automation
 
   input:
     sensor_entity:
-      name: "Entities"
-      description: "Entities which trigger the notification."
+      name: "🖲️ Observed Entities"
+      description: >
+        'target'
+      
+      
+        Entities which trigger the notification.
       selector:
         entity:
           multiple: true
 
     active_state:
-      name: "Notification state"
-      description: "State which triggers notification"
+      name: "🟢 Notification State"
+      description: >
+        'target'
+      
+
+        Target state that triggers the automation.
       default: "on"
 
     for_time_m:
-      name: For Time
-      description: Duration the sensor must be in state
+      name: '⏲️ State Duration'
+      description: >
+        'target'
+      
+        Duration the entity must be in target state.
       default: 0
       selector:
         number:
@@ -52,8 +73,12 @@ blueprint:
           unit_of_measurement: min
 
     notify_device:
-      name: "Device to notify"
-      description: Device which gets a notification.
+      name: "📱 Device to notify"
+      description: >
+        `notification`
+      
+      
+        Device which gets a notification.
       default:
       selector:
         device:
@@ -61,37 +86,60 @@ blueprint:
             integration: mobile_app
 
     notify_group:
-      name: Notification Group
-      description: "The name of the notification group to call. ('notify' for all devices)"
+      name: '🫂 Notification Group'
+      description: >
+        `notification`
+      
+      
+        The name of the notification group to call. ('notify' for all devices)
       default: ""
 
     title:
-      name: "Title"
-      description: "Notification title"
+      name: "📕 Notification Title"
+      description: >
+        `notification`
+      
+
+        Headline of your notifications.
       default: "{{ entity_name }} is {{ avtive_state }}"
 
     message:
-      name: "Message"
-      description: "Notification message"
+      name: "💬 Notification Message"
+      description: >
+        `notification`
+
+        
+        Content of your notifications.
       default: "Keep in mind: {{ entity_name }} is {{ active_state }}"
 
     ha_notification:
-      name: Persistent HomeAssistant Notification
-      description: Creates a notification in your home assistant frontend.
+      name: '🏠 Persistent HomeAssistant Notification'
+      description: >
+        `notification`
+      
+      
+        Creates a notification in your home assistant frontend.
       default: false
       selector:
         boolean:
 
     persistent_notification:
-      name: Persistent Notification
-      description: Would you like a persistent or a closable notification?
+      name: '🪨 Persistent Notification'
+      description: > 
+        `notification`
+      
+        If turned on you can't swipe away the notification. It only disappears if the observed entity leave the target state.
       default: true
       selector:
         boolean:
 
     period:
-      name: Periodical Notification
-      description: Sends notification periodically
+      name: '🔄 Periodical Notification'
+      description: >
+        `periodical` `notification`
+      
+        
+        Sends notification periodically. 0 means off.
       default: 0
       selector:
         number:
@@ -102,46 +150,107 @@ blueprint:
           unit_of_measurement: min
 
     stop_button_text:
-      name: "Stop button text"
-      description: "Text for stop button in the notification to interrupt the periodical send notifications."
+      name: "💬 Stop Button Text"
+      description: >
+        `periodical` `optional`
+
+
+        Text for stop button in the notification to interrupt the periodical send notifications.
       default: "Stop notifying"
 
     status_bar_icon:
-      name: "Status bar icon (Android specific)"
-      description: "Sets the status bar icon."
+      name: "🌠 Status Bar Icon"
+      description: >
+        `Android` `optional`
+
+
+        Sets the status bar icon.
       default: mdi:home-assistant
       selector:
         icon:
           placeholder: mdi:home-assistant
 
     notification_color:
-      name: "Notification color (Android specific)"
-      description: "Color of the notification"
+      name: "🎨 Notification Color"
+      description: >
+        `Android` `optional`
+
+
+        Color of the notification
       default: [100, 200, 240]
       selector:
         color_rgb:
 
     channel:
-      name: "Channel (Android specific)"
-      description: "Separate these notifications by channel."
+      name: "📭 Notification Channel"
+      description: >
+        `Android` `optional`
+
+
+        You can set a notification channel. In your companion app you can set e.g. a custom sound for notifications in this channel.
       default: "General"
 
     group:
-      name: "Notification group (Android specific)"
-      description: "Group notifications by using this identifier."
-      default: "zone-notification-group"
+      name: "📑 Notification Group"
+      description: >
+        `Android` `optional`
+
+
+        Group notifications by using this identifier.
+      default: "espn-notification-group"
 
     vibration_pattern:
-      name: "Vibration pattern (Android specific)"
-      description: "Pattern of the vibration when notification arrives."
+      name: "📳 Vibration Pattern"
+      description: >
+        `Android` `optional`
+
+
+        Pattern of the vibration when notification arrives."
       default: "100, 100"
 
     led_color:
-      name: "Notification LED color (Android specific)"
-      description: "Color of the phone LED after incoming notification."
+      name: "💡 Notification LED Color"
+      description: >
+        `Android` `optional`
+
+
+        Color of the phone LED after incoming notification."
       default: [100, 200, 240]
       selector:
         color_rgb:
+
+    custom_condition:
+      name: "❌ Conditions"
+      description: >
+        `optional`
+
+
+        Condition that must be met for the notification to be triggered.
+      default: []
+      selector:
+        condition:
+
+    custom_action_on:
+      name: "🎬 Custom Action On"
+      description: >
+        `optional`
+
+      
+        Custom action when your observed entity enters the target states.
+      default: []
+      selector:
+        action: {}
+
+    custom_action_off:
+      name: "🎬 Custom Action Off"
+      description: >
+        `optional`
+
+      
+        Custom action when observed entity leave the target state. Keep in mind this action also will be fired if your custom condition doesn't match.
+      default: []
+      selector:
+        action: {}
 
 variables:
   active_state: !input active_state
@@ -178,12 +287,22 @@ trigger:
 condition:
   - condition: or
     conditions:
-      - condition: template
-        value_template: "{{ trigger.id == 'on' }}"
+      - condition: and
+        conditions:  
+        - condition: template
+          value_template: "{{ trigger.id == 'on' }}"
+        - condition: and
+          conditions: !input custom_condition
+
       - condition: template
         value_template: "{{ trigger.id == 'off' }}"
-      - condition: template
-        value_template: "{{ trigger.id == 'period' and trigger.event.data.automation == this.entity_id }}"
+
+      - condition: and
+        conditions: 
+        - condition: template
+          value_template: "{{ trigger.id == 'period' and trigger.event.data.automation == this.entity_id }}"
+        - condition: and
+          conditions: !input custom_condition
 
 action:
   - variables:
@@ -332,5 +451,27 @@ action:
             event_data:
               s_entity: "{{ sensor }}"
               automation: "{{ this.entity_id }}"
+
+  - if:
+    - condition: template
+      value_template: "{{ is_period_trigger or trigger.to_state.state == active_state }}"
+    then:
+      - variables:
+          custom_action_on: !input custom_action_on
+      - if:
+        - condition: template
+          value_template: "{{ custom_action_on != none }}"
+        then:
+          - choose: []
+            default: !input "custom_action_on"
+    else:
+      - variables:
+          custom_action_on: !input custom_action_off
+      - if:
+        - condition: template
+          value_template: "{{ custom_action_off != none }}"
+        then:
+          - choose: []
+            default: !input "custom_action_off"
 
 mode: parallel
