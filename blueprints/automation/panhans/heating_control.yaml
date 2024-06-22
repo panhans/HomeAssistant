@@ -249,7 +249,13 @@ blueprint:
             `scheduler` `optional`
 
 
-            Define an entity to choose from your schedulers. If you use one scheduler only you can ignore this. If you use more than one scheduler you have multiple possibilities to setup your selection: <br/>
+            Define an entity to choose from your schedulers. If you use one scheduler only you can ignore this. If you use more than one scheduler you have multiple possibilities to setup your selection.<br/>
+
+            <details>
+            <summary><code><strong>CLICK HERE:</strong> More information</code></summary>
+            <br/>
+
+
 
             * toggle [input_boolean](https://www.home-assistant.io/integrations/input_boolean/) or [binary_sensor](https://www.home-assistant.io/integrations/binary_sensor/): If *off* the first defined [scheduler](https://www.home-assistant.io/integrations/schedule/) is active. If *on* the second [scheduler](https://www.home-assistant.io/integrations/schedule/) is active. More than two [schedulers](https://www.home-assistant.io/integrations/schedule/) cannot be selected with binary inputs.
 
@@ -259,6 +265,11 @@ blueprint:
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
+
+
+
+            </details>
+
           default:
           selector:
             entity:
@@ -277,8 +288,13 @@ blueprint:
             `optional`
 
 
-            Here you can setup some adjustments to your heating schedule. What's possible until now?
+            Here you can setup some adjustments to your heating schedule.
             <br/>
+
+            <details>
+            <summary><code><strong>CLICK HERE:</strong> Modifiers</code></summary>
+            <br/>
+
 
             > 🕔 **time**
 
@@ -314,8 +330,14 @@ blueprint:
             > on/off
 
 
-            Example:
+            </details>
+
             <br/>
+
+            <details>
+            <summary><code><strong>CLICK HERE:</strong> Example</code></summary>
+            <br/>
+
 
             ```yaml
 
@@ -331,6 +353,8 @@ blueprint:
               comfort: "24"
               eco: "17"
             ```
+            
+            </details>
 
           selector:
             object:
@@ -646,11 +670,6 @@ blueprint:
               custom_value: false
               mode: list
 
-
-              
-
-    
-
     # M O D I F I E R S
     aggressive_mode_section:
       name: Aggressive Mode
@@ -664,11 +683,21 @@ blueprint:
 
 
             Activate this option if your [thermostats](https://www.home-assistant.io/integrations/climate/) react slowly or only start to react at a large temperature difference between actual and set temperature.
-            Define a range when your real target temperature shall be set. E.g. you target temperature is 20°C and your room temperature is 19.5°C.
+            Define a range when your real target temperature shall be set. 
+            
+            <details>
+            <summary><code><strong>CLICK HERE:</strong> More information</code></summary>
+            <br/>
+            
+            E.g. you target temperature is 20°C and your room temperature is 19.5°C.
             If your range is set to 0.5°C the real target temperature (20°C) will be set when room temperature is between 19.5°C and 20.5°C.
             If the room temperature is above or lower that range it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react. (see Aggressive Mode - Offset)
 
-            **NOTE:** Don't set temperature by your [cliamte](https://www.home-assistant.io/integrations/climate/) entities when using aggressive mode but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
+            </details>
+
+
+
+            **NOTE:** Don't set temperature by your [climate](https://www.home-assistant.io/integrations/climate/) entities when using aggressive mode but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
           default: 0
           selector:
             number:
