@@ -459,9 +459,6 @@ blueprint:
 
             > Enable/Disable the Away Offset for presence based heating/cooling
 
-
-            **NOTE:** Don't set temperature by your [climate](https://www.home-assistant.io/integrations/climate/) entities when using generic calibration but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
-
             "
 
           default: []
@@ -653,9 +650,6 @@ blueprint:
 
             > Enable this if you [thermostat](https://www.home-assistant.io/integrations/climate/) calibration entity accept floating values but only save them as integers.
 
-
-            **NOTE:** Don't set temperature by your [climate](https://www.home-assistant.io/integrations/climate/) entities when using generic calibration but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
-
             "
 
           default: []
@@ -695,9 +689,6 @@ blueprint:
 
             </details>
 
-
-
-            **NOTE:** Don't set temperature by your [climate](https://www.home-assistant.io/integrations/climate/) entities when using aggressive mode but by your eco / comfort entities only in order to prevent unwanted side effect. (caused by a home assistant [bug](https://github.com/home-assistant/core/issues/99914))
           default: 0
           selector:
             number:
