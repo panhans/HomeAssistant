@@ -578,7 +578,7 @@ blueprint:
     # C A L I B R A T I O N
     calibration_section:
       name: Calibration
-      icon: mdi:cog
+      icon: mdi:compass
       collapsed: true
       input:
         input_temperature_sensor:
