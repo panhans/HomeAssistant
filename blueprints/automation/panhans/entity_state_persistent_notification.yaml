@@ -25,7 +25,7 @@ blueprint:
     **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    **Version**: 2.3.0
+    **Version**: 2.4.0
 
 
     If you like my work and support feel free to support me.
@@ -37,220 +37,242 @@ blueprint:
   domain: automation
 
   input:
-    sensor_entity:
-      name: "🖲️ Observed Entities"
-      description: >
-        'target'
+    sensor_section:
+      name: Sensors
+      icon: mdi:broadcast
+      collapsed: true
+      input:
+        sensor_entity:
+          name: "🖲️ Observed Entities"
+          description: >
+            `target`
+          
+          
+            Entities which trigger the notification.
+          selector:
+            entity:
+              multiple: true
+
+        active_state:
+          name: "🟢 Notification State"
+          description: >
+            `target`
+          
+
+            Target state that triggers the automation.
+          default: "on"
+
+        for_time_m:
+          name: '⏲️ State Duration'
+          description: >
+            `target`
+          
+            Duration the entity must be in target state.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 0
+          selector:
+            duration:
+
+    mobile_notifcation_section:
+      name: Mobile Notification Settings
+      icon: mdi:chat
+      collapsed: true
+      input:
+        notify_device:
+          name: "📱 Device to notify"
+          description: >
+            `notification`
+          
+          
+            Device which gets a notification.
+          default:
+          selector:
+            device:
+              filter:
+                integration: mobile_app
+
+        notify_group:
+          name: '🫂 Notification Group'
+          description: >
+            `notification`
+          
+          
+            The name of the notification group to call. ('notify' for all devices)
+          default: ""
+
+        title:
+          name: "📕 Notification Title"
+          description: >
+            `notification`
+          
+
+            Headline of your notifications.
+          default: "{{ entity_name }} is {{ avtive_state }}"
+
+        message:
+          name: "💬 Notification Message"
+          description: >
+            `notification`
+
+            
+            Content of your notifications.
+          default: "Keep in mind: {{ entity_name }} is {{ active_state }}"
+
+        persistent_notification:
+          name: '🪨 Persistent Notification'
+          description: > 
+            `notification`
+          
+            If turned on you can't swipe away the notification. It only disappears if the observed entity leave the target state.
+          default: true
+          selector:
+            boolean:
+
+        ha_notification:
+          name: '🏠 Persistent HomeAssistant Notification'
+          description: >
+            `notification`
+          
+          
+            Creates a notification in your home assistant frontend.
+          default: false
+          selector:
+            boolean:
+
+    peridodic_notification_section:
+      name: Periodic Notification Settings
+      icon: mdi:refresh
+      collapsed: true
+      input:
       
-      
-        Entities which trigger the notification.
-      selector:
-        entity:
-          multiple: true
+        period:
+          name: '🔄 Periodical Notification'
+          description: >
+            `periodical` `notification`
+          
+            
+            Sends notification periodically. 0 means off.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 0
+          selector:
+            duration:
 
-    active_state:
-      name: "🟢 Notification State"
-      description: >
-        'target'
-      
-
-        Target state that triggers the automation.
-      default: "on"
-
-    for_time_m:
-      name: '⏲️ State Duration'
-      description: >
-        'target'
-      
-        Duration the entity must be in target state.
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 59
-          step: 1
-          mode: slider
-          unit_of_measurement: min
-
-    notify_device:
-      name: "📱 Device to notify"
-      description: >
-        `notification`
-      
-      
-        Device which gets a notification.
-      default:
-      selector:
-        device:
-          filter:
-            integration: mobile_app
-
-    notify_group:
-      name: '🫂 Notification Group'
-      description: >
-        `notification`
-      
-      
-        The name of the notification group to call. ('notify' for all devices)
-      default: ""
-
-    title:
-      name: "📕 Notification Title"
-      description: >
-        `notification`
-      
-
-        Headline of your notifications.
-      default: "{{ entity_name }} is {{ avtive_state }}"
-
-    message:
-      name: "💬 Notification Message"
-      description: >
-        `notification`
-
-        
-        Content of your notifications.
-      default: "Keep in mind: {{ entity_name }} is {{ active_state }}"
-
-    ha_notification:
-      name: '🏠 Persistent HomeAssistant Notification'
-      description: >
-        `notification`
-      
-      
-        Creates a notification in your home assistant frontend.
-      default: false
-      selector:
-        boolean:
-
-    persistent_notification:
-      name: '🪨 Persistent Notification'
-      description: > 
-        `notification`
-      
-        If turned on you can't swipe away the notification. It only disappears if the observed entity leave the target state.
-      default: true
-      selector:
-        boolean:
-
-    period:
-      name: '🔄 Periodical Notification'
-      description: >
-        `periodical` `notification`
-      
-        
-        Sends notification periodically. 0 means off.
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 30
-          step: 1
-          mode: slider
-          unit_of_measurement: min
-
-    stop_button_text:
-      name: "💬 Stop Button Text"
-      description: >
-        `periodical` `optional`
+        stop_button_text:
+          name: "💬 Stop Button Text"
+          description: >
+            `periodical` `optional`
 
 
-        Text for stop button in the notification to interrupt the periodical send notifications.
-      default: "Stop notifying"
+            Text for stop button in the notification to interrupt the periodical send notifications.
+          default: "Stop notifying"
 
-    status_bar_icon:
-      name: "🌠 Status Bar Icon"
-      description: >
-        `Android` `optional`
-
-
-        Sets the status bar icon.
-      default: mdi:home-assistant
-      selector:
-        icon:
-          placeholder: mdi:home-assistant
-
-    notification_color:
-      name: "🎨 Notification Color"
-      description: >
-        `Android` `optional`
+    mobile_appearance_section:
+      name: Mobile Notification Appearance
+      icon: mdi:palette
+      collapsed: true
+      input:
+        status_bar_icon:
+          name: "🌠 Status Bar Icon"
+          description: >
+            `Android` `optional`
 
 
-        Color of the notification
-      default: [100, 200, 240]
-      selector:
-        color_rgb:
+            Sets the status bar icon.
+          default: mdi:home-assistant
+          selector:
+            icon:
+              placeholder: mdi:home-assistant
 
-    channel:
-      name: "📭 Notification Channel"
-      description: >
-        `Android` `optional`
-
-
-        You can set a notification channel. In your companion app you can set e.g. a custom sound for notifications in this channel.
-      default: "General"
-
-    group:
-      name: "📑 Notification Group"
-      description: >
-        `Android` `optional`
+        notification_color:
+          name: "🎨 Notification Color"
+          description: >
+            `Android` `optional`
 
 
-        Group notifications by using this identifier.
-      default: "espn-notification-group"
+            Color of the notification
+          default: [100, 200, 240]
+          selector:
+            color_rgb:
 
-    vibration_pattern:
-      name: "📳 Vibration Pattern"
-      description: >
-        `Android` `optional`
-
-
-        Pattern of the vibration when notification arrives."
-      default: "100, 100"
-
-    led_color:
-      name: "💡 Notification LED Color"
-      description: >
-        `Android` `optional`
+        channel:
+          name: "📭 Notification Channel"
+          description: >
+            `Android` `optional`
 
 
-        Color of the phone LED after incoming notification."
-      default: [100, 200, 240]
-      selector:
-        color_rgb:
+            You can set a notification channel. In your companion app you can set e.g. a custom sound for notifications in this channel.
+          default: "General"
 
-    custom_condition:
-      name: "❌ Conditions"
-      description: >
-        `optional`
+        group:
+          name: "📑 Notification Group"
+          description: >
+            `Android` `optional`
 
 
-        Condition that must be met for the notification to be triggered.
-      default: []
-      selector:
-        condition:
+            Group notifications by using this identifier.
+          default: "espn-notification-group"
 
-    custom_action_on:
-      name: "🎬 Custom Action On"
-      description: >
-        `optional`
+        vibration_pattern:
+          name: "📳 Vibration Pattern"
+          description: >
+            `Android` `optional`
 
-      
-        Custom action when your observed entity enters the target states.
-      default: []
-      selector:
-        action: {}
 
-    custom_action_off:
-      name: "🎬 Custom Action Off"
-      description: >
-        `optional`
+            Pattern of the vibration when notification arrives."
+          default: "100, 100"
 
-      
-        Custom action when observed entity leave the target state. Keep in mind this action also will be fired if your custom condition doesn't match.
-      default: []
-      selector:
-        action: {}
+        led_color:
+          name: "💡 Notification LED Color"
+          description: >
+            `Android` `optional`
+
+
+            Color of the phone LED after incoming notification."
+          default: [100, 200, 240]
+          selector:
+            color_rgb:
+
+    custom_section:
+      name: Custom Actions / Conditions
+      icon: mdi:cog
+      collapsed: true
+      input:
+        custom_condition:
+          name: "❌ Conditions"
+          description: >
+            `optional`
+
+
+            Condition that must be met for the notification to be triggered.
+          default: []
+          selector:
+            condition:
+
+        custom_action_on:
+          name: "🎬 Custom Action On"
+          description: >
+            `optional`
+
+          
+            Custom action when your observed entity enters the target states.
+          default: []
+          selector:
+            action: {}
+
+        custom_action_off:
+          name: "🎬 Custom Action Off"
+          description: >
+            `optional`
+
+          
+            Custom action when observed entity leave the target state. Keep in mind this action also will be fired if your custom condition doesn't match.
+          default: []
+          selector:
+            action: {}
 
 variables:
   active_state: !input active_state
@@ -265,16 +287,11 @@ variables:
   led_color: !input "led_color"
   led_color_hex: "#{{ '%02x%02x%02x' | format(led_color[0], led_color[1], led_color[2]) }}"
 
-trigger_variables:
-  for_time_m: !input for_time_m
-  for_time_m_t: "{{ for_time_m | default(0) | int }}"
-
 trigger:
   - platform: state
     entity_id: !input "sensor_entity"
     to: !input active_state
-    for:
-      minutes: "{{ for_time_m_t }}"
+    for: !input for_time_m
     id: "on"
   - platform: state
     entity_id: !input "sensor_entity"
@@ -327,7 +344,7 @@ action:
         then:
           - if:
               - condition: template
-                value_template: "{{ period > 0 }}"
+                value_template: "{{ now() != now() + timedelta(**period) }}"
             then:
               - service: 'notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}'
                 data:
@@ -371,7 +388,7 @@ action:
         then:
           - if:
               - condition: template
-                value_template: "{{ period > 0 }}"
+                value_template: "{{ now() != now() + timedelta(**period) }}"
             then:
               - service: notify.{{ group_target }}
                 data:
@@ -432,25 +449,41 @@ action:
 
   - if:
       - condition: template
-        value_template: "{{ period > 0 }}"
+        value_template: "{{ now() != now() + timedelta(**period) }}"
     then:
       - wait_for_trigger:
           - platform: event
             event_type: mobile_app_notification_action
             event_data:
               action: "{{ action_tag }}"
-        timeout:
-          minutes: "{{ period }}"
+        timeout: !input period
+      - variables:
+          s_last_changed: | 
+            {{ [sensor] | expand | map(attribute='last_changed') | first }}
+          st_last_changed:  |
+            {% if is_period_trigger %}
+              {{ trigger.event.data.st_last_changed }}
+            {% else %}
+              {{ none }}
+            {% endif %}
+      - service: system_log.write
+        data:
+          level: warning
+          message: > 
+            Last Changed {{ s_last_changed }} Last Change Trigger {{ st_last_changed }}
       - if:
           - condition: template
             value_template: "{{ states(sensor) == active_state }}"
           - condition: template
             value_template: "{{ wait.trigger == none }}"
+          - condition: template
+            value_template: "{{ st_last_changed == none or st_last_changed == s_last_changed }}"
         then:
           - event: pntc_event
             event_data:
               s_entity: "{{ sensor }}"
               automation: "{{ this.entity_id }}"
+              st_last_changed: "{{ s_last_changed }}"
 
   - if:
     - condition: template
