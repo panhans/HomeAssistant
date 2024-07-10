@@ -341,6 +341,14 @@ action:
       - condition: template
         value_template: "{{ is_period_trigger or trigger.to_state.state == active_state }}"
     then:
+      - variables:
+          custom_action_on: !input custom_action_on
+      - if:
+        - condition: template
+          value_template: "{{ custom_action_on != none }}"
+        then:
+          - choose: []
+            default: !input "custom_action_on"    
       - if:
           - condition: template
             value_template: "{{ notify_device != none }}"
@@ -439,6 +447,14 @@ action:
               message: !input message
               notification_id: "{{ tag }}"
     else:
+      - variables:
+          custom_action_on: !input custom_action_off
+      - if:
+        - condition: template
+          value_template: "{{ custom_action_off != none }}"
+        then:
+          - choose: []
+            default: !input "custom_action_off"
       - service: notify.notify
         data:
           data:
@@ -487,27 +503,5 @@ action:
               s_entity: "{{ sensor }}"
               automation: "{{ this.entity_id }}"
               st_last_changed: "{{ s_last_changed }}"
-
-  - if:
-    - condition: template
-      value_template: "{{ is_period_trigger or trigger.to_state.state == active_state }}"
-    then:
-      - variables:
-          custom_action_on: !input custom_action_on
-      - if:
-        - condition: template
-          value_template: "{{ custom_action_on != none }}"
-        then:
-          - choose: []
-            default: !input "custom_action_on"
-    else:
-      - variables:
-          custom_action_on: !input custom_action_off
-      - if:
-        - condition: template
-          value_template: "{{ custom_action_off != none }}"
-        then:
-          - choose: []
-            default: !input "custom_action_off"
 
 mode: parallel
