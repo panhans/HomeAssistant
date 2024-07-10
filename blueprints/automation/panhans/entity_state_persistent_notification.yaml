@@ -1,5 +1,8 @@
 blueprint:
   name: "Entity State Notification"
+  author: panhans
+  homeassistant:
+    min_version: "2024.6.0"
   description: "
 
     **Features**
