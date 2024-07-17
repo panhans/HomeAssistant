@@ -374,6 +374,12 @@ action:
       #   {% else %}
       #     {{ notification_importance }}
       #   {% endif %}
+      st_last_changed: |
+        {% if is_period_trigger %}
+          {{ trigger.event.data.st_last_changed }}
+        {% else %}
+          {{ as_timestamp([sensor] | expand | map(attribute='last_changed') | first) }}
+        {% endif %}
 
   - if:
       - condition: template
@@ -495,6 +501,8 @@ action:
   - if:
       - condition: template
         value_template: "{{ now() != now() + timedelta(**period) }}"
+      - condition: template
+        value_template: "{{ trigger.id != 'off' }}"
     then:
       - wait_for_trigger:
           - platform: event
@@ -505,12 +513,6 @@ action:
       - variables:
           s_last_changed: |
             {{ as_timestamp([sensor] | expand | map(attribute='last_changed') | first) }}
-          st_last_changed: |
-            {% if is_period_trigger %}
-              {{ trigger.event.data.st_last_changed }}
-            {% else %}
-              {{ none }}
-            {% endif %}
       - service: system_log.write
         data:
           level: debug
@@ -520,11 +522,9 @@ action:
           - condition: template
             value_template: "{{ states(sensor) == active_state }}"
           - condition: template
-            value_template: "{{ trigger.id != 'off' }}"
-          - condition: template
             value_template: "{{ wait.trigger == none }}"
           - condition: template
-            value_template: "{{ st_last_changed == none or st_last_changed == s_last_changed }}"
+            value_template: "{{ st_last_changed == s_last_changed }}"
         then:
           - event: pntc_event
             event_data:
