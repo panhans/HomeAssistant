@@ -500,6 +500,8 @@ action:
 
   - if:
       - condition: template
+        value_template: "{{ timedelta(hours=0,minutes=0,seconds=0) != timedelta(**period) }}"
+      - condition: template
         value_template: "{{ now() != now() + timedelta(**period) }}"
       - condition: template
         value_template: "{{ trigger.id != 'off' }}"
@@ -546,7 +548,7 @@ action:
             default: !input "custom_action_on"
     else:
       - variables:
-          custom_action_on: !input custom_action_off
+          custom_action_off: !input custom_action_off
       - if:
           - condition: template
             value_template: "{{ custom_action_off != none }}"
