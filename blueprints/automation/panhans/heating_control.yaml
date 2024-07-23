@@ -1061,7 +1061,7 @@ trigger_variables:
   input_tweaks: !input input_tweaks
   is_heat_only_if_below_real_temp: "{{ 'heat_only_if_below_real_temp' in input_tweaks}}"
 
-  factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
+  factor: "{{ iif(input_hvac_mode == 'cool', 1, -1) | int }}"
 
 trigger:
   # S Y S T E M   T R I G G E R S
@@ -1523,7 +1523,7 @@ variables:
 
   # E V A L U A T I O N --------------------------------------------------------------
 
-  factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
+  factor: "{{ iif(input_hvac_mode == 'cool', 1, -1) | int }}"
 
   # ------------------------------------------------------------------------------------
   # ------------- PRESENCE, SCHEDULER, FROST PROTECTION, WINDOWS, PERSONS --------------
