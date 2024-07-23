@@ -19,7 +19,8 @@ blueprint:
 
     **Hints**
 
-    - if you want to test this automation, you need to change the state of an observed person. you can do this, in the developer options. Simply filter for your person entity, click on it and change the state to a zone used by this automation.
+    If you want to test this automation, you need to change the state of an observed entity. You can do this in the developer options. 
+    Simply filter for your entity, select it and change the state to the trigger state manually.
 
 
     **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
