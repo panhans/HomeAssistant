@@ -2637,6 +2637,8 @@ action:
       - event: ahc_event
         event_data:
           automation: "{{ this.entity_id }}"
+          factor: "{{ factor }}"
+          min_temp: "{{ state_temperature_min }}"
           target_temperature: "{{ temperature }}"
           comfort_temperature: "{{ state_temperature_comfort }}"
           eco_temperature: "{{ state_temperature_min }}"
