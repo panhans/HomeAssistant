@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.2.9
+    **Version**: 4.2.10
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -82,8 +82,8 @@ blueprint:
 
             Select the hvac mode for your [thermostats](https://www.home-assistant.io/integrations/climate/). Be sure your selected thermostats support the hvac mode you've chosen.
             AHC will log a warning if there is a miss match. For radiator [thermostats]((https://www.home-assistant.io/integrations/climate/)) the default is mostly *heat*.
-            If you own an air conditioner it will support *auto* or *cool*, too. 
-          default: 'heat'
+            If you own an air conditioner it will support *auto* or *cool*, too.
+          default: "heat"
           selector:
             select:
               options:
@@ -97,7 +97,6 @@ blueprint:
       icon: mdi:thermometer
       collapsed: true
       input:
-
         input_temperature_minimum_static:
           name: 🌱 Static Eco Temperature
           description: >
@@ -353,7 +352,7 @@ blueprint:
               comfort: "24"
               eco: "17"
             ```
-            
+
             </details>
 
           selector:
@@ -426,7 +425,7 @@ blueprint:
           selector:
             duration:
 
-        # A W A Y   O F F S E T 
+        # A W A Y   O F F S E T
         input_away_offset:
           name: 🏃 Away Temperature
           description: >
@@ -678,11 +677,11 @@ blueprint:
 
             Activate this option if your [thermostats](https://www.home-assistant.io/integrations/climate/) react slowly or only start to react at a large temperature difference between actual and set temperature.
             Define a range when your real target temperature shall be set. 
-            
+
             <details>
             <summary><code><strong>CLICK HERE:</strong> More information</code></summary>
             <br/>
-            
+
             E.g. you target temperature is 20°C and your room temperature is 19.5°C.
             If your range is set to 0.5°C the real target temperature (20°C) will be set when room temperature is between 19.5°C and 20.5°C.
             If the room temperature is above or lower that range it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react. (see Aggressive Mode - Offset)
@@ -826,7 +825,7 @@ blueprint:
 
     # W I N T E R  M O D E
     toggle_section:
-      name: 'On/Off Automation Options'
+      name: "On/Off Automation Options"
       icon: mdi:light-switch
       collapsed: true
       input:
@@ -892,8 +891,6 @@ blueprint:
               step: 1
               mode: box
               unit_of_measurement: °C / °F
-
-    
 
     # TWEAKS
     tweak_section:
@@ -994,7 +991,6 @@ blueprint:
     #   description: "
     #     `tweak`
 
-
     #     > ### 🌡️ Physical Temperature Change
 
     #     > Adjust the temperature via your thermostats.
@@ -1002,7 +998,6 @@ blueprint:
     #     > ### 🎈 Start Party Timer On Physical Change
 
     #     > Start your party timer when you change the temperature via your thermostats.
-
 
     #     **HINT**: This features may won't work properly since there is a [bug](https://github.com/home-assistant/core/issues/99914) in home assistant.
 
@@ -1431,16 +1426,16 @@ trigger:
           {{ iif(is_person_based, person_fp, presence_fp) }}
         {% endif %}
       {% endif %}
-  
-# HEATING / COOLING WHEN ABOVE/BELOW ROOM TEMPERATURE
+
+  # HEATING / COOLING WHEN ABOVE/BELOW ROOM TEMPERATURE
   - platform: template
     id: temperature_change_room_temp_above_target
     value_template: >
-        {% if input_temperature_sensor != none and is_heat_only_if_below_real_temp == true %}
-          {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(hours=0, minutes=0, seconds=2) }}
-        {% else %}
-          {{ false }}
-        {% endif %}
+      {% if input_temperature_sensor != none and is_heat_only_if_below_real_temp == true %}
+        {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(hours=0, minutes=0, seconds=2) }}
+      {% else %}
+        {{ false }}
+      {% endif %}
 
 ##################################################
 ############### V A R I A B L E S ################
@@ -1531,7 +1526,7 @@ variables:
 
   active_party_entity: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | map(attribute='entity_id') | first | default(none) }}"
   state_mode_party: "{{ active_party_entity != none }}"
-  party_temp: > 
+  party_temp: >
     {% set pos_party_temp = none %}
     {% if state_mode_party == true %}
       {% set name = state_attr(active_party_entity,'friendly_name') %}
@@ -1929,7 +1924,7 @@ variables:
       {% endif %}
 
       {% if is_away_temperature %}
-        {% set min_temp = state_temperature_comfort | float + input_away_offset | float * factor %}
+        {% set min_temp = state_temperature_comfort | float - (input_away_offset | float * factor) %}
       {% endif %}
 
       {{ min_temp }}
@@ -2346,7 +2341,7 @@ action:
         data:
           level: warning
           logger: blueprints.panhans.heatingcontrol
-          message: > 
+          message: >
             AHC - Your selected hvac mode {{ input_hvac_mode }} isn't support by some of your climate entities: {{ valves_unsupported | join(', ') }}
 
   - if:
@@ -2637,6 +2632,8 @@ action:
       - event: ahc_event
         event_data:
           automation: "{{ this.entity_id }}"
+          factor: "{{ factor }}"
+          min_temp: "{{ state_temperature_min }}"
           target_temperature: "{{ temperature }}"
           comfort_temperature: "{{ state_temperature_comfort }}"
           eco_temperature: "{{ state_temperature_min }}"
