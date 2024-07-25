@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.2.10
+    **Version**: 4.2.11
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control)
 
@@ -2078,9 +2078,9 @@ variables:
             {% set temp_diff = valve_temp - current_valve_temp %}
 
             {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
-              {% set valve_temp = valve_temp - input_aggressive_mode_offset %}
+              {% set valve_temp = valve_temp - input_aggressive_mode_offset * factor %}
             {% elif temp_diff * factor > input_aggressive_mode_range %}
-              {% set valve_temp = valve_temp + input_aggressive_mode_offset %}
+              {% set valve_temp = valve_temp + input_aggressive_mode_offset * factor %}
             {% endif %}
 
             {% if valve_temp < min_temp %}
