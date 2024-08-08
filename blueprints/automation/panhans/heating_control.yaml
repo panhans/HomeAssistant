@@ -670,7 +670,7 @@ blueprint:
       collapsed: true
       input:
         input_aggressive_mode_range:
-          name: 😡 Agressive Mode - Range
+          name: 😡 Aggressive Mode - Range
           description: >
             `aggressive mode` `tweak`
 
@@ -684,7 +684,7 @@ blueprint:
 
             E.g. you target temperature is 20°C and your room temperature is 19.5°C.
             If your range is set to 0.5°C the real target temperature (20°C) will be set when room temperature is between 19.5°C and 20.5°C.
-            If the room temperature is above or lower that range it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react. (see Aggressive Mode - Offset)
+            If the room temperature is above or lower than range, it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react. (see Aggressive Mode - Offset)
 
             </details>
 
@@ -698,13 +698,13 @@ blueprint:
               unit_of_measurement: °C / °F
 
         input_aggressive_mode_offset:
-          name: 😡 Agressive Mode - Offset
+          name: 😡 Aggressive Mode - Offset
           description: >
             `aggressive mode` `tweak`
 
 
             Here you can define the offset that will be added to your target temperature if the room temperature is not in range of your target temperature.
-            If your room temperature is not in the defined range, e.g. 19.5°C - 20.5°C this offset will be added to your target temperature.
+            If your room temperature is not in the defined range, e.g. 19.5°C - 20.5°C this offset will be added to your target temperature. If range is 0, then offset is always added.
           default: 0
           selector:
             number:
@@ -788,7 +788,7 @@ blueprint:
 
 
             If an entity is specified here, it is treated like a [person](https://www.home-assistant.io/integrations/person/). It's usefull when you're leaving your guests alone in your home and you are not using presence detection.
-              
+
               * entity defined -> [person](https://www.home-assistant.io/integrations/person/) defined
               * enitity is *on* -> simulates [person](https://www.home-assistant.io/integrations/person/) is home
               * enitity is *off* -> simulates [person](https://www.home-assistant.io/integrations/person/) is away
@@ -1264,7 +1264,7 @@ trigger:
       {% if input_mode_outside_temperature != none %}
         {% set state = states(input_mode_outside_temperature) %}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-        
+
         {% if is_number(state) %}
           {{ (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 }}
         {% endif %}
@@ -1499,7 +1499,7 @@ variables:
   is_not_off_but_min: "{{ 'not_off_but_min' in input_tweaks}}"
   is_heat_only_if_below_real_temp: "{{ 'heat_only_if_below_real_temp' in input_tweaks}}"
   is_fahrenheit: "{{ 'fahrenheit' in input_tweaks}}"
-  is_aggresive_mode: "{{ input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0 }}"
+  is_aggressive_mode: "{{ input_aggressive_mode_offset > 0 }}"
 
   is_generic_calibration: "{{ 'generic_calibration' in input_calibration_options}}"
   is_rounded_values: "{{ 'rounded_values' in input_calibration_options}}"
@@ -1803,7 +1803,7 @@ variables:
 
       {% if e != none%}
         {% set e_time = e['time'].replace(':','') | int %}
-        
+
         {% if e_time <= current_time and
               (result.entry == none or 
                 e_time >= result.entry['time'].replace(':','') | int) %}
@@ -1814,7 +1814,7 @@ variables:
         {% endif %}
       {% endif %}
     {% endfor %}
-      
+
     {{ iif(result.entry == none, result.last_entry, result.entry) }}
 
   entry_time: >
@@ -2045,7 +2045,7 @@ variables:
         trigger.platform == none or
         "temperature_change" in trigger.id or 
         is_calibration and is_generic_calibration or 
-        is_aggresive_mode and "aggressive_mode" in trigger.id
+        is_aggressive_mode and "aggressive_mode" in trigger.id
     }}
 
   changes: >
@@ -2069,7 +2069,7 @@ variables:
 
         {% if mode != 'off' %}
 
-          {% if is_aggresive_mode %}
+          {% if is_aggressive_mode %}
 
             {% if is_generic_calibration and input_temperature_sensor != none %}
               {% set current_valve_temp = states(input_temperature_sensor) | float %}
@@ -2209,7 +2209,7 @@ variables:
   calibration_external_sensor: >
     {% set n = namespace(dict=[]) %}
     {% if (is_periodical_popp_calibration or is_difference_popp_calibration) and is_generic_calibration == false and entry_calibration %}
-      
+
       {% for valve in valves_external_sensor %}
 
         {% set calibration_entity = device_entities(device_id(valve)) |
@@ -2231,7 +2231,7 @@ variables:
         {% if is_difference_popp_calibration %}
           {% set update_calibration = old_state != new_state %}
         {% endif %}
-        
+
         {% if update_calibration %}
           {% set n.dict = n.dict + [(calibration_entity, [{'value': new_state, 'valve': valve}])] %}
         {% endif%}
@@ -2247,7 +2247,7 @@ variables:
     {% set n = namespace(dict=[]) %}
 
     {% if is_calibration and is_generic_calibration == false and entry_calibration %}
-      
+
       {% for valve in valves_calibration_common %}
 
         {% set calibration_entities = device_entities(device_id(valve)) |
@@ -2276,11 +2276,10 @@ variables:
 
           {% set new_calibration_value = iif(new_calibration_value > max_calibration_value, max_calibration_value, new_calibration_value) %}
           {% set new_calibration_value = iif(new_calibration_value < min_calibration_value, min_calibration_value, new_calibration_value) %}
-          
+
           {% set round_size = iif('.' in (step | string) and is_rounded_values == false, (step | string).split('.')[1] | length, 0) %}
 
           {% set offset_new = ((new_calibration_value | float(0) / step) | round(0) * step) | round(round_size) | float %}
-          
 
           {% if (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) %}
             {% set n.dict = n.dict + [(calibration_entity, [{'value': offset_new, 'valve': valve}])] %}
@@ -2357,7 +2356,7 @@ action:
   - if:
       - condition: template
         value_template:
-          "{{ (is_generic_calibration or (input_aggressive_mode_range > 0 and input_aggressive_mode_offset > 0))
+          "{{ (is_generic_calibration or input_aggressive_mode_offset > 0)
           and is_physical_change }}"
     then:
       - service: system_log.write
