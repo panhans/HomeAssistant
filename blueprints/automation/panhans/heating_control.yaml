@@ -2,7 +2,7 @@ blueprint:
   name: 🔥 Advanced Heating Control
   author: panhans
   homeassistant:
-    min_version: "2024.6.0"
+    min_version: "2024.8.0"
   description: "
 
 
@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.2.12
+    **Version**: 4.2.13
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -852,6 +852,20 @@ blueprint:
                     - binary_sensor
               multiple: false
 
+        input_invert_winter_mode_value:
+          name: 🔄 Invert Winter Mode Value
+          description: >
+            `activation`
+
+
+            If enabled the the value of the binary winter mode entity will be inverted:
+
+              * off -> activates the automation
+              * on -> disables the automation
+          default: off
+          selector:
+            boolean:
+
         input_mode_outside_temperature:
           name: 🌤️ Outside Temperature Sensor
           description: >
@@ -862,7 +876,7 @@ blueprint:
             To do this, select a temperature sensor or a weather entity and adjust the threshold below.
 
               * [weather entity](https://www.home-assistant.io/integrations/weather/)
-              * [temperature sensor entity](https://www.home-assistant.io/integrations/sensor/
+              * [temperature sensor entity](https://www.home-assistant.io/integrations/sensor/)
 
           default:
           selector:
@@ -898,14 +912,14 @@ blueprint:
       icon: mdi:cog-box
       collapsed: true
       input:
-        input_service_call_delay:
-          name: ⚙️ Service Call Delay
+        input_action_call_delay:
+          name: ⚙️ Action Call Delay
           description: >
             `tweak`
 
 
             Some [thermostats](https://www.home-assistant.io/integrations/climate/) have problems with setting mode and temperature. You can try to increase the
-            delay between the service calls. This could fix your problems.
+            delay between the action calls. This could fix your problems.
           default:
             hours: 0
             minutes: 0
@@ -966,7 +980,7 @@ blueprint:
             `optional`
 
 
-            This custom action gets executed with every temperature / mode change except calibration. If you want to control other devices just check states before doing a service call.
+            This custom action gets executed with every temperature / mode change except calibration. If you want to control other devices just check states before doing an action call.
             Use the variable *is_heating* in your conditions. *True* means heating is active.
           default:
           selector:
@@ -1057,6 +1071,8 @@ trigger_variables:
   is_heat_only_if_below_real_temp: "{{ 'heat_only_if_below_real_temp' in input_tweaks}}"
 
   factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
+
+  input_invert_winter_mode_value: !input input_invert_winter_mode_value
 
 trigger:
   # S Y S T E M   T R I G G E R S
@@ -1243,7 +1259,8 @@ trigger:
     id: temperature_change_winter_mode_on
     value_template: >
       {% if input_mode_winter != none %}
-        {{ states(input_mode_winter) == 'on' }}
+        {% set activation_state = iif(input_invert_winter_mode_value, 'off', 'on') %}
+        {{ states(input_mode_winter) == activation_state }}
       {% endif %}
     for:
       seconds: 2
@@ -1252,7 +1269,8 @@ trigger:
     id: temperature_change_winter_mode_off
     value_template: >
       {% if input_mode_winter != none %}
-        {{ states(input_mode_winter) == 'off' }}
+        {% set activation_state = iif(input_invert_winter_mode_value, 'off', 'on') %}
+        {{ states(input_mode_winter) != activation_state }}
       {% endif %}
     for:
       seconds: 2
@@ -1464,6 +1482,7 @@ variables:
   input_windows_reaction_time_close: !input input_windows_reaction_time_close
 
   input_mode_winter: !input input_mode_winter
+  input_invert_winter_mode_value: !input input_invert_winter_mode_value
   input_mode_outside_temperature: !input input_mode_outside_temperature
   input_mode_outside_temperature_threshold: !input input_mode_outside_temperature_threshold
   input_proximity: !input input_proximity
@@ -1482,7 +1501,7 @@ variables:
   input_temperature_sensor: !input input_temperature_sensor
   input_calibration_delta: !input input_calibration_delta
   input_time_based_temperature_change_valve_target: !input input_time_based_temperature_change_valve_target
-  input_service_call_delay: !input input_service_call_delay
+  input_action_call_delay: !input input_action_call_delay
   input_aggressive_mode_offset: !input input_aggressive_mode_offset
   input_aggressive_mode_range: !input input_aggressive_mode_range
   input_custom_action: !input input_custom_action
@@ -1541,7 +1560,8 @@ variables:
 
   state_mode_winter: >
     {% if input_mode_winter != none %}
-      {{ states(input_mode_winter) == 'on' }}
+      {% set activation_state = iif(input_invert_winter_mode_value, 'off', 'on') %}
+      {{ states(input_mode_winter) == activation_state }}
     {% else %}
       {{ true }}
     {% endif %}
@@ -2336,7 +2356,7 @@ action:
       - condition: template
         value_template: "{{ valves_unsupported | count > 0 }}"
     then:
-      - service: system_log.write
+      - action: system_log.write
         data:
           level: warning
           logger: blueprints.panhans.heatingcontrol
@@ -2347,7 +2367,7 @@ action:
       - condition: template
         value_template: "{{ up_time_sensor == none }}"
     then:
-      - service: system_log.write
+      - action: system_log.write
         data:
           level: warning
           logger: blueprints.panhans.heatingcontrol
@@ -2359,7 +2379,7 @@ action:
           "{{ (is_generic_calibration or input_aggressive_mode_offset > 0)
           and is_physical_change }}"
     then:
-      - service: system_log.write
+      - action: system_log.write
         data:
           level: warning
           logger: blueprints.panhans.heatingcontrol
@@ -2367,7 +2387,7 @@ action:
             AHC - You've enabled generic calibration / aggressive mode in combination with the physical change feature. 
             Unwanted side effects may occur with this configuration. This combination is therefore not recommended.
 
-  - service: system_log.write
+  - action: system_log.write
     data:
       message: >
         AHC REF  {{" \n "}}
@@ -2434,7 +2454,7 @@ action:
           - condition: template
             value_template: "{{ is_reset }}"
         sequence:
-          - service: input_number.set_value
+          - action: input_number.set_value
             data:
               value: "{{ input_temperature_comfort_static }}"
             target:
@@ -2469,7 +2489,7 @@ action:
           - condition: template
             value_template: "{{  real_manual_temp != state_temperature_comfort }}"
 
-          - service: input_number.set_value
+          - action: input_number.set_value
             data:
               value: "{{ real_manual_temp }}"
             target:
@@ -2502,7 +2522,7 @@ action:
           - condition: template
             value_template: "{{  real_manual_temp != state_temperature_comfort }}"
 
-          - service: input_number.set_value
+          - action: input_number.set_value
             data:
               value: "{{ real_manual_temp }}"
             target:
@@ -2512,13 +2532,13 @@ action:
           - condition: template
             value_template: "{{ is_manual_timer_start }}"
         then:
-          - service: timer.start
+          - action: timer.start
             target:
               entity_id: "{{ input_mode_party }}"
           - delay:
-              hours: "{{ input_service_call_delay.hours }}"
-              minutes: "{{ input_service_call_delay.minutes }}"
-              seconds: "{{ input_service_call_delay.seconds }}"
+              hours: "{{ input_action_call_delay.hours }}"
+              minutes: "{{ input_action_call_delay.minutes }}"
+              seconds: "{{ input_action_call_delay.seconds }}"
 
       # NUMBER CALIBRATION
       - repeat:
@@ -2530,7 +2550,7 @@ action:
                 thermostat: "{{ (((calibration_number.values() | list) [index]) | first) ['valve'] }}"
                 offset: "{{ (((calibration_number.values() | list) [index]) | first) ['value'] }}"
 
-            - service: system_log.write
+            - action: system_log.write
               data:
                 message: >
                   AHC REF CALIBRATION  {{" \n "}}
@@ -2539,15 +2559,15 @@ action:
                 level: !input input_log_level
                 logger: blueprints.panhans.heatingcontrol
 
-            - service: number.set_value
+            - action: number.set_value
               data:
                 value: "{{ float(offset) }}"
               target:
                 entity_id: "{{ calibration_entity }}"
             - delay:
-                hours: "{{ input_service_call_delay.hours }}"
-                minutes: "{{ input_service_call_delay.minutes }}"
-                seconds: "{{ input_service_call_delay.seconds }}"
+                hours: "{{ input_action_call_delay.hours }}"
+                minutes: "{{ input_action_call_delay.minutes }}"
+                seconds: "{{ input_action_call_delay.seconds }}"
 
       # TADO CALIBRATION
       - repeat:
@@ -2557,17 +2577,17 @@ action:
                 index: "{{ repeat.index-1 }}"
                 thermostat: "{{ (calibration_tado.keys() | list) [index] }}"
                 offset: "{{ (((calibration_tado.values() | list) [index]) | first) ['value'] }}"
-            - service: tado.set_climate_temperature_offset
+            - action: tado.set_climate_temperature_offset
               data:
                 offset: "{{ offset }}"
                 entity_id: "{{ thermostat }}"
             - delay:
-                hours: "{{ input_service_call_delay.hours }}"
-                minutes: "{{ input_service_call_delay.minutes }}"
-                seconds: "{{ input_service_call_delay.seconds }}"
+                hours: "{{ input_action_call_delay.hours }}"
+                minutes: "{{ input_action_call_delay.minutes }}"
+                seconds: "{{ input_action_call_delay.seconds }}"
 
       # SET TEMPERATURE
-      - service: system_log.write
+      - action: system_log.write
         data:
           message: >
             AHC REF  {{" \n "}}
@@ -2583,7 +2603,7 @@ action:
                 thermostat: "{{ (changes.keys() | list) [index] }}"
                 mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
                 target_temperature: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
-            - service: system_log.write
+            - action: system_log.write
               data:
                 message: >
                   thermostat: {{ thermostat }}
@@ -2593,7 +2613,7 @@ action:
                 level: !input input_log_level
                 logger: blueprints.panhans.heatingcontrol
 
-            - service: system_log.write
+            - action: system_log.write
               data:
                 message: >
                   AHC REF CHANGES: {{ thermostat }} -> {{ mode }} -> {{ target_temperature }}
@@ -2604,29 +2624,29 @@ action:
                 - condition: template
                   value_template: "{{ states(thermostat) | lower != mode | lower  }}"
               then:
-                - service: climate.set_hvac_mode
+                - action: climate.set_hvac_mode
                   data:
                     entity_id: "{{ thermostat }}"
                     hvac_mode: "{{ mode }}"
 
                 - delay:
-                    hours: "{{ input_service_call_delay.hours }}"
-                    minutes: "{{ input_service_call_delay.minutes }}"
-                    seconds: "{{ input_service_call_delay.seconds }}"
+                    hours: "{{ input_action_call_delay.hours }}"
+                    minutes: "{{ input_action_call_delay.minutes }}"
+                    seconds: "{{ input_action_call_delay.seconds }}"
 
             - if:
                 - condition: template
                   value_template: "{{ state_attr(thermostat, 'temperature') != target_temperature and mode != 'off' }}"
               then:
-                - service: climate.set_temperature
+                - action: climate.set_temperature
                   data:
                     entity_id: "{{ thermostat }}"
                     temperature: "{{ target_temperature | float }}"
 
                 - delay:
-                    hours: "{{ input_service_call_delay.hours }}"
-                    minutes: "{{ input_service_call_delay.minutes }}"
-                    seconds: "{{ input_service_call_delay.seconds }}"
+                    hours: "{{ input_action_call_delay.hours }}"
+                    minutes: "{{ input_action_call_delay.minutes }}"
+                    seconds: "{{ input_action_call_delay.seconds }}"
 
       - event: ahc_event
         event_data:
@@ -2656,6 +2676,7 @@ action:
           is_change: "{{ changes | count > 0 }}"
           is_calibration: "{{ is_calibration }}"
           is_force_max_temperature: "{{ state_force_max_temperature }}"
+          is_metric: "{{ is_metric }}"
 
       - if:
           - condition: template
