@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.2.13
+    **Version**: 4.2.14
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -424,6 +424,13 @@ blueprint:
             seconds: 0
           selector:
             duration:
+
+    # P R O X I M I T Y
+    away_section:
+      name: Away Mode
+      icon: mdi:walk
+      collapsed: true
+      input:
 
         # A W A Y   O F F S E T
         input_away_offset:
@@ -1926,7 +1933,7 @@ variables:
         {% set result = state_scheduler and is_anybody_home == false %}
       {% endif %}
       {% if result == false and is_presence_based and is_presence_away_mode %}
-        {% set result = is_anybody_home == true and state_presence_sensor_presence_scheduler_combined == false %}
+        {% set result = is_anybody_home == true and iif(is_presence_scheduler_defined, state_presence_scheduler and state_presence_sensor == false, state_presence_sensor == false) %}
       {% endif %}
     {% endif %}
     {{ result }}
