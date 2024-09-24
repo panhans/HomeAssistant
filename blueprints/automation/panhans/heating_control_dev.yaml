@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.1_dev2
+    **Version**: 4.3.1_dev3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -425,13 +425,13 @@ blueprint:
           selector:
             duration:
 
-    # P R O X I M I T Y
+    # AWAY MODE
     away_section:
       name: Away Mode
       icon: mdi:walk
       collapsed: true
       input:
-        # A W A Y   O F F S E T
+        # AWAY OFFSET
         input_away_offset:
           name: 🏃 Away Temperature
           description: >
@@ -474,6 +474,8 @@ blueprint:
                   value: scheduler
                 - label: "🚶 Presence Away Mode"
                   value: presence
+                - label: "🚶 Ignore People For Presence Away Mode"
+                  value: presence_ignor_people
               multiple: true
               custom_value: false
               mode: list
@@ -1625,6 +1627,7 @@ variables:
 
   is_scheduler_away_mode: "{{ 'scheduler' in input_away_options}}"
   is_presence_away_mode: "{{ 'presence' in input_away_options}}"
+  presence_ignor_people: "{{ 'presence_ignor_people' in input_away_options}}"
 
   # is_physical_temperature_change: "{{ 'physical_temperature_change' in input_tweaks_experimental}}"
   # is_physical_party_timer: "{{ 'physical_party_timer' in input_tweaks_experimental}}"
@@ -2036,7 +2039,7 @@ variables:
       {% if is_scheduled_heating and is_scheduler_away_mode %}
         {% set result = state_scheduler and is_anybody_home == false %}
       {% endif %}
-      {% if result == false and is_presence_based and is_presence_away_mode %}
+      {% if result == false and (is_presence_based or presence_ignor_people) and is_presence_away_mode %}
         {% set result = is_anybody_home == true and iif(is_presence_scheduler_defined, state_presence_scheduler and state_presence_sensor == false, state_presence_sensor == false) %}
       {% endif %}
     {% endif %}
