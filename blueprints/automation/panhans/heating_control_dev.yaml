@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.1_dev
+    **Version**: 4.3.1_dev2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -579,6 +579,18 @@ blueprint:
             seconds: 30
           selector:
             duration:
+
+        input_window_open_temperature:
+          name: Window Open Temperature
+          description: ''
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 15
+              step: 1
+              mode: slider
+              unit_of_measurement: °C / °F
 
     # C A L I B R A T I O N
     calibration_section:
@@ -1563,9 +1575,11 @@ variables:
 
   input_scheduler_presence: !input input_scheduler_presence
 
+  # WINDOWS & DOORS
   input_windows: !input input_windows
   input_windows_reaction_time_open: !input input_windows_reaction_time_open
   input_windows_reaction_time_close: !input input_windows_reaction_time_close
+  input_window_open_temperature: !input input_window_open_temperature
 
   input_mode_winter: !input input_mode_winter
   input_invert_winter_mode_value: !input input_invert_winter_mode_value
@@ -2179,9 +2193,10 @@ variables:
         {% set min_temp = state_attr(valve, 'min_temp') | float(5) %}
         {% set max_temp = state_attr(valve, 'max_temp') | float(30) %}
 
-        {% set valve_mode = iif(mode == 'off' and (valve in valves_without_off_mode or is_not_off_but_min), current_valve_mode, mode) %}
+        {% set valve_mode = iif(mode == 'off' and (valve in valves_without_off_mode or is_not_off_but_min or (state_window and input_window_open_temperature > 0)), current_valve_mode, mode) %}
         {% set valve_temp = temperature %}
         {% set valve_temp = iif((valve in valves_without_off_mode or is_not_off_but_min) and mode == 'off', min_temp, temperature) %}
+        {% set valve_temp = iif(state_window and input_window_open_temperature > 0, iif(input_window_open_temperature < min_temp, min_temp, input_window_open_temperature), temperature) %}
         {% set valve_temp = iif(state_force_max_temperature and mode != 'off', max_temp, valve_temp) %}
 
         {% if mode != 'off' %}
