@@ -434,15 +434,15 @@ blueprint:
 
         # A W A Y   O F F S E T
         input_away_offset:
-          name: 🏃 Away Temperature
+          name: 🏃 Away Temperature Offset
           description: >
             `scheduler` `persons` `presence` `away mode`
 
 
             First: This feature only works for [schedule](https://www.home-assistant.io/integrations/schedule/) and/or presence based heating combined with [people/persons](https://www.home-assistant.io/integrations/person/). You can define an offset for your comfort temperature that will be subtracted (heating) from or added (cooling) to your comfort temperature.
 
-            If you enable this option for [scheduling](https://www.home-assistant.io/integrations/schedule/)  the away offset will be set if your scheduler is *on* but nobody is at home.
-            For presence detection the offset will be set if you are at home but no presence is detected.
+            If you enable this option for [scheduling](https://www.home-assistant.io/integrations/schedule/) the away offset will be substracted from the comfort temperature if your scheduler is *on* but nobody is at home.
+            For presence detection this is the case if you are at home but no presence is detected.
           default: 0
           selector:
             number:
