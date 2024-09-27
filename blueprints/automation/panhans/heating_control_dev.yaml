@@ -776,19 +776,30 @@ blueprint:
     # LIMING PROTECTION
     liming_protection_section:
       name: Liming Protection
-      icon: mid:test
+      icon: mdi:pipe-valve
       collapsed: true
       input:
         input_liming_protection:
-          name: Liming Protection
-          description: ""
+          name: 🎚️ Liming Protection
+          description: >
+            `liming protection`
+          
+
+            Most smart thermostats come with that feature out of the box. 
+            If your thermostat doesn't support this or you're using the generic thermostat integration this feature is maybe handy for you in order to prevent your valve against limescale. 
+            The automation will set the thermostat to its max and open the valve for one minute.
+
           default: off
           selector:
             boolean:
 
         input_liming_protection_day:
-          name: Day
-          description: ""
+          name: 🗓️ Day
+          description: >
+            `liming protection`
+          
+
+            Select the day of the week for the execution.
           default: "Mon"
           selector:
             select:
@@ -809,8 +820,12 @@ blueprint:
                   value: Sun
 
         input_liming_protection_time:
-          name: Time
-          description: ""
+          name: 🕖 Time
+          description: >
+            `liming protection`
+
+
+            Select the time for the execution.
           default: "12:00:00"
           selector:
             time:
@@ -997,7 +1012,7 @@ blueprint:
 
             > ### ↩️ Reset Temperature
 
-            > Reset your temperature after party ends or temperature go from comfort to eco
+            > Reset your temperature entities to the values of the static temperatures after [schedule](https://www.home-assistant.io/integrations/schedule/) or [presence](https://www.home-assistant.io/integrations/schedule) ends
 
             > ### 🛑 Turn *OFF* Instead Of Eco Temperature
 
@@ -1015,6 +1030,10 @@ blueprint:
 
             > Enable this if your unit of measurement is Fahrenheit (untested)
 
+            > ### 🧪 Physical Temperature Change / Sync
+
+            > Enable this if your want to adjust the temperature using your thermostat or thermostat card. Make sure aggressive mode and generic calibration is disabled for this feature. (experimental)
+
             "
 
           default: []
@@ -1031,6 +1050,8 @@ blueprint:
                   value: heat_only_if_below_real_temp
                 - label: "🇫 Fahrenheit"
                   value: fahrenheit
+                - label: "🧪 Physical Temperature Change / Sync (experimental)"
+                  value: physical_temperature_change
               multiple: true
               custom_value: false
               mode: list
@@ -1070,7 +1091,7 @@ blueprint:
     #     > ### 🌡️ Physical Temperature Change
 
     #     > Adjust the temperature via your thermostats.
-
+ 
     #     > ### 🎈 Start Party Timer On Physical Change
 
     #     > Start your party timer when you change the temperature via your thermostats.
@@ -1180,13 +1201,12 @@ trigger:
     id: temperature_change_reload
 
   # S T A T E   T R I G G E R S
-  # not implemented yet
-  # - platform: state
-  #   entity_id: !input input_trvs
-  #   attribute: temperature
-  #   for:
-  #     seconds: 5
-  #   id: temperature_change_valve_target
+  - platform: state
+    entity_id: !input input_trvs
+    attribute: temperature
+    for:
+      seconds: 5
+    id: temperature_change_valve_target
 
   # T E M P E R A T U R E   C H A N G E S
   - platform: template
@@ -1614,7 +1634,7 @@ variables:
   input_hvac_mode: !input input_hvac_mode
   input_away_offset: !input input_away_offset
   input_away_options: !input input_away_options
-  # input_tweaks_experimental: !input input_tweaks_experimental
+  #input_tweaks_experimental: !input input_tweaks_experimental
 
   # TWEAKS
   is_reset_temperature: "{{ 'reset_temperature' in input_tweaks}}"
@@ -1631,7 +1651,7 @@ variables:
   is_presence_away_mode: "{{ 'presence' in input_away_options}}"
   presence_ignor_people: "{{ 'presence_ignor_people' in input_away_options}}"
 
-  # is_physical_temperature_change: "{{ 'physical_temperature_change' in input_tweaks_experimental}}"
+  is_physical_change_enabled: "{{ 'physical_temperature_change' in input_tweaks}}"
   # is_physical_party_timer: "{{ 'physical_party_timer' in input_tweaks_experimental}}"
 
   # V A L V E   G R O U P S
@@ -2099,8 +2119,8 @@ variables:
 
     {{ heating_mode }}
 
-  is_physical_change: >
-    {{ false }}
+  #is_physical_change: >
+  #  {{ false }}
   # is_physical_change: >
   #   {{
   #     trigger.id == 'temperature_change_valve_target' and
@@ -2476,11 +2496,19 @@ variables:
           (trigger.id == 'temperature_change_party_off' and state_window)
         )
     }}
+
+  all_exisiting_scenes: "{{ [scene_id_window,scene_id_party] | expand | map(attribute='entity_id') | list }}"
+  delete_all_scenes: >
+      {{ 'temperature_change' in trigger.id and not ('temperature_change_window' in trigger.id or 'temperature_change_party' in trigger.id) }}  
+
   scene_can_delete: "{{ scene_apply }}"
-  #scene_can_delete: >
-  #  {{
-  #    (not (trigger.id == 'temperature_change_party_off' and state_window))
-  #  }}
+  
+  current_temp_entity: "{{ iif(set_comfort, input_temperature_comfort, input_temperature_minimum) }}"
+
+  is_physical_change: >
+    {{ 
+      (is_physical_change_enabled and trigger.id == 'temperature_change_valve_target' and temperature != state_attr(trigger.to_state.entity_id,'temperature') and not (is_aggressive_mode or is_generic_calibration))
+    }}
 
 ##################################################
 ########### C O N D I T I O N S ##################
@@ -2496,13 +2524,15 @@ condition:
       - condition: template
         value_template: "{{ calibration_tado | count > 0 }}"
       - condition: template
-        value_template: "{{ changes | count > 0 }}"
+        value_template: "{{ changes | count > 0 and not trigger.id == 'temperature_change_valve_target' }}"
       - condition: template
         value_template: "{{ is_manual_timer_start }}"
       - condition: template
         value_template: "{{ is_reset }}"
       - condition: template
-        value_template: "{{ is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change }}"
+        value_template: "{{ (is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change) and not trigger.id == 'temperature_change_valve_target' }}"
+      - condition: template
+        value_template: "{{ is_physical_change }}"
 
 ##################################################
 ################## A C T I O N ###################
@@ -2540,16 +2570,15 @@ action:
   - if:
       - condition: template
         value_template:
-          "{{ (is_generic_calibration or input_aggressive_mode_offset > 0)
-          and is_physical_change }}"
+          "{{ (is_aggressive_mode or is_generic_calibration) and is_physical_change_enabled }}"
     then:
       - action: system_log.write
         data:
           level: warning
           logger: blueprints.panhans.heatingcontrol
           message: >
-            AHC - You've enabled generic calibration / aggressive mode in combination with the physical change feature. 
-            Unwanted side effects may occur with this configuration. This combination is therefore not recommended.
+            AHC - You've enabled generic calibration / aggressive mode in combination with the physical change / temperature sync feature. 
+            This feature is disabled in order to prevent unwanted side effects.
 
   - action: system_log.write
     data:
@@ -2563,6 +2592,8 @@ action:
         scene_apply: {{ scene_apply }} {{" \n "}}
         scene_to_apply: {{ scene_to_apply }} {{" \n "}}
         scene_can_delete: {{ scene_can_delete }} {{" \n "}}
+        delete_all_scenes: {{ delete_all_scenes }} {{" \n "}}
+        all_exisiting_scenes: {{ all_exisiting_scenes }} {{" \n "}}
         is_calibration: {{ calibration_number | count > 0 or calibration_tado | count > 0 }} {{" \n "}}
         is_changes: {{ changes | count > 0 }} {{" \n "}}
         is_reset: {{ is_reset }} {{" \n "}}
@@ -2632,6 +2663,30 @@ action:
 
       - conditions:
           - condition: template
+            value_template: "{{ is_physical_change }}"
+        sequence:
+          - action: input_number.set_value
+            data:
+              value: >
+                {% set source_id = trigger.to_state.entity_id %}
+                {% set target_id = iif(set_comfort, input_temperature_comfort, input_temperature_minimum) %}
+                {% set t_target = state_attr(source_id,'temperature') %}
+                {% set t_min = state_attr(target_id,'min') %}
+                {% set t_max = state_attr(target_id,'max') %}
+
+                {% if t_target < t_min %}
+                  {{ t_min }}
+                {% elif t_target > t_max %}
+                  {{ t_max }}
+                {% else %}
+                  {{ t_target }}
+                {% endif %}
+            target:
+              entity_id: "{{ iif(set_comfort, input_temperature_comfort, input_temperature_minimum) }}"
+          
+
+      - conditions:
+          - condition: template
             value_template: "{{ scene_to_apply != none and scene_apply == true }}"
         sequence:
           - action: scene.turn_on
@@ -2644,12 +2699,11 @@ action:
     default:
       - if:
           - condition: template
-            value_template: "{{ scene_to_apply != none and scene_apply == false and scene_can_delete }}"
+            value_template: "{{ (scene_to_apply != none and scene_apply == false and scene_can_delete) or delete_all_scenes }}"
         then:
           - action: scene.delete
             target:
-              entity_id: "{{ scene_to_apply }}"
-
+              entity_id: "{{ iif(delete_all_scenes,all_exisiting_scenes,scene_to_apply) }}"
 
       # STORE CLIMATE STATES IN A SCENE
       - if:
