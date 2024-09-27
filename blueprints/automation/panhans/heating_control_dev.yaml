@@ -1513,10 +1513,12 @@ trigger:
     value_template: >
       {% set is_frost_protection_configured = input_frost_protection_duration.hours | int > 0 or input_frost_protection_duration.minutes | int > 0 or input_frost_protection_duration.seconds | int > 0 %}
       {% set is_frost_protection_configured = iif(is_frost_protection_configured,is_frost_protection_configured,days in input_frost_protection_duration) %}
-      {% set is_person_based = input_persons | count > 0 %}
-      {% set is_presence_based = input_presence_sensor != none %}
+      {% set person_count = input_persons | count %}
+      {% set is_person_based = person_count > 0 %}
+      {% set person_home_count = input_persons | expand | selectattr('state','==','home') | map(attribute='entity_id') | list | count %}
+      {% set anybody_is_home = person_count > 0 and person_home_count > 0 %}
 
-      {% if is_frost_protection_configured == false or ( is_person_based == false and is_presence_based == false ) %}
+      {% if (not is_frost_protection_configured) or (is_frost_protection_configured and (person_count == 0 or anybody_is_home or is_presence_based == false)) %}
         {{ false }}
       {% else %}
         {% set person_fp = false %}
@@ -1888,9 +1890,12 @@ variables:
   is_frost_protection: >
     {% set is_frost_protection_configured = input_frost_protection_duration.hours | int > 0 or input_frost_protection_duration.minutes | int > 0 or input_frost_protection_duration.seconds | int > 0 %}
     {% set is_frost_protection_configured = iif(is_frost_protection_configured,is_frost_protection_configured,days in input_frost_protection_duration) %}
-    {% set is_person_based = input_persons | count > 0 %}
+    {% set person_count = input_persons | count %}
+    {% set is_person_based = person_count > 0 %}
+    {% set person_home_count = input_persons | expand | selectattr('state','==','home') | map(attribute='entity_id') | list | count %}
+    {% set anybody_is_home = person_count > 0 and person_home_count > 0 %}
 
-    {% if is_frost_protection_configured == false or ( is_person_based == false and is_presence_based == false ) %}
+    {% if (not is_frost_protection_configured) or (is_frost_protection_configured and (person_count == 0 or anybody_is_home or is_presence_based == false)) %}
       {{ false }}
     {% else %}
       {% set person_fp = false %}
@@ -2243,17 +2248,17 @@ variables:
 
               {% set temp_with_offset = (temp_with_offset | float(0) / float(step)) | round(0) * float(step) %}
 
-              {% if(temp_with_offset > max_temp) %}
-                {% set temp_with_offset = max_temp %}
-              {% elif (temp_with_offset < min_temp) %}
-                {% set temp_with_offset = min_temp %}
-              {% endif %}
-
               {% set valve_temp = iif(is_rounded_values == true, float(temp_with_offset) | round(), temp_with_offset | round(1)) %}
 
             {% endif %}
           {% endif %}
 
+        {% endif %}
+
+        {% if(valve_temp > max_temp) %}
+          {% set valve_temp = max_temp %}
+        {% elif (valve_temp < min_temp) %}
+          {% set valve_temp = min_temp %}
         {% endif %}
 
         {% if (current_valve_mode != valve_mode or 
