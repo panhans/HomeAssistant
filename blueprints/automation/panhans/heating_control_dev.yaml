@@ -2199,7 +2199,7 @@ variables:
         {% set valve_mode = iif(mode == 'off' and (valve in valves_without_off_mode or is_not_off_but_min or (state_window and input_window_open_temperature > 0)), current_valve_mode, mode) %}
         {% set valve_temp = temperature %}
         {% set valve_temp = iif((valve in valves_without_off_mode or is_not_off_but_min) and mode == 'off', min_temp, temperature) %}
-        {% set valve_temp = iif(state_window and input_window_open_temperature > 0, iif(input_window_open_temperature < min_temp, min_temp, input_window_open_temperature), temperature) %}
+        {% set valve_temp = iif(state_window and input_window_open_temperature > 0, iif(input_window_open_temperature < min_temp, min_temp, input_window_open_temperature), valve_temp) %}
         {% set valve_temp = iif(state_force_max_temperature and mode != 'off', max_temp, valve_temp) %}
 
         {% if mode != 'off' %}
@@ -2433,6 +2433,50 @@ variables:
 
   is_warning: "{{ valves_unsupported | count > 0 }}"
 
+  scene_entities: "{{ input_trvs | reject('==', none) | list }}"
+  scene_id_window: "{{ 'scene.' + this.entity_id | replace('.','_') + '_window' }}"
+  scene_id_party: "{{ 'scene.' + this.entity_id | replace('.','_') + '_party' }}"
+  scene_window_exist: "{{ states[scene_id_window] != none }}"
+  scene_party_exist: "{{ states[scene_id_party] != none }}"
+  scene_to_create: >
+    {% if trigger.id == 'temperature_change_window_on' and not state_mode_party %}
+      {{ scene_id_window }}
+    {% elif trigger.id == 'temperature_change_party_on' and not state_window %}
+      {{ scene_id_party }}
+    {% else %}
+      {{ none }}
+    {% endif %}
+  scene_to_apply: >
+    {% set result = none%}
+    {% if trigger.id == 'temperature_change_window_off' %}
+      {% set result = scene_id_window %}
+    {% elif trigger.id == 'temperature_change_party_off' %}
+      {% set result = scene_id_party %}
+    {% endif %}
+
+    {% if states[result] == none %}
+      {% set result = iif(result == scene_id_window,scene_id_party,scene_id_window) %}
+    {% endif %}
+
+    {% if states[result] == none %}
+      {% set result = none %}
+    {% endif %}
+
+    {{ result }}
+  scene_apply: >
+    {{ 
+      not 
+        (
+          (trigger.id == 'temperature_change_window_off' and state_mode_party) or
+          (trigger.id == 'temperature_change_party_off' and state_window)
+        )
+    }}
+  scene_can_delete: "{{ scene_apply }}"
+  #scene_can_delete: >
+  #  {{
+  #    (not (trigger.id == 'temperature_change_party_off' and state_window))
+  #  }}
+
 ##################################################
 ########### C O N D I T I O N S ##################
 ##################################################
@@ -2508,6 +2552,12 @@ action:
         AHC REF  {{" \n "}}
         {{" \n "}}
         TRIGGER {{" \n "}}
+        trigger_id: {{ trigger.id }} {{" \n "}}
+        scene_window_exist: {{ scene_window_exist }} {{" \n "}}
+        scene_party_exist: {{ scene_party_exist }} {{" \n "}}
+        scene_apply: {{ scene_apply }} {{" \n "}}
+        scene_to_apply: {{ scene_to_apply }} {{" \n "}}
+        scene_can_delete: {{ scene_can_delete }} {{" \n "}}
         is_calibration: {{ calibration_number | count > 0 or calibration_tado | count > 0 }} {{" \n "}}
         is_changes: {{ changes | count > 0 }} {{" \n "}}
         is_reset: {{ is_reset }} {{" \n "}}
@@ -2575,7 +2625,37 @@ action:
             target:
               entity_id: !input input_temperature_comfort
 
+      - conditions:
+          - condition: template
+            value_template: "{{ scene_to_apply != none and scene_apply == true }}"
+        sequence:
+          - action: scene.turn_on
+            target:
+              entity_id: "{{ scene_to_apply }}"
+          - action: scene.delete
+            target:
+              entity_id: "{{ scene_to_apply }}"
+
     default:
+      - if:
+          - condition: template
+            value_template: "{{ scene_to_apply != none and scene_apply == false and scene_can_delete }}"
+        then:
+          - action: scene.delete
+            target:
+              entity_id: "{{ scene_to_apply }}"
+
+
+      # STORE CLIMATE STATES IN A SCENE
+      - if:
+          - condition: template
+            value_template: "{{ scene_to_create != none }}"
+        then:
+          - action: scene.create
+            data:
+              snapshot_entities: "{{ scene_entities }}"
+              scene_id: "{{ scene_to_create.split('.')[1] }}"
+
       # UPDATE TEMPERATURE ENTITIES
       - if: # COMFORT ENTITY
           - condition: template
