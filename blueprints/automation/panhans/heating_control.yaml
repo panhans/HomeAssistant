@@ -613,7 +613,7 @@ blueprint:
               * Tado, Aqara, Popp, Danfoss, Hive, Tuya
               * generic calibration
 
-            Note: This is an additional sensor inside your room usually next to your favourite spot. [Thermostats](https://www.home-assistant.io/integrations/climate/) or its integration (e.g. Z2M or ZHA) except Tado should provide a seperate clibration enitity.
+            Note: This is an additional sensor inside your room usually next to your favourite spot. [Thermostats](https://www.home-assistant.io/integrations/climate/) or its integration (e.g. Z2M or ZHA) except Tado should provide a seperate calibration entity.
           default:
           selector:
             entity:
