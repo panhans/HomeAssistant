@@ -1537,6 +1537,7 @@ trigger:
       {% set is_frost_protection_configured = iif(is_frost_protection_configured,is_frost_protection_configured,days in input_frost_protection_duration) %}
       {% set person_count = input_persons | count %}
       {% set is_person_based = person_count > 0 %}
+      {% set is_presence_based = input_presence_sensor != none %}
       {% set person_home_count = input_persons | expand | selectattr('state','==','home') | map(attribute='entity_id') | list | count %}
       {% set anybody_is_home = person_count > 0 and person_home_count > 0 %}
 
