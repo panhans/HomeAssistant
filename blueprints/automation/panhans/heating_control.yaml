@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.1
+    **Version**: 4.3.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2508,9 +2508,11 @@ variables:
   
   current_temp_entity: "{{ iif(set_comfort, input_temperature_comfort, input_temperature_minimum) }}"
 
+  is_temp_change_by_thermostat: "{{ trigger.id == 'temperature_change_valve_target' }}"
+
   is_physical_change: >
     {{ 
-      (is_physical_change_enabled and trigger.id == 'temperature_change_valve_target' and temperature != state_attr(trigger.to_state.entity_id,'temperature') and not (is_aggressive_mode or is_generic_calibration))
+      (is_physical_change_enabled and is_temp_change_by_thermostat and temperature != state_attr(trigger.to_state.entity_id,'temperature') and not (is_aggressive_mode or is_generic_calibration))
     }}
 
 ##################################################
@@ -2527,13 +2529,13 @@ condition:
       - condition: template
         value_template: "{{ calibration_tado | count > 0 }}"
       - condition: template
-        value_template: "{{ changes | count > 0 and not trigger.id == 'temperature_change_valve_target' }}"
+        value_template: "{{ changes | count > 0 and not is_temp_change_by_thermostat }}"
       - condition: template
         value_template: "{{ is_manual_timer_start }}"
       - condition: template
         value_template: "{{ is_reset }}"
       - condition: template
-        value_template: "{{ (is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change) and not trigger.id == 'temperature_change_valve_target' }}"
+        value_template: "{{ (is_refresh_comfort_entity or is_refresh_eco_entity or is_temperature_change) and not is_temp_change_by_thermostat }}"
       - condition: template
         value_template: "{{ is_physical_change }}"
 
