@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.3
+    **Version**: 4.3.4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1071,6 +1071,17 @@ blueprint:
           selector:
             action:
 
+        input_custom_condition:
+          name: ☑️ Temperature Change Custom Condition
+          description: >
+            `optional`
+
+
+            Define a custom condition that prevents / allows temperature changes to your thermostats. This has no impact to the rest of logic like calibration.
+          default:
+          selector:
+            condition:
+
         input_log_level:
           name: ✍️ Log Level
           description: ""
@@ -1666,6 +1677,8 @@ variables:
   # E V A L U A T I O N --------------------------------------------------------------
 
   factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
+
+  no_changes: "{{ input_persons | count == 0 and input_mode_guest == none and input_schedulers | count == 0 and input_presence_sensor == none}}"
 
   # ------------------------------------------------------------------------------------
   # ------------- PRESENCE, SCHEDULER, FROST PROTECTION, WINDOWS, PERSONS --------------
@@ -2850,66 +2863,72 @@ action:
                 seconds: "{{ input_action_call_delay.seconds }}"
 
       # SET TEMPERATURE
-      - action: system_log.write
-        data:
-          message: >
-            AHC REF  {{" \n "}}
-            change_count: {{ changes | count | int }}  {{" \n "}}
-            changes: {{ changes }}
-          level: !input input_log_level
-          logger: blueprints.panhans.heatingcontrol
-      - repeat:
-          count: "{{ changes | count | int }}"
-          sequence:
-            - variables:
-                index: "{{ repeat.index-1 }}"
-                thermostat: "{{ (changes.keys() | list) [index] }}"
-                mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
-                target_temperature: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
-            - action: system_log.write
-              data:
-                message: >
-                  thermostat: {{ thermostat }}
-                  mode: {{ mode }}
-                  new_target: {{ target_temperature }}
-                  current_target: {{ state_attr(thermostat,'temperature') }}
-                level: !input input_log_level
-                logger: blueprints.panhans.heatingcontrol
+      - if:
+        - condition: template
+          value_template: "{{ not no_changes }}"
+        - condition: and
+          conditions: !input input_custom_condition
+        then:
+        - action: system_log.write
+          data:
+            message: >
+              AHC REF  {{" \n "}}
+              change_count: {{ changes | count | int }}  {{" \n "}}
+              changes: {{ changes }}
+            level: !input input_log_level
+            logger: blueprints.panhans.heatingcontrol
+        - repeat:
+            count: "{{ changes | count | int }}"
+            sequence:
+              - variables:
+                  index: "{{ repeat.index-1 }}"
+                  thermostat: "{{ (changes.keys() | list) [index] }}"
+                  mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
+                  target_temperature: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
+              - action: system_log.write
+                data:
+                  message: >
+                    thermostat: {{ thermostat }}
+                    mode: {{ mode }}
+                    new_target: {{ target_temperature }}
+                    current_target: {{ state_attr(thermostat,'temperature') }}
+                  level: !input input_log_level
+                  logger: blueprints.panhans.heatingcontrol
 
-            - action: system_log.write
-              data:
-                message: >
-                  AHC REF CHANGES: {{ thermostat }} -> {{ mode }} -> {{ target_temperature }}
-                level: !input input_log_level
-                logger: blueprints.panhans.heatingcontrol
+              - action: system_log.write
+                data:
+                  message: >
+                    AHC REF CHANGES: {{ thermostat }} -> {{ mode }} -> {{ target_temperature }}
+                  level: !input input_log_level
+                  logger: blueprints.panhans.heatingcontrol
 
-            - if:
-                - condition: template
-                  value_template: "{{ states(thermostat) | lower != mode | lower  }}"
-              then:
-                - action: climate.set_hvac_mode
-                  data:
-                    entity_id: "{{ thermostat }}"
-                    hvac_mode: "{{ mode }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ states(thermostat) | lower != mode | lower  }}"
+                then:
+                  - action: climate.set_hvac_mode
+                    data:
+                      entity_id: "{{ thermostat }}"
+                      hvac_mode: "{{ mode }}"
 
-                - delay:
-                    hours: "{{ input_action_call_delay.hours }}"
-                    minutes: "{{ input_action_call_delay.minutes }}"
-                    seconds: "{{ input_action_call_delay.seconds }}"
+                  - delay:
+                      hours: "{{ input_action_call_delay.hours }}"
+                      minutes: "{{ input_action_call_delay.minutes }}"
+                      seconds: "{{ input_action_call_delay.seconds }}"
 
-            - if:
-                - condition: template
-                  value_template: "{{ state_attr(thermostat, 'temperature') != target_temperature and mode != 'off' }}"
-              then:
-                - action: climate.set_temperature
-                  data:
-                    entity_id: "{{ thermostat }}"
-                    temperature: "{{ target_temperature | float }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ state_attr(thermostat, 'temperature') != target_temperature and mode != 'off' }}"
+                then:
+                  - action: climate.set_temperature
+                    data:
+                      entity_id: "{{ thermostat }}"
+                      temperature: "{{ target_temperature | float }}"
 
-                - delay:
-                    hours: "{{ input_action_call_delay.hours }}"
-                    minutes: "{{ input_action_call_delay.minutes }}"
-                    seconds: "{{ input_action_call_delay.seconds }}"
+                  - delay:
+                      hours: "{{ input_action_call_delay.hours }}"
+                      minutes: "{{ input_action_call_delay.minutes }}"
+                      seconds: "{{ input_action_call_delay.seconds }}"
 
       - event: ahc_event
         event_data:
