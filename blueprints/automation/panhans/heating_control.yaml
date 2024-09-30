@@ -2603,6 +2603,9 @@ action:
             AHC - You've enabled generic calibration / aggressive mode in combination with the physical change / temperature sync feature. 
             This feature is disabled in order to prevent unwanted side effects.
 
+  - variables:
+      input_entity: "{{ iif(set_comfort, input_temperature_comfort, input_temperature_minimum) }}"
+
   - action: system_log.write
     data:
       message: >
@@ -2614,6 +2617,9 @@ action:
             {{ trigger.id }} 
           {% endif %}  
           {{" \n "}}
+
+        input_entity: "{{ input_entity }}"
+        is_input_entity_defined: "{{ input_entity != none }}"
         scene_window_exist: {{ scene_window_exist }} {{" \n "}}
         scene_party_exist: {{ scene_party_exist }} {{" \n "}}
         scene_apply: {{ scene_apply }} {{" \n "}}
@@ -2676,6 +2682,8 @@ action:
       level: !input input_log_level
       logger: blueprints.panhans.heatingcontrol
 
+  
+
   - choose:
       # TIMER STOP RESET
       - conditions:
@@ -2691,15 +2699,16 @@ action:
       - conditions:
           - condition: template
             value_template: "{{ is_physical_change }}"
+          - condition: template
+            value_template: "{{ input_entity != none }}"
         sequence:
           - action: input_number.set_value
             data:
               value: >
                 {% set source_id = trigger.to_state.entity_id %}
-                {% set target_id = iif(set_comfort, input_temperature_comfort, input_temperature_minimum) %}
                 {% set t_target = state_attr(source_id,'temperature') %}
-                {% set t_min = state_attr(target_id,'min') %}
-                {% set t_max = state_attr(target_id,'max') %}
+                {% set t_min = state_attr(input_entity,'min') %}
+                {% set t_max = state_attr(input_entity,'max') %}
 
                 {% if t_target < t_min %}
                   {{ t_min }}
@@ -2709,9 +2718,8 @@ action:
                   {{ t_target }}
                 {% endif %}
             target:
-              entity_id: "{{ iif(set_comfort, input_temperature_comfort, input_temperature_minimum) }}"
+              entity_id: "{{ input_entity }}"
           
-
       - conditions:
           - condition: template
             value_template: "{{ scene_to_apply != none and scene_apply == true }}"
