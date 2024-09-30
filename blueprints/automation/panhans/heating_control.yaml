@@ -2502,7 +2502,7 @@ variables:
 
   all_exisiting_scenes: "{{ [scene_id_window,scene_id_party] | expand | map(attribute='entity_id') | list }}"
   delete_all_scenes: >
-      {{ 'temperature_change' in trigger.id and not ('temperature_change_window' in trigger.id or 'temperature_change_party' in trigger.id) }}  
+      {{ trigger.id is defined and 'temperature_change' in trigger.id and not ('temperature_change_window' in trigger.id or 'temperature_change_party' in trigger.id) }}  
 
   scene_can_delete: "{{ scene_apply }}"
   
