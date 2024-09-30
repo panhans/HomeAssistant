@@ -2591,7 +2591,11 @@ action:
         AHC REF  {{" \n "}}
         {{" \n "}}
         TRIGGER {{" \n "}}
-        trigger_id: {{ trigger.id }} {{" \n "}}
+        trigger_id: >
+          {% if  trigger.id is defined %}
+            {{ trigger.id }} 
+          {% endif %}  
+          {{" \n "}}
         scene_window_exist: {{ scene_window_exist }} {{" \n "}}
         scene_party_exist: {{ scene_party_exist }} {{" \n "}}
         scene_apply: {{ scene_apply }} {{" \n "}}
