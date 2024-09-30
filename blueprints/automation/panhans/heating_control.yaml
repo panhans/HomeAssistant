@@ -2238,6 +2238,7 @@ variables:
         {% set max_temp = state_attr(valve, 'max_temp') | float(30) %}
 
         {% set valve_mode = iif(mode == 'off' and (valve in valves_without_off_mode or is_not_off_but_min or (state_window and input_window_open_temperature > 0)), current_valve_mode, mode) %}
+
         {% set valve_temp = temperature %}
         {% set valve_temp = iif((valve in valves_without_off_mode or is_not_off_but_min) and mode == 'off', min_temp, temperature) %}
         {% set valve_temp = iif(state_window and input_window_open_temperature > 0, iif(input_window_open_temperature < min_temp, min_temp, input_window_open_temperature), valve_temp) %}
@@ -2296,6 +2297,10 @@ variables:
         {% elif (valve_temp < min_temp) %}
           {% set valve_temp = min_temp %}
         {% endif %}
+
+
+        {% set is_window_or_party = trigger.id is defined and ('temperature_change_window' in trigger.id or 'temperature_change_party' in trigger.id) %}
+        {% set valve_temp = iif(no_changes and not is_window_or_party, current_valve_target_temp, valve_temp) %}
 
         {% if (current_valve_mode != valve_mode or 
             current_valve_target_temp != valve_temp) and valve not in valves_unsupported %}
@@ -2864,8 +2869,6 @@ action:
 
       # SET TEMPERATURE
       - if:
-        - condition: template
-          value_template: "{{ not no_changes }}"
         - condition: and
           conditions: !input input_custom_condition
         then:
