@@ -1085,7 +1085,7 @@ blueprint:
         input_log_level:
           name: ✍️ Log Level
           description: ""
-          default: warning
+          default: debug
           selector:
             select:
               mode: dropdown
