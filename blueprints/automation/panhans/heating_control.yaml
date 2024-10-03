@@ -990,7 +990,6 @@ blueprint:
               unit_of_measurement: °C / °F
 
         input_mode_room_temperature:
-          input_mode_room_temperature:
           name: 🔘 Room Temperature Sensor
           description: >
             `activation` `optional`
