@@ -1008,7 +1008,7 @@ blueprint:
               multiple: false
 
         input_mode_room_temperature_threshold:
-          name: 🎚️ Toom Temperature Threshold
+          name: 🎚️ Room Temperature Threshold
           description: >
             `activation`
 
