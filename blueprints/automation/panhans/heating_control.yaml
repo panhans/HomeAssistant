@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.4
+    **Version**: 4.3.5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -465,6 +465,10 @@ blueprint:
             > ### 🚶 Presence Away Mode
 
             > Enable/Disable the Away Offset for presence based heating/cooling
+
+            > ### 🚶 Ignore People For Presence Away Mode
+
+            > If you want to make away happen if your presence scheduler is on but no motion is detected regardless if somebody is at home enable this option.
 
             "
 
@@ -985,6 +989,41 @@ blueprint:
               mode: box
               unit_of_measurement: °C / °F
 
+        input_mode_room_temperature:
+          input_mode_room_temperature:
+          name: 🔘 Room Temperature Sensor
+          description: >
+            `activation` `optional`
+
+
+            If you add an additional room sensor both values (outside and room temperature) must be below / above
+            its threshold. That makes sense if you go with an A/C and the room is still heated up but it has already cooled down outside.
+
+          default:
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - sensor
+                  device_class: temperature
+              multiple: false
+
+        input_mode_room_temperature_threshold:
+          name: 🎚️ Toom Temperature Threshold
+          description: >
+            `activation`
+
+
+            Threshold for your room temperature sensor.
+          default: 18
+          selector:
+            number:
+              min: 5
+              max: 68
+              step: 1
+              mode: box
+              unit_of_measurement: °C / °F
+
     # TWEAKS
     tweak_section:
       name: Tweaks
@@ -1085,7 +1124,7 @@ blueprint:
         input_log_level:
           name: ✍️ Log Level
           description: ""
-          default: warning
+          default: debug
           selector:
             select:
               mode: dropdown
@@ -1158,8 +1197,11 @@ trigger_variables:
   input_proximity_duration: !input input_proximity_duration
   input_proximity_distance: !input input_proximity_distance
 
+  # MODE ON / OFF
   input_mode_outside_temperature: !input input_mode_outside_temperature
   input_mode_outside_temperature_threshold: !input input_mode_outside_temperature_threshold
+  input_mode_room_temperature: !input input_mode_room_temperature
+  input_mode_room_temperature_threshold: !input input_mode_room_temperature_threshold
 
   input_frost_protection_duration: !input input_frost_protection_duration
 
@@ -1407,28 +1449,56 @@ trigger:
   - platform: template
     id: temperature_change_outside_on
     value_template: >
+      {% set outside_state = iif(input_mode_outside_temperature != none,false,true) %}
+
       {% if input_mode_outside_temperature != none %}
         {% set state = states(input_mode_outside_temperature) %}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
 
         {% if is_number(state) %}
-          {{ (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 }}
+          {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
         {% endif %}
       {% endif %}
+
+      {% set room_state = iif(input_mode_room_temperature != none,false,true) %}
+
+      {% if input_mode_room_temperature != none %}
+        {% set state = states(input_mode_room_temperature) %}
+
+        {% if is_number(state) %}
+          {% set room_state = (state | float - input_mode_room_temperature_threshold | float) * factor < 0 %}
+        {% endif %}
+      {% endif %}
+
+      {{ input_mode_room_temperature != none and room_state and outside_state }}
     for:
       seconds: 2
 
   - platform: template
     id: temperature_change_outside_off
     value_template: >
+      {% set outside_state = iif(input_mode_outside_temperature != none,false,true) %}
+
       {% if input_mode_outside_temperature != none %}
         {% set state = states(input_mode_outside_temperature) %}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
 
         {% if is_number(state) %}
-          {{ (state | float - input_mode_outside_temperature_threshold | float) * factor >= 0 }}
+          {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
         {% endif %}
       {% endif %}
+
+      {% set room_state = iif(input_mode_room_temperature != none,false,true) %}
+
+      {% if input_mode_room_temperature != none %}
+        {% set state = states(input_mode_room_temperature) %}
+
+        {% if is_number(state) %}
+          {% set room_state = (state | float - input_mode_room_temperature_threshold | float) * factor < 0 %}
+        {% endif %}
+      {% endif %}
+
+      {{ input_mode_room_temperature != none and (not room_state or not outside_state) }}
     for:
       seconds: 2
 
@@ -1708,17 +1778,32 @@ variables:
     {% endif %}
 
   state_outside_temp: >
-    {% if input_mode_outside_temperature != none %}
-      {% set state = states(input_mode_outside_temperature) %}
-      {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-
-      {% if is_number(state) %}
-        {{ (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 }}
-      {% else %}
-        {{ true }}
-      {% endif %}
-    {% else %}
+    {% if input_mode_outside_temperature == none %}
       {{ true }}
+    {% else %}
+      {% set outside_state = iif(input_mode_outside_temperature == none, true, false) %}
+      {% set room_state = iif(input_mode_room_temperature == none, true, false) %}
+
+      {% if input_mode_outside_temperature != none %}
+        {% set state = states(input_mode_outside_temperature) %}
+        {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
+
+        {% if is_number(state) %}
+          {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
+        {% endif %}
+      {% endif %}
+
+      {% if input_mode_room_temperature != none %}
+        {% set state = states(input_mode_room_temperature) %}
+
+        {% if is_number(state) %}
+          {% set room_state = (state | float - input_mode_room_temperature_threshold | float) * factor < 0 %}
+        {% endif %}
+      {% endif %}
+
+      {% set any_input_none = input_mode_outside_temperature == none or input_mode_room_temperature == none %}
+
+      {{ input_mode_outside_temperature != none and room_state and outside_state }}
     {% endif %}
 
   is_liming_protetion: >
