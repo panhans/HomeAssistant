@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.5
+    **Version**: 4.3.6
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1734,7 +1734,7 @@ variables:
   is_presence_away_mode: "{{ 'presence' in input_away_options}}"
   presence_ignor_people: "{{ 'presence_ignor_people' in input_away_options}}"
 
-  is_physical_change_enabled: "{{ 'physical_temperature_change' in input_tweaks}}"
+  is_physical_change_enabled: "{{ 'physical_temperature_change' in input_tweaks }}"
   # is_physical_party_timer: "{{ 'physical_party_timer' in input_tweaks_experimental}}"
 
   # V A L V E   G R O U P S
@@ -2260,19 +2260,71 @@ variables:
   #     state_mode_party == false
   #   }}
 
+  reset_multiple_reasons: >
+    {{ [state_mode_party,is_scheduled_heating_on,is_presence_on] | reject('false') | list | count > 1 }}
+
+  reset_mode: >
+    {% if trigger.id is defined and 'off' in trigger.id and set_comfort == false %}
+      {{ 'comfort' }}
+    {% elif trigger.id is defined and 'on' in trigger.id and set_comfort == true and not reset_multiple_reasons %}
+      {{ 'eco' }}
+    {% else %}
+      {{ none }}
+    {% endif %}
+
+  reset_entity: >
+    {% set result = none %}
+    {% if reset_mode == 'comfort' %}
+      {% set result = input_temperature_comfort %}
+    {% elif reset_mode == 'eco' %}
+      {% set result = input_temperature_minimum %}
+    {% endif %}
+
+    {% if states[result] != none %}
+      {{ result }}
+    {% else %}
+      {{ none }}
+    {% endif %}
+
+  reset_temperature: >
+    {% if reset_entity == none %}
+      {{ none }}
+    {% else %}
+
+      {% set target_temp = none %}
+      {% if reset_mode == 'comfort' %}
+        {% set target_temp = input_temperature_comfort_static %}
+      {% else %}
+        {% set target_temp = input_temperature_minimum_static %}
+      {% endif %}
+
+      {% set t_min = state_attr(reset_entity,'min') %}
+      {% set t_max = state_attr(reset_entity,'max') %}
+
+      {% if target_temp < t_min %}
+        {{ t_min }}
+      {% elif target_temp > t_max %}
+        {{ t_max }}
+      {% else %}
+        {{ target_temp }}
+      {% endif %}
+    
+    {% endif %}
+
   is_reset: >
     {{
-      input_temperature_comfort != none and
-      float(states(input_temperature_comfort)) != float(input_temperature_comfort_static) and
+      is_reset_temperature and
+      reset_temperature != none and
+      not is_state(reset_entity,reset_temperature) and
+      reset_entity != none and
+      trigger.id is defined and
+      'temperature_change' in trigger.id and
       (
-        trigger.id in ['temperature_change_party_off'] or
-        (trigger.id in ['temperature_change_scheduler_off',
-                        'temperature_change_person_off',
-                        'temperature_change_person_guest_off',
-                        'temperature_change_presence_off'] and
-        set_comfort == false)
-      ) and
-      is_reset_temperature == true
+        'party' in trigger.id or 
+        'scheduler' in trigger.id or 
+        'person' in trigger.id or
+        'presence' in trigger.id
+      )
     }}
 
   # EVLAUATING TRIGGER IDs
@@ -2769,16 +2821,15 @@ action:
   
 
   - choose:
-      # TIMER STOP RESET
-      - conditions:
-          - condition: template
-            value_template: "{{ is_reset }}"
-        sequence:
-          - action: input_number.set_value
-            data:
-              value: "{{ input_temperature_comfort_static }}"
-            target:
-              entity_id: !input input_temperature_comfort
+#      - conditions:
+#          - condition: template
+#            value_template: "{{ is_reset }}"
+#        sequence:
+#          - action: input_number.set_value
+#            data:
+#              value: "{{ reset_temperature }}"
+#            target:
+#              entity_id: "{{ reset_entity }}"
 
       - conditions:
           - condition: template
@@ -2816,6 +2867,16 @@ action:
               entity_id: "{{ scene_to_apply }}"
 
     default:
+      - if :
+          - condition: template
+            value_template: "{{ is_reset }}"
+        then:
+          - action: input_number.set_value
+            data:
+              value: "{{ reset_temperature }}"
+            target:
+              entity_id: "{{ reset_entity }}"
+
       - if:
           - condition: template
             value_template: "{{ (scene_to_apply != none and scene_apply == false and scene_can_delete) or delete_all_scenes }}"
