@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.6
+    **Version**: 4.3.7
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1938,7 +1938,32 @@ variables:
   # Presence Configuration
   is_presence_sensor_defined: "{{ input_presence_sensor != none }}"
   is_presence_scheduler_defined: "{{ input_scheduler_presence != none }}"
-  state_presence_sensor: "{{ is_presence_sensor_defined and is_state(input_presence_sensor, 'on') }}"
+
+  state_presence_sensor: >
+    {% if not is_presence_sensor_defined %}
+      {{ false }}
+    {% else %}
+
+      {% set uptime = none %}
+
+      {% if up_time_sensor != none %}
+        {% set uptime = states(up_time_sensor) | as_datetime %}
+      {% endif %}
+
+      {% set last_changed = [input_presence_sensor] | expand | map(attribute='last_changed') | first %}
+      {% set reaction_time = iif(sensor_state == 'on', input_presence_reaction_on_time, input_presence_reaction_off_time) %}
+      {% set sensor_state = is_state(input_presence_sensor, 'on') %}
+      {% set min_timestamp = last_changed + timedelta(**reaction_time) %}
+
+      {% if uptime != none and uptime + timedelta(**reaction_time) > now() - timedelta(**reaction_time) %}
+        {{ sensor_state }}
+      {% else %}
+        {% set is_limit = min_timestamp <= now() %}
+
+        {{ (sensor_state == true and is_limit) or (sensor_state == false and not is_limit) }}
+      {% endif %}
+    {% endif %}
+
   state_presence_scheduler: "{{ is_presence_scheduler_defined and is_state(input_scheduler_presence, 'on') }}"
 
   state_presence_sensor_presence_scheduler_combined: >
