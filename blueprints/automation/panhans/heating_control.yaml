@@ -2232,12 +2232,12 @@ variables:
 
     {% if is_heat_only_if_below_real_temp == true and 
           input_temperature_sensor != none and 
-          heating_mode in ['cool','heat'] %}
+          input_hvac_mode in ['cool','heat'] %}
       {% set sensor_temp = states(input_temperature_sensor) | float %}
 
-      {% if heating_mode == 'cool' and sensor_temp < temperature %}
+      {% if input_hvac_mode == 'cool' and sensor_temp < temperature %}
         {% set heating_mode = 'off' %}
-      {% elif heating_mode == 'heat' and sensor_temp > temperature %}
+      {% elif input_hvac_mode == 'heat' and sensor_temp > temperature %}
         {% set heating_mode = 'off' %}
       {% endif %}
     {% endif %}
