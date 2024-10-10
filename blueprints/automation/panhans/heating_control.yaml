@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.8
+    **Version**: 4.3.9
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1216,6 +1216,8 @@ trigger_variables:
   input_liming_protection_day: !input input_liming_protection_day
   input_liming_protection_time: !input input_liming_protection_time
 
+  scene_id_window: "{{ 'scene.' + this.entity_id | replace('.','_') + '_window' }}"
+
 
 trigger:
   # LIMING PROTECTION
@@ -1414,7 +1416,7 @@ trigger:
 
   # W I N D O W  O P E N
   - platform: template
-    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
+    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 and states[scene_id_window] == none }}"
     for: !input input_windows_reaction_time_open
     id: temperature_change_window_on
 
