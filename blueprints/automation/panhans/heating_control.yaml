@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.9
+    **Version**: 4.3.10
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1216,9 +1216,6 @@ trigger_variables:
   input_liming_protection_day: !input input_liming_protection_day
   input_liming_protection_time: !input input_liming_protection_time
 
-  scene_id_window: "{{ 'scene.' + this.entity_id | replace('.','_') + '_window' }}"
-
-
 trigger:
   # LIMING PROTECTION
   - platform: template
@@ -1416,7 +1413,7 @@ trigger:
 
   # W I N D O W  O P E N
   - platform: template
-    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 and states[scene_id_window] == none }}"
+    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
     for: !input input_windows_reaction_time_open
     id: temperature_change_window_on
 
@@ -2655,6 +2652,21 @@ variables:
     {% else %}
       {{ none }}
     {% endif %}
+
+  scene_creation_block: >
+    {% set trvs_off = input_trvs | select('is_state','off') | list | count %}
+    {% set result = namespace(r=0) %}
+
+    {% for valve in input_trvs | reject('is_state','off') | list %}
+      {% if states(valve) != 'off' and 
+        (state_attr(valve,'temperature') == state_attr(valve,'min') or
+        state_attr(valve,'temperature') == input_window_open_temperature) %}
+        {% set result.r = result.r + 1  %}
+      {% endif %}
+    {% endfor %}
+
+    {{ trvs_off + result.r == input_trvs | count and mode == 'off' }}
+
   scene_to_apply: >
     {% set result = none%}
     {% if trigger.id == 'temperature_change_window_off' %}
@@ -2915,7 +2927,7 @@ action:
       # STORE CLIMATE STATES IN A SCENE
       - if:
           - condition: template
-            value_template: "{{ scene_to_create != none }}"
+            value_template: "{{ scene_to_create != none and not scene_creation_block }}"
         then:
           - action: scene.create
             data:
