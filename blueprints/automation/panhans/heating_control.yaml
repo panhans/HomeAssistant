@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.12_aqara_fix
+    **Version**: 4.3.12
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1070,6 +1070,10 @@ blueprint:
 
             > Enable this if your unit of measurement is Fahrenheit (untested)
 
+            > ### 🪟 Legacy Restore
+
+            > Enable this if the temperatures after airing (closing windows) or party won't restore properly
+
             > ### 🧪 Physical Temperature Change / Sync
 
             > Enable this if your want to adjust the temperature using your thermostat or thermostat card. Make sure aggressive mode and generic calibration is disabled for this feature. (experimental)
@@ -1090,6 +1094,8 @@ blueprint:
                   value: heat_only_if_below_real_temp
                 - label: "🇫 Fahrenheit"
                   value: fahrenheit
+                - label: "🪟 Legacy Restore"
+                  value: legacy_restore
                 - label: "🧪 Physical Temperature Change / Sync (experimental)"
                   value: physical_temperature_change
               multiple: true
@@ -1724,6 +1730,7 @@ variables:
   is_not_off_but_min: "{{ 'not_off_but_min' in input_tweaks}}"
   is_heat_only_if_below_real_temp: "{{ 'heat_only_if_below_real_temp' in input_tweaks}}"
   is_fahrenheit: "{{ 'fahrenheit' in input_tweaks}}"
+  is_legacy_restore: "{{ 'legacy_restore' in input_tweaks}}"
   is_aggressive_mode: "{{ input_aggressive_mode_offset > 0 }}"
 
   is_generic_calibration: "{{ 'generic_calibration' in input_calibration_options}}"
@@ -2900,6 +2907,8 @@ actions:
       - conditions:
           - condition: template
             value_template: "{{ scene_to_apply != none and scene_apply == true }}"
+          - condition: template
+            value_template: "{{ not is_legacy_restore }}"
         sequence:
           - action: scene.turn_on
             target:
@@ -2922,6 +2931,8 @@ actions:
       - if:
           - condition: template
             value_template: "{{ (scene_to_apply != none and scene_apply == false and scene_can_delete) or delete_all_scenes }}"
+          - condition: template
+            value_template: "{{ not is_legacy_restore }}"
         then:
           - action: scene.delete
             target:
@@ -2929,6 +2940,8 @@ actions:
 
       # STORE CLIMATE STATES IN A SCENE
       - if:
+          - condition: template
+            value_template: "{{ not is_legacy_restore }}"
           - condition: template
             value_template: "{{ scene_to_create != none and not scene_creation_block }}"
         then:
