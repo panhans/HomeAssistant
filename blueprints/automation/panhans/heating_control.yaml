@@ -2,7 +2,7 @@ blueprint:
   name: 🔥 Advanced Heating Control
   author: panhans
   homeassistant:
-    min_version: "2024.8.0"
+    min_version: "2024.10.0"
   description: "
 
 
@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.10
+    **Version**: 4.3.11
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1218,7 +1218,7 @@ trigger_variables:
 
 trigger:
   # LIMING PROTECTION
-  - platform: template
+  - trigger: template
     value_template: >
       {% set state_winter_mode = true %}
       {% if input_mode_winter != none %}
@@ -1231,7 +1231,7 @@ trigger:
       {{ input_liming_protection and not state_winter_mode and is_liming_day and is_liming_time }}
     id: temperature_change_liming_protection_on
 
-  - platform: template
+  - trigger: template
     value_template: >
       {% set state_winter_mode = true %}
       {% if input_mode_winter != none %}
@@ -1245,16 +1245,16 @@ trigger:
     id: temperature_change_liming_protection_off
 
   # S Y S T E M   T R I G G E R S
-  - platform: homeassistant
+  - trigger: homeassistant
     event: start
     id: temperature_change_hastart
 
-  - platform: event
+  - trigger: event
     event_type: automation_reloaded
     id: temperature_change_reload
 
   # S T A T E   T R I G G E R S
-  - platform: state
+  - trigger: state
     entity_id: !input input_trvs
     attribute: temperature
     for:
@@ -1262,7 +1262,7 @@ trigger:
     id: temperature_change_valve_target
 
   # T E M P E R A T U R E   C H A N G E S
-  - platform: template
+  - trigger: template
     value_template: >
       {% if input_temperature_minimum != none %}
         {{ now() - states.input_number[input_temperature_minimum.split('.')[1]].last_updated >= timedelta(seconds=2) }}
@@ -1271,7 +1271,7 @@ trigger:
       {% endif %}
     id: temperature_change_eco
 
-  - platform: template
+  - trigger: template
     value_template: >
       {% if input_temperature_comfort != none %}
         {{ now() - states.input_number[input_temperature_comfort.split('.')[1]].last_updated >= timedelta(seconds=2) }}
@@ -1281,7 +1281,7 @@ trigger:
     id: temperature_change_comfort
 
   # S C H E D U L E R   O N / O F F
-  - platform: template
+  - trigger: template
     id: temperature_change_scheduler_on
     value_template: >
       {% set trigger_state = 'on' %}
@@ -1309,7 +1309,7 @@ trigger:
 
       {{ iif(selected_scheduler != '', is_state(selected_scheduler, trigger_state), false) }}
 
-  - platform: template
+  - trigger: template
     id: temperature_change_scheduler_off
     value_template: >
       {% set trigger_state = 'off' %}
@@ -1338,18 +1338,18 @@ trigger:
       {{ iif(selected_scheduler != '', is_state(selected_scheduler, trigger_state), false) }}
 
   # P E R S O N  P R E S E N C E
-  - platform: template
+  - trigger: template
     value_template: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count > 0 }}"
     for: !input input_people_entering_home_duration
     id: temperature_change_person_on
 
-  - platform: template
+  - trigger: template
     value_template: "{{ expand(input_persons) | selectattr('state', 'eq', 'home') | list | count == 0 }}"
     id: temperature_change_person_off
     for: !input input_people_leaving_home_duration
 
   # P R O X I M I T Y
-  - platform: template
+  - trigger: template
     id: temperature_change_person_proximity_on
     value_template: >
       {% set proximity_entities = device_entities(input_proximity) %}
@@ -1380,7 +1380,7 @@ trigger:
       {{ is_towards or is_arrived }}
     for: !input input_proximity_duration
 
-  - platform: template
+  - trigger: template
     id: temperature_change_person_proximity_off
     value_template: >
       {% set proximity_entities = device_entities(input_proximity) %}
@@ -1412,18 +1412,18 @@ trigger:
     for: !input input_proximity_duration
 
   # W I N D O W  O P E N
-  - platform: template
+  - trigger: template
     value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
     for: !input input_windows_reaction_time_open
     id: temperature_change_window_on
 
-  - platform: template
+  - trigger: template
     value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count == 0 }}"
     for: !input input_windows_reaction_time_close
     id: temperature_change_window_off
 
   # M O D E   -   W I N T E R
-  - platform: template
+  - trigger: template
     id: temperature_change_winter_mode_on
     value_template: >
       {% if input_mode_winter != none %}
@@ -1433,7 +1433,7 @@ trigger:
     for:
       seconds: 2
 
-  - platform: template
+  - trigger: template
     id: temperature_change_winter_mode_off
     value_template: >
       {% if input_mode_winter != none %}
@@ -1444,7 +1444,7 @@ trigger:
       seconds: 2
 
   # O U T S I D E   T E M P E R A T U R E
-  - platform: template
+  - trigger: template
     id: temperature_change_outside_on
     value_template: >
       {% set outside_state = iif(input_mode_outside_temperature != none,false,true) %}
@@ -1472,7 +1472,7 @@ trigger:
     for:
       seconds: 2
 
-  - platform: template
+  - trigger: template
     id: temperature_change_outside_off
     value_template: >
       {% set outside_state = iif(input_mode_outside_temperature != none,false,true) %}
@@ -1501,70 +1501,70 @@ trigger:
       seconds: 2
 
   # M O D E   -   M A I N T A N A C E
-  - platform: template
+  - trigger: template
     id: temperature_change_force_max_temperature_on
     value_template: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'on') }}"
     for:
       seconds: 2
 
-  - platform: template
+  - trigger: template
     id: temperature_change_force_max_temperature_off
     value_template: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'off') }}"
     for:
       seconds: 2
 
   # M O D E   -   P A R T Y
-  - platform: template
+  - trigger: template
     id: temperature_change_party_on
     value_template: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | list | count > 0 }}"
     for:
       seconds: 2
 
-  - platform: template
+  - trigger: template
     value_template: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | list | count == 0 }}"
     id: temperature_change_party_off
     for:
       seconds: 2
 
   # M O D E   -   G U E S T
-  - platform: template
+  - trigger: template
     id: temperature_change_person_guest_on
     value_template: "{{ input_mode_guest != none and states(input_mode_guest) in ['on','active'] }}"
     for:
       seconds: 2
 
-  - platform: template
+  - trigger: template
     value_template: "{{ input_mode_guest != none and states(input_mode_guest) in ['off','idle','paused'] }}"
     id: temperature_change_person_guest_off
     for:
       seconds: 2
 
   # P R E S E N C E   S E N S O R
-  - platform: template
+  - trigger: template
     id: temperature_change_presence_on
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'on') }}"
     for: !input input_presence_reaction_on_time
 
-  - platform: template
+  - trigger: template
     value_template: "{{ input_presence_sensor != none and is_state(input_presence_sensor, 'off') }}"
     id: temperature_change_presence_off
     for: !input input_presence_reaction_off_time
 
   # P R E S E N C E   S C H E D U L E R
-  - platform: template
+  - trigger: template
     id: temperature_change_presence_scheduler_on
     value_template: "{{ input_scheduler_presence != none and is_state(input_scheduler_presence, 'on') }}"
     for:
       seconds: 2
 
-  - platform: template
+  - trigger: template
     id: temperature_change_presence_scheduler_off
     value_template: "{{ input_scheduler_presence != none and is_state(input_scheduler_presence, 'off') }}"
     for:
       seconds: 2
 
   # E X T E R N A L  C A L I B R A T I O N   S E N S O R
-  - platform: template
+  - trigger: template
     id: calibration_sensor_change
     value_template: >
       {% if input_temperature_sensor != none %}
@@ -1573,13 +1573,13 @@ trigger:
         {{ false }}
       {% endif %}
 
-  - platform: state
+  - trigger: state
     id: calibration_aggressive_mode_thermostat_change
     entity_id: !input input_trvs
     attribute: current_temperature
     for: !input input_calibration_timeout
 
-  - platform: template
+  - trigger: template
     id: calibration_popp_change
     value_template: >
       {% if input_temperature_sensor != none %}
@@ -1588,7 +1588,7 @@ trigger:
         {{ false }}
       {% endif %}
 
-  - platform: template
+  - trigger: template
     id: calibration_popp_ping
     value_template: >
       {% set has_valves_danfoss = input_trvs | select('is_device_attr', 'manufacturer', 'Danfoss') | list  %}
@@ -1604,12 +1604,12 @@ trigger:
       {% endif %}
 
   # C O M F O R T   T E M P   C H A N G E   B Y   T I M E
-  - platform: template
+  - trigger: template
     id: temperature_change_heating_adjustment
     value_template: "{{ now().strftime('%H:%M') in (input_time_based_temperature_change_valve_target | map(attribute='time') | list) }}"
 
   # F R O S T   P R O T E C T I O N
-  - platform: template
+  - trigger: template
     id: temperature_change_frost_protection_on
     value_template: >
       {% set is_frost_protection_configured = input_frost_protection_duration.hours | int > 0 or input_frost_protection_duration.minutes | int > 0 or input_frost_protection_duration.seconds | int > 0 %}
@@ -1645,7 +1645,7 @@ trigger:
       {% endif %}
 
   # HEATING / COOLING WHEN ABOVE/BELOW ROOM TEMPERATURE
-  - platform: template
+  - trigger: template
     id: temperature_change_room_temp_above_target
     value_template: >
       {% if input_temperature_sensor != none and is_heat_only_if_below_real_temp == true %}
@@ -2665,7 +2665,7 @@ variables:
       {% endif %}
     {% endfor %}
 
-    {{ trvs_off + result.r == input_trvs | count and mode == 'off' }}
+    {{ trvs_off + result.r == input_trvs | count and mode == 'off' and trigger.id != none and trigger.id == 'temperature_change_window_on' }}
 
   scene_to_apply: >
     {% set result = none%}
@@ -2712,7 +2712,9 @@ variables:
 ########### C O N D I T I O N S ##################
 ##################################################
 
-condition:
+conditions:
+  - condition: template
+    value_template: "{{ not scene_creation_block }}"
   - condition: or
     conditions:
       - condition: template
@@ -2736,7 +2738,7 @@ condition:
 ################## A C T I O N ###################
 ##################################################
 
-action:
+actions:
   - if:
       - condition: template
         value_template: "{{ trigger.id in ['hastart'] }}"
