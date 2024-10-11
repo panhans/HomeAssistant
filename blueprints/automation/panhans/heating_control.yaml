@@ -2517,6 +2517,7 @@ variables:
 
         {% set calibration_entities = device_entities(device_id(valve)) |
                                     expand | selectattr('domain','in','number') |
+                                    selectattr('entity_id', 'search', 'external') |
                                     map(attribute='entity_id') | list %}
 
         {% if calibration_entities | count > 0 %}
