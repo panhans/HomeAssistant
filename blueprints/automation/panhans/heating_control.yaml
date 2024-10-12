@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.12
+    **Version**: 4.3.13
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1753,7 +1753,7 @@ variables:
 
   factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
 
-  no_changes: "{{ input_persons | count == 0 and input_mode_guest == none and input_schedulers | count == 0 and input_presence_sensor == none}}"
+  no_changes: "{{ input_persons | count == 0 and input_mode_guest == none and input_schedulers | count == 0 and input_presence_sensor == none and input_proximity == none }}"
 
   # ------------------------------------------------------------------------------------
   # ------------- PRESENCE, SCHEDULER, FROST PROTECTION, WINDOWS, PERSONS --------------
