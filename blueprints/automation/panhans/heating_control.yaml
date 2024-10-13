@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 4.3.13
+    **Version**: 4.3.14
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1957,8 +1957,8 @@ variables:
       {% endif %}
 
       {% set last_changed = [input_presence_sensor] | expand | map(attribute='last_changed') | first %}
-      {% set reaction_time = iif(sensor_state == 'on', input_presence_reaction_on_time, input_presence_reaction_off_time) %}
       {% set sensor_state = is_state(input_presence_sensor, 'on') %}
+      {% set reaction_time = iif(sensor_state, input_presence_reaction_on_time, input_presence_reaction_off_time) %}
       {% set min_timestamp = last_changed + timedelta(**reaction_time) %}
 
       {% if uptime != none and uptime + timedelta(**reaction_time) > now() - timedelta(**reaction_time) %}
