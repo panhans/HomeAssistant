@@ -3038,6 +3038,10 @@ actions:
                 calibration_entity: "{{ (calibration_number.keys() | list) [index] }}"
                 thermostat: "{{ (((calibration_number.values() | list) [index]) | first) ['valve'] }}"
                 offset: "{{ (((calibration_number.values() | list) [index]) | first) ['value'] }}"
+                select_entity: "{{ device_entities(device_id(thermostat)) |
+                            expand | selectattr('domain','in','select') |
+                            selectattr('attributes.options', 'contains', 'external') |
+                            map(attribute='entity_id') | list | first }}"
 
             - action: system_log.write
               data:
@@ -3047,6 +3051,22 @@ actions:
                   offset: {{ offset }}
                 level: !input input_log_level
                 logger: blueprints.panhans.heatingcontrol
+
+            - if:
+                - condition: template
+                  value_template: "{{ thermostat in valves_xiaomi }}"
+                - condition: template
+                  value_template: "{{ select_entity is defined and not is_state(select_entity, 'external') }}"
+              then:
+                - action: select.select_option
+                  target:
+                    entity_id: "{{ select_entity }}"
+                  data:
+                    option: external
+                - delay:
+                    hours: "{{ input_action_call_delay.hours }}"
+                    minutes: "{{ input_action_call_delay.minutes }}"
+                    seconds: "{{ input_action_call_delay.seconds }}"
 
             - action: number.set_value
               data:
