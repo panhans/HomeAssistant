@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_c
+    **Version**: 5.0.rc1_d
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2035,7 +2035,7 @@ variables:
     {% endif %}
 
   state_presence: >
-    {{ iif(is_presence_sensor_defined, state_presence_scheduler and state_presence_sensor, state_presence_sensor) }}
+    {{ iif(is_presence_scheduler_defined, state_presence_scheduler and state_presence_sensor, state_presence_sensor) }}
 
   # force max temperature
   is_force_max_temperature: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'on') }}"
