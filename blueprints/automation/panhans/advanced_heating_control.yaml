@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_a
+    **Version**: 5.0.rc1_b
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2248,14 +2248,14 @@ variables:
     {% endif %}
 
   entry_comfort_temp: >
-    {% if entry != none and 'comfort' in entry.keys() and (last_comfort_entity_change == none or as_datetime(entry_time) < as_datetime(last_comfort_entity_change)) %}
+    {% if entry != none and 'comfort' in entry.keys() and (last_comfort_entity_change == none or as_datetime(entry_time) > as_datetime(last_comfort_entity_change)) %}
       {{ entry['comfort'] }}
     {% else %}
       {{ none }}
     {% endif %}
 
   entry_eco_temp: >
-    {% if entry != none and 'eco' in entry.keys() and (last_eco_entity_change == none or as_datetime(entry_time) < as_datetime(last_eco_entity_change)) %}
+    {% if entry != none and 'eco' in entry.keys() and (last_eco_entity_change == none or as_datetime(entry_time) > as_datetime(last_eco_entity_change)) %}
       {{ entry['eco'] }}
     {% else %}
       {{ none }}
@@ -2287,11 +2287,11 @@ variables:
     {% elif is_aggressive_mode_calibration and trigger.id is defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
     {% else %}
-      {{ trigger.id is defined and 'calibration' in trigger.id and not is_generic_calibration }}
+      {{ trigger.id is defined and 'calibration' in trigger.id and not input_calibration_generic }}
     {% endif %}
 
   # changes
-  is_generic_calibration_trigger: "{{ is_calibration_trigger and is_generic_calibration }}"
+  is_generic_calibration_trigger: "{{ is_calibration_trigger and input_calibration_generic }}"
 
   is_change_trigger: >
     {{ trigger.id is defined and 
