@@ -2734,8 +2734,8 @@ variables:
 
   # conditions 
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
-  change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 }}"
-  reset_trigger: "{{ is_reset_trigger and reset_temperature != states(reset_entity) }}"
+  change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
+  reset_trigger: "{{ is_reset_trigger and reset_temperature != states(reset_entity) and not no_changes }}"
   calibration_trigger: "{{ is_calibration_trigger and (calibration_value_set | count > 0 or calibration_tado | count > 0) }}"
 
   # warnings
