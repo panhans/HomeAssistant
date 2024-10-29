@@ -859,13 +859,42 @@ blueprint:
         input_calibration_generic:
           name: 🧭 Generic Calibration
           description: >
-            `calibration`
+            `generic` `calibration`
 
 
             Adds the difference between room and [thermostat](https://www.home-assistant.io/integrations/climate/) temperature to the target temperature.
           default: false
           selector:
             boolean:
+
+        input_generic_calibration_offset:
+          name: ↕️ Generic Calibration Offset
+          description: >
+            `generic` `calibration`
+
+
+            If the temperature difference between the thermostat and the temperature sensor is very high, 
+            the offset, i.e. the correction temperature, can be limited to this value.
+
+            <details>
+            <summary><code><strong>CLICK HERE:</strong> Example</code></summary>
+            Generic Calibration Offset = 5°</br>
+            Thermostat Temperature = 28°</br>
+            Room Temperature = 18°</br>
+            </br>
+            Difference = Thermostat Temperature - Room Temperature = 10°</br>
+            Difference > Generic Calibration Offset -> Corrected Difference = 5°</br>
+            New Target Temperature = Thermostat Temperature + Corrected Difference = 33°
+            </details>
+          default: 5
+          selector:
+            number:
+              min: 0
+              max: 20
+              step: 1
+              mode: slider
+              unit_of_measurement: °C / °F
+
 
         input_calibration_rounded_values:
           name: 🌕 Fully Rounded Values
@@ -1813,6 +1842,7 @@ variables:
   input_calibration_generic: !input input_calibration_generic
   is_rounded_values: !input input_calibration_rounded_values
   input_calibration_key_word: !input input_calibration_key_word
+  input_generic_calibration_offset: !input input_generic_calibration_offset
   
   # Aggressive Mode
   input_aggressive_mode_offset: !input input_aggressive_mode_offset
@@ -2641,7 +2671,7 @@ variables:
 
           {% if is_aggressive_mode and not is_aggressive_mode_calibration %}
 
-            {% if is_generic_calibration %}
+            {% if input_calibration_generic %}
               {% set current_valve_temp = value_temperature_sensor | float %}
             {% endif %}
 
@@ -2655,7 +2685,7 @@ variables:
 
           {% endif %}
 
-          {% if is_generic_calibration %}
+          {% if input_calibration_generic %}
 
             {% set sensor_temp = value_temperature_sensor | float(current_valve_temp) %}
 
