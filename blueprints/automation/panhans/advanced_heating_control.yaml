@@ -2272,8 +2272,6 @@ variables:
   ############################### TRIGGER EVALUATION ##################################
   #####################################################################################
 
-  is_temperature_change_trigger: "{{ true }}"
-
   # calibration
   is_calibration_popp_periodical_trigger: >
     {{ trigger.id in ['calibration_popp_ping','hastart','reload'] }}
@@ -2609,7 +2607,7 @@ variables:
 
     {% set original_mode = mode %}
 
-    {% if not is_temperature_change_trigger %}
+    {% if not is_changes_trigger %}
       {{ n.dict }}
     {% else %}
       {% for valve in input_trvs %}
