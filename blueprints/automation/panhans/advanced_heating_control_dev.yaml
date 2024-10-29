@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_e
+    **Version**: 5.0.rc1_f
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1738,7 +1738,9 @@ trigger:
       {% if frost_protection_timestamp == now_ts %}
         {{ false }}
       {% else %}
+        
         {% set is_presence_fp = [input_presence_sensor] 
+            | reject('eq',none)
             | reject('is_state','on')
             | list
             | count > 0 %}
@@ -2127,6 +2129,7 @@ variables:
       {{ false }}
     {% else %}
       {% set is_presence_fp = [input_presence_sensor] 
+          | reject('eq',none)
           | reject('is_state','on')
           | expand 
           | selectattr('last_changed', '<=', frost_protection_timestamp)
@@ -2780,7 +2783,7 @@ variables:
 
     {{ messages }}
 
-conditions:
+conditions: 
   - condition: or
     conditions:
       - condition: template
