@@ -2317,7 +2317,7 @@ variables:
     {% endif %}
 
   is_scene_create_trigger: >
-    {{ trigger.id is defined and ("window_on" in trigger.id and not state_party) or ("party_on" in trigger.id and not state_window) }}
+    {{ trigger.id is defined and (("window_on" in trigger.id and not state_party) or ("party_on" in trigger.id and not state_window)) }}
 
   is_scene_apply_trigger: >
     {{ trigger.id is defined and ("window_off" in trigger.id or "party_off" in trigger.id) and not is_legacy_restore and not (state_window or state_party) }}
