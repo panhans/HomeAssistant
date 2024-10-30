@@ -2786,11 +2786,6 @@ variables:
       {% set messages = messages + ['Generic Calibration in combination with physical change / sync feature is not recommended. Expect unwanted side effects.'] %}
     {% endif %}
 
-    {% set messages = messages + ['reset_data' + reset_data | string + ' is_reset:' + is_reset | string ] %}
-    {% set messages = messages + ['is_adjustment_trigger ' + is_adjustment_trigger | string ] %}
-    {% set messages = messages + ['trigger.id is defined and trigger.id == temperature_change_heating_adjustment' +  (trigger.id is defined and trigger.id == 'temperature_change_heating_adjustment') | string ] %}
-    {% set messages = messages + ['entry_comfort_temp != none' +  (entry_comfort_temp != none) | string + 'entry_eco_temp != none: ' + (entry_eco_temp != none) | string ] %}
-
     {{ messages }}
 
 conditions:
