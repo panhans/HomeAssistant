@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_f
+    **Version**: 5.0.rc1_g
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2336,9 +2336,12 @@ variables:
   is_pysical_change: >
     {{ trigger.id is defined and trigger.id == 'temperature_change_valve_target' and is_physical_change_enabled }}
 
+  is_adjustment_trigger: "{{ trigger.id is defined and trigger.id == 'temperature_change_heating_adjustment' and
+                              (entry_comfort_temp != none or entry_eco_temp != none) }}"
+
   is_reset: >
     {{ (is_reset_temperature and is_change_trigger) or 
-        is_pysical_change }}
+        is_pysical_change or is_adjustment_trigger }}
 
   is_changes_trigger: >
     {% if state_window and trigger.id is defined and 'temperature_change_window_off' not in trigger.id %}
@@ -2731,42 +2734,44 @@ variables:
     {% endif %}
 
   # reset temperature
-  reset_entity: >
-    {% if is_reset and set_comfort %}
-      {{ iif(is_pysical_change, input_temperature_comfort_entity, input_temperature_eco_entity) }}
-    {% elif is_reset and not set_comfort %}
-      {{ iif(is_pysical_change, input_temperature_eco_entity, input_temperature_comfort_entity) }}
+  reset_data: >
+    {% set result = [] %}
+    {% if is_adjustment_trigger %}
+      {% if entry_comfort_temp != none %}
+        {% set result = result + [{'entity': input_temperature_comfort_entity, 'temp': entry_comfort_temp}] %}
+      {% endif %}
+      {% if entry_eco_temp != none %}
+        {% set result = result + [{'entity': input_temperature_eco_entity, 'temp': entry_eco_temp}] %}
+      {% endif %}
     {% else %}
-      {{ none }}
+      {% set entity = none %}
+      {% if is_reset and set_comfort %}
+        {% set entity = iif(is_pysical_change, input_temperature_comfort_entity, input_temperature_eco_entity) %}
+      {% elif is_reset and not set_comfort %}
+        {% set entity = iif(is_pysical_change, input_temperature_eco_entity, input_temperature_comfort_entity) %}
+      {% endif %}
+
+      {% set temp_r = none %}
+      {% if is_pysical_change %}
+        {% set temp_r = state_attr(trigger.to_state.entity_id,'temperature') %}
+      {% else %}
+      {% set temp_r = iif(is_reset and entity == input_temperature_eco_entity, 
+          input_temperature_eco_static, input_temperature_comfort_static) %}
+      {% endif %}
+
+      {% if entity != none and temp_r != none %}
+        {% set result = result + [{'entity': entity, 'temp': temp_r}] %}
+      {% endif %}
     {% endif %}
 
-  is_reset_trigger: "{{ is_reset and reset_entity != none }}"
+    {{ result }}
 
-  reset_temperature: >
-    {% set temp_r = none %}
-    {% if is_pysical_change %}
-      {% set temp_r = state_attr(trigger.to_state.entity_id,'temperature') %}
-    {% else %}
-    {% set temp_r = iif(is_reset_trigger and reset_entity == input_temperature_eco_entity, 
-        input_temperature_eco_static, input_temperature_comfort_static) %}
-    {% endif %}
-
-    {% if reset_entity != none%}
-      {% set t_min = state_attr(reset_entity,'min') %}
-      {% set t_max = state_attr(reset_entity,'max') %}
-      {% set step = state_attr(reset_entity,'step') %}
-
-      {% set temp_r = ((temp_r | float(0) / step) | round(0) * step) | float %}
-      {% set temp_r = iif(temp_r > t_max, t_max, temp_r) %}
-      {% set temp_r = iif(temp_r < t_min, t_min, temp_r) %}
-    {% endif %}
-
-    {{ temp_r }}
+  is_reset_trigger: "{{ is_reset and reset_data | count > 0 }}"
 
   # conditions 
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
   change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
-  reset_trigger: "{{ is_reset_trigger and reset_temperature != states(reset_entity) and not no_changes }}"
+  reset_trigger: "{{ is_reset_trigger and not no_changes }}"
   calibration_trigger: "{{ is_calibration_trigger and (calibration_value_set | count > 0 or calibration_tado | count > 0) }}"
 
   # warnings
@@ -2781,9 +2786,14 @@ variables:
       {% set messages = messages + ['Generic Calibration in combination with physical change / sync feature is not recommended. Expect unwanted side effects.'] %}
     {% endif %}
 
+    {% set messages = messages + ['reset_data' + reset_data | string + ' is_reset:' + is_reset | string ] %}
+    {% set messages = messages + ['is_adjustment_trigger ' + is_adjustment_trigger | string ] %}
+    {% set messages = messages + ['trigger.id is defined and trigger.id == temperature_change_heating_adjustment' +  (trigger.id is defined and trigger.id == 'temperature_change_heating_adjustment') | string ] %}
+    {% set messages = messages + ['entry_comfort_temp != none' +  (entry_comfort_temp != none) | string + 'entry_eco_temp != none: ' + (entry_eco_temp != none) | string ] %}
+
     {{ messages }}
 
-conditions: 
+conditions:
   - condition: or
     conditions:
       - condition: template
@@ -2848,11 +2858,27 @@ actions:
           - condition: template
             value_template: "{{ is_reset_trigger }}"
         sequence:
-          - action: input_number.set_value
-            data:
-              value: "{{ reset_temperature }}"
-            target:
-              entity_id: "{{ reset_entity }}"
+          - repeat:
+              count: "{{ reset_data | count | int }}"
+              sequence:
+                - variables:
+                    index: "{{ repeat.index-1 }}"
+                    reset_entity: "{{ reset_data[index]['entity'] }}"
+                    reset_temp: >
+                      {% set temp_r = reset_data[index]['temp'] %}
+                      {% set t_min = state_attr(reset_entity,'min') %}
+                      {% set t_max = state_attr(reset_entity,'max') %}
+                      {% set step = state_attr(reset_entity,'step') %}
+
+                      {% set temp_r = ((temp_r | float(0) / step) | round(0) * step) | float %}
+                      {% set temp_r = iif(temp_r > t_max, t_max, temp_r) %}
+                      {% set temp_r = iif(temp_r < t_min, t_min, temp_r) %}
+                      {{ temp_r }}
+                - action: input_number.set_value
+                  data:
+                    value: "{{ reset_temp }}"
+                  target:
+                    entity_id: "{{ reset_entity }}"
 
       # calibration
       - conditions:
