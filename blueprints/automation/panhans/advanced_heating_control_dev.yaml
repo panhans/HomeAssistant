@@ -2344,8 +2344,12 @@ variables:
         is_pysical_change or is_adjustment_trigger }}
 
   is_changes_trigger: >
-    {% if state_window and trigger.id is defined and 'temperature_change_window_off' not in trigger.id %}
-      {{ false }}
+    {% if state_window %}
+      {% if trigger.id is defined and 'temperature_change_window_on' in trigger.id %}
+        {{ true }}
+      {% elif trigger.id is defined and 'temperature_change_window_off' not in trigger.id %}
+        {{ false }}
+      {% endif %}
     {% elif trigger.id == 'temperature_change_valve_target' %}
       {{ false }}
     {% else %}
@@ -2713,12 +2717,11 @@ variables:
 
         {% endif %}
 
-        {% if mode == 'off' and dont_turn_off and (valve in valves_without_off_mode or is_not_off_but_min) %}
+        {% if mode == 'off' and dont_turn_off %}
           {% set valve_temp = min_temp %}
         {% endif %}
 
         {% set valve_temp = iif(set_max_temperature, max_temp, valve_temp) %}
-
         {% set valve_temp = iif(valve_temp > max_temp, max_temp, valve_temp) %}
         {% set valve_temp = iif(valve_temp < min_temp, min_temp, valve_temp) %}
 
