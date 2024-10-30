@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_2410301307
+    **Version**: 5.0.rc1_2410301426
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -907,7 +907,7 @@ blueprint:
           selector:
             boolean:
 
-    # M O D I F I E R S
+    # aggressive mode
     aggressive_mode_section:
       name: Aggressive Mode
       icon: mdi:emoticon-angry
@@ -971,7 +971,7 @@ blueprint:
             boolean:
 
 
-    # F R O S T   P R O T E C T I O N
+    # frost protection
     frostprotection_section:
       name: Frost Protection
       icon: mdi:snowflake
@@ -1010,7 +1010,7 @@ blueprint:
             duration:
               enable_day: true
 
-    # LIMING PROTECTION
+    # liming protection
     liming_protection_section:
       name: Liming Protection
       icon: mdi:pipe-valve
@@ -1078,7 +1078,7 @@ blueprint:
           selector:
             boolean:
 
-    # W I N T E R  M O D E
+    # winter mode
     toggle_section:
       name: "On/Off Automation Options"
       icon: mdi:light-switch
@@ -1193,7 +1193,7 @@ blueprint:
               mode: box
               unit_of_measurement: °C / °F
 
-    # TWEAKS
+    # tweaks
     tweak_section:
       name: Custom Settings
       icon: mdi:cog-box
@@ -1214,7 +1214,7 @@ blueprint:
           selector:
             duration:
 
-        # C U S T O M   A C T I O N
+        # custom action
         input_custom_action:
           name: 🎬 Custom Action
           description: >
@@ -2883,14 +2883,21 @@ actions:
           - condition: template
             value_template: "{{ is_calibration_trigger }}"
         sequence:
+          - action: system_log.write
+            data:
+              message: >
+                {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
+                'calibration data set: ' + calibration_value_set | string }}
+              level: !input input_log_level
+              logger: blueprints.panhans.heatingcontrol
           - repeat:
-              count: "{{ calibration_number | count | int }}"
+              count: "{{ calibration_value_set | count | int }}"
               sequence:
                 - variables:
                     index: "{{ repeat.index-1 }}"
-                    calibration_entity: "{{ (calibration_number.keys() | list) [index] }}"
-                    thermostat: "{{ (((calibration_number.values() | list) [index]) | first) ['valve'] }}"
-                    offset: "{{ (((calibration_number.values() | list) [index]) | first) ['value'] }}"
+                    calibration_entity: "{{ (calibration_value_set.keys() | list) [index] }}"
+                    thermostat: "{{ (((calibration_value_set.values() | list) [index]) | first) ['valve'] }}"
+                    offset: "{{ (((calibration_value_set.values() | list) [index]) | first) ['value'] }}"
                     select_entity: "{{ device_entities(device_id(thermostat)) |
                                 expand | selectattr('domain','in','select') |
                                 selectattr('attributes.options', 'contains', 'external') |
@@ -2899,9 +2906,9 @@ actions:
                 - action: system_log.write
                   data:
                     message: >
-                      AHC - Calibration - automation_name {{" \n "}}
-                      calibration entity: {{ calibration_entity }} {{" \n "}}
-                      offset: {{ offset }}
+                      {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
+                      'calibration entity: ' + calibration_entity | string  + ' \n ' +
+                      'offset: ' + offset | string }}
                     level: !input input_log_level
                     logger: blueprints.panhans.heatingcontrol
 
