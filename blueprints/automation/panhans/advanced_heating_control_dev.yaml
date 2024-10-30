@@ -2930,7 +2930,7 @@ actions:
                     index: "{{ repeat.index-1 }}"
                     thermostat: "{{ (calibration_tado.keys() | list) [index] }}"
                     offset: "{{ (((calibration_tado.values() | list) [index]) | first) ['value'] }}"
-                - action: tado.set_climate_temperature_offset
+                - action: "{{ 'tado.set_climate_temperature_offset' }}"
                   data:
                     offset: "{{ offset }}"
                     entity_id: "{{ thermostat }}"
