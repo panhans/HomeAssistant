@@ -2531,12 +2531,12 @@ variables:
 
       {% for valve in valves_calibration_common %}
 
-        {% set calibration_entity = device_entities(device_id(valve)) |
+        {% set calibration_entities = device_entities(device_id(valve)) |
                                     expand | selectattr('domain','in','number') |
                                     selectattr('entity_id', 'search', input_calibration_key_word) |
-                                    map(attribute='entity_id') | list | first | default(none) %}
+                                    map(attribute='entity_id') | list %}
 
-        {% if calibration_entity != none %}
+        {% if calibration_entities | count > 0%}
 
           {% set calibration_entity = calibration_entities | first %}
           {% set step = state_attr(calibration_entity, 'step') | float %}
