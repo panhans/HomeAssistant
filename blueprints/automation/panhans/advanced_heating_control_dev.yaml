@@ -852,7 +852,7 @@ blueprint:
 
             Keyword for finding the calibration entity. This word must be part of the entity id. 
             As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations.
-          default: 'offset'
+          default: 'calibration'
           selector:
             text:
 
