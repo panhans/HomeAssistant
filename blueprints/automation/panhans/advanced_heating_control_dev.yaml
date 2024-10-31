@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_2410310822
+    **Version**: 5.0.rc1_2410310842
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2733,10 +2733,10 @@ variables:
   reset_data: >
     {% set result = [] %}
     {% if is_adjustment_trigger %}
-      {% if entry_comfort_temp != none %}
+      {% if entry_comfort_temp != none and input_temperature_comfort_entity != none %}
         {% set result = result + [{'entity': input_temperature_comfort_entity, 'temp': entry_comfort_temp}] %}
       {% endif %}
-      {% if entry_eco_temp != none %}
+      {% if entry_eco_temp != none and input_temperature_eco_entity != none %}
         {% set result = result + [{'entity': input_temperature_eco_entity, 'temp': entry_eco_temp}] %}
       {% endif %}
     {% else %}
@@ -2852,6 +2852,13 @@ actions:
           - repeat:
               count: "{{ reset_data | count | int }}"
               sequence:
+                - action: system_log.write
+                  data:
+                    message: >
+                      {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
+                      'reset data: ' + reset_data | string }}
+                    level: !input input_log_level
+                    logger: blueprints.panhans.heatingcontrol
                 - variables:
                     index: "{{ repeat.index-1 }}"
                     reset_entity: "{{ reset_data[index]['entity'] }}"
