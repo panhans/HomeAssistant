@@ -851,8 +851,8 @@ blueprint:
 
 
             Keyword for finding the calibration entity. This word must be part of the entity id. 
-            As a rule, the entities with the word *external* are marked by the integrations.
-          default: 'external'
+            As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations.
+          default: 'offset'
           selector:
             text:
 
@@ -2531,19 +2531,12 @@ variables:
 
       {% for valve in valves_calibration_common %}
 
-        {% set calibration_entities = device_entities(device_id(valve)) |
+        {% set calibration_entity = device_entities(device_id(valve)) |
                                     expand | selectattr('domain','in','number') |
-                                    selectattr('entity_id', 'search', 'offset') |
-                                    map(attribute='entity_id') | list %}
+                                    selectattr('entity_id', 'search', input_calibration_key_word) |
+                                    map(attribute='entity_id') | list | first | default(none) %}
 
-        {% if calibration_entities | count == 0 %}
-          {% set calibration_entities = device_entities(device_id(valve)) |
-                                    expand | selectattr('domain','in','number') |
-                                    selectattr('entity_id', 'search', 'calibration') |
-                                    map(attribute='entity_id') | list %}
-        {% endif %}
-
-        {% if calibration_entities | count > 0 %}
+        {% if calibration_entity != none %}
 
           {% set calibration_entity = calibration_entities | first %}
           {% set step = state_attr(calibration_entity, 'step') | float %}
