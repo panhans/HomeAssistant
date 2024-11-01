@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_2410310859
+    **Version**: 5.0.rc1_2411011120
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1369,7 +1369,7 @@ trigger:
                           | list 
                           | count == 0 
           
-          and (is_guest_mode_defined and states(input_mode_guest) not in ['on','active'] ) }}
+          and (not is_guest_mode_defined or (is_guest_mode_defined and states(input_mode_guest) not in ['on','active'])) }}
     id: temperature_change_person_off
     for: !input input_people_leaving_home_duration
 
