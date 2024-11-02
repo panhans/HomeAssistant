@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc1_2411011120
+    **Version**: 5.0.rc1_2411022057
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2363,7 +2363,7 @@ variables:
     {{ trigger.id is defined and ("window_off" in trigger.id or "party_off" in trigger.id) and not is_legacy_restore and not (state_window or state_party) }}
 
   is_scene_destroy_trigger: >
-    {{ (is_change_trigger or trigger.id == 'temperature_change_heating_adjustment') and not (state_window or state_party) }}
+    {{ (is_change_trigger or trigger.id == 'temperature_change_heating_adjustment') and (state_window or state_party) }}
 
   # scene management
   scene_entities: "{{ valves }}"
@@ -2844,40 +2844,6 @@ actions:
       warnings: "{{ warnings | count > 0 }}"
 
   - choose:
-      # reset
-      - conditions:
-          - condition: template
-            value_template: "{{ is_reset_trigger }}"
-        sequence:
-          - repeat:
-              count: "{{ reset_data | count | int }}"
-              sequence:
-                - action: system_log.write
-                  data:
-                    message: >
-                      {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
-                      'reset data: ' + reset_data | string }}
-                    level: !input input_log_level
-                    logger: blueprints.panhans.heatingcontrol
-                - variables:
-                    index: "{{ repeat.index-1 }}"
-                    reset_entity: "{{ reset_data[index]['entity'] }}"
-                    reset_temp: >
-                      {% set temp_r = reset_data[index]['temp'] %}
-                      {% set t_min = state_attr(reset_entity,'min') %}
-                      {% set t_max = state_attr(reset_entity,'max') %}
-                      {% set step = state_attr(reset_entity,'step') %}
-
-                      {% set temp_r = ((temp_r | float(0) / step) | round(0) * step) | float %}
-                      {% set temp_r = iif(temp_r > t_max, t_max, temp_r) %}
-                      {% set temp_r = iif(temp_r < t_min, t_min, temp_r) %}
-                      {{ temp_r }}
-                - action: input_number.set_value
-                  data:
-                    value: "{{ reset_temp }}"
-                  target:
-                    entity_id: "{{ reset_entity }}"
-
       # calibration
       - conditions:
           - condition: template
@@ -3001,50 +2967,83 @@ actions:
               entity_id: "{{ scene_to_apply_tmp }}"
           - condition: template
             value_template: "{{ false }}"
-        else: 
-          # changes
+        else:
+          # reset
           - if:
-              - condition: and
-                conditions: !input input_custom_condition
+              - condition: template
+                value_template: "{{ is_reset_trigger }}"
             then:
-            - repeat:
-                count: "{{ changes | count | int }}"
-                sequence:
-                  - variables:
-                      index: "{{ repeat.index-1 }}"
-                      thermostat: "{{ (changes.keys() | list) [index] }}"
-                      mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
-                      target_temperature: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
-                  - action: system_log.write
-                    data:
-                      message: >
-                        AHC - Change - automation_name {{" \n "}}
-                        thermostat: {{ thermostat }} {{" \n "}}
-                        mode: {{ mode }} {{" \n "}}
-                        new_target: {{ target_temperature }} {{" \n "}}
-                        current_target: {{ state_attr(thermostat,'temperature') }}
-                      level: !input input_log_level
-                      logger: blueprints.panhans.heatingcontrol
+              - repeat:
+                  count: "{{ reset_data | count | int }}"
+                  sequence:
+                    - action: system_log.write
+                      data:
+                        message: >
+                          {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
+                          'reset data: ' + reset_data | string }}
+                        level: !input input_log_level
+                        logger: blueprints.panhans.heatingcontrol
+                    - variables:
+                        index: "{{ repeat.index-1 }}"
+                        reset_entity: "{{ reset_data[index]['entity'] }}"
+                        reset_temp: >
+                          {% set temp_r = reset_data[index]['temp'] %}
+                          {% set t_min = state_attr(reset_entity,'min') %}
+                          {% set t_max = state_attr(reset_entity,'max') %}
+                          {% set step = state_attr(reset_entity,'step') %}
 
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(thermostat) | lower != mode | lower  }}"
-                    then:
-                      - action: climate.set_hvac_mode
+                          {% set temp_r = ((temp_r | float(0) / step) | round(0) * step) | float %}
+                          {% set temp_r = iif(temp_r > t_max, t_max, temp_r) %}
+                          {% set temp_r = iif(temp_r < t_min, t_min, temp_r) %}
+                          {{ temp_r }}
+                    - action: input_number.set_value
+                      data:
+                        value: "{{ reset_temp }}"
+                      target:
+                        entity_id: "{{ reset_entity }}"
+            else:       
+              - if:
+                  - condition: and
+                    conditions: !input input_custom_condition
+                then:
+                - repeat:
+                    count: "{{ changes | count | int }}"
+                    sequence:
+                      - variables:
+                          index: "{{ repeat.index-1 }}"
+                          thermostat: "{{ (changes.keys() | list) [index] }}"
+                          mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
+                          target_temperature: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
+                      - action: system_log.write
                         data:
-                          entity_id: "{{ thermostat }}"
-                          hvac_mode: "{{ mode }}"
-                      - delay: !input input_action_call_delay
+                          message: >
+                            AHC - Change - automation_name {{" \n "}}
+                            thermostat: {{ thermostat }} {{" \n "}}
+                            mode: {{ mode }} {{" \n "}}
+                            new_target: {{ target_temperature }} {{" \n "}}
+                            current_target: {{ state_attr(thermostat,'temperature') }}
+                          level: !input input_log_level
+                          logger: blueprints.panhans.heatingcontrol
 
-                  - if:
-                      - condition: template
-                        value_template: "{{ state_attr(thermostat, 'temperature') != target_temperature and mode != 'off' }}"
-                    then:
-                      - action: climate.set_temperature
-                        data:
-                          entity_id: "{{ thermostat }}"
-                          temperature: "{{ target_temperature | float }}"
-                      - delay: !input input_action_call_delay
+                      - if:
+                          - condition: template
+                            value_template: "{{ states(thermostat) | lower != mode | lower  }}"
+                        then:
+                          - action: climate.set_hvac_mode
+                            data:
+                              entity_id: "{{ thermostat }}"
+                              hvac_mode: "{{ mode }}"
+                          - delay: !input input_action_call_delay
+
+                      - if:
+                          - condition: template
+                            value_template: "{{ state_attr(thermostat, 'temperature') != target_temperature and mode != 'off' }}"
+                        then:
+                          - action: climate.set_temperature
+                            data:
+                              entity_id: "{{ thermostat }}"
+                              temperature: "{{ target_temperature | float }}"
+                          - delay: !input input_action_call_delay
             
       # custom action
       - if:
