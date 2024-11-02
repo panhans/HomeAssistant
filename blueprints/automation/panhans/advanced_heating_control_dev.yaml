@@ -2305,27 +2305,29 @@ variables:
   ############################### TRIGGER EVALUATION ##################################
   #####################################################################################
 
+  trigger_id_defined: "{{ trigger.id is defined }}"
+
   # calibration
   is_calibration_popp_periodical_trigger: >
-    {{ trigger.id in ['calibration_popp_ping','hastart','reload'] }}
+    {{ trigger_id_defined and trigger.id in ['calibration_popp_ping','hastart','reload'] }}
 
   is_calibration_difference_popp_trigger: >
-    {{ trigger.id in ['calibration_popp_change'] }}
+    {{ trigger_id_defined and trigger.id in ['calibration_popp_change'] }}
 
   is_calibration_trigger: >
-    {% if valves_dph | count == 0 and trigger.id is defined and 'calibration_popp' in trigger.id %}
+    {% if valves_dph | count == 0 and trigger_id_defined and 'calibration_popp' in trigger.id %}
       {{ false }}
-    {% elif is_aggressive_mode_calibration and trigger.id is defined and 'aggressive_mode' in trigger.id %}
+    {% elif is_aggressive_mode_calibration and trigger_id_defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
     {% else %}
-      {{ trigger.id is defined and 'calibration' in trigger.id and not input_calibration_generic }}
+      {{ trigger_id_defined and 'calibration' in trigger.id and not input_calibration_generic }}
     {% endif %}
 
   # changes
   is_generic_calibration_trigger: "{{ is_calibration_trigger and input_calibration_generic }}"
 
   is_change_trigger: >
-    {{ trigger.id is defined and 
+    {{ trigger_id_defined and 
         'temperature_change' in trigger.id and 
         ('presence' in trigger.id or 
         'scheduler' in trigger.id or 
@@ -2334,9 +2336,9 @@ variables:
         and not trigger.id == 'temperature_change_valve_target' }}
 
   is_pysical_change: >
-    {{ trigger.id is defined and trigger.id == 'temperature_change_valve_target' and is_physical_change_enabled }}
+    {{ trigger_id_defined and trigger.id == 'temperature_change_valve_target' and is_physical_change_enabled }}
 
-  is_adjustment_trigger: "{{ trigger.id is defined and trigger.id == 'temperature_change_heating_adjustment' and
+  is_adjustment_trigger: "{{ trigger_id_defined and trigger.id == 'temperature_change_heating_adjustment' and
                               (entry_comfort_temp != none or entry_eco_temp != none) }}"
 
   is_reset: >
@@ -2345,22 +2347,22 @@ variables:
 
   is_changes_trigger: >
     {% if state_window %}
-      {% if trigger.id is defined and 'temperature_change_window_on' in trigger.id %}
+      {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
         {{ true }}
-      {% elif trigger.id is defined and 'temperature_change_window_off' not in trigger.id %}
+      {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
         {{ false }}
       {% endif %}
-    {% elif trigger.id == 'temperature_change_valve_target' %}
+    {% elif trigger_id_defined and trigger.id == 'temperature_change_valve_target' %}
       {{ false }}
     {% else %}
-      {{ (trigger.id is defined and 'temperature_change' in trigger.id) or is_generic_calibration_trigger }}
+      {{ (trigger_id_defined and 'temperature_change' in trigger.id) or is_generic_calibration_trigger }}
     {% endif %}
 
   is_scene_create_trigger: >
-    {{ trigger.id is defined and (("window_on" in trigger.id and not state_party) or ("party_on" in trigger.id and not state_window)) }}
+    {{ trigger_id_defined and (("window_on" in trigger.id and not state_party) or ("party_on" in trigger.id and not state_window)) }}
 
   is_scene_apply_trigger: >
-    {{ trigger.id is defined and ("window_off" in trigger.id or "party_off" in trigger.id) and not is_legacy_restore and not (state_window or state_party) }}
+    {{ trigger_id_defined and ("window_off" in trigger.id or "party_off" in trigger.id) and not is_legacy_restore and not (state_window or state_party) }}
 
   is_scene_destroy_trigger: >
     {{ (is_change_trigger or trigger.id == 'temperature_change_heating_adjustment') and (state_window or state_party) }}
@@ -2840,7 +2842,7 @@ actions:
       temperature_eco: "{{ temperature_eco }}"
       target_temperature: "{{ target_temperature }}"
       set_max_temperature: "{{ set_max_temperature }}"
-      last_trigger_id: "{{ trigger.id }}"
+      last_trigger_id: "{{ iif(trigger_id_defined, trigger.id, '') }}"
       warnings: "{{ warnings | count > 0 }}"
 
   - choose:
