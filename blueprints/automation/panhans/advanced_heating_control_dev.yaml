@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411022057
+    **Version**: 5.0.rc2_2411031853
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -278,7 +278,7 @@ blueprint:
             object:
           default: "[]"
 
-    # M O D E S
+    # modes
     mode_section:
       name: Force Comfort Mode
       icon: mdi:fire
@@ -407,7 +407,7 @@ blueprint:
           selector:
             boolean:
 
-    # P E R S O N S
+    # persons
     person_section:
       name: People
       icon: mdi:account-multiple
@@ -482,7 +482,7 @@ blueprint:
                     - timer
               multiple: false
 
-    # S C H E D U L E R
+    # scheduler
     scheduling_section:
       name: Scheduling
       icon: mdi:clock-outline
@@ -547,7 +547,7 @@ blueprint:
                     - input_select
               multiple: false
 
-    # P R E S E N C E
+    # presence
     presence_section:
       name: Presence Detection
       icon: mdi:location-enter
@@ -613,7 +613,7 @@ blueprint:
           selector:
             duration:
 
-    # P R O X I M I T Y
+    # proximity
     proximity_section:
       name: Proximity
       icon: mdi:leak
@@ -666,7 +666,7 @@ blueprint:
               step: 1
               mode: box
 
-    # AWAY MODE
+    # away mode
     away_section:
       name: Away Mode
       icon: mdi:walk
@@ -725,7 +725,7 @@ blueprint:
           selector:
             boolean:
 
-    # W I N D O W   O P E N   D E T E C T I O N
+    # windows
     window_section:
       name: Window & Door Detection
       icon: mdi:door
@@ -802,7 +802,7 @@ blueprint:
           selector:
             boolean:
     
-    # C A L I B R A T I O N
+    # calibration
     calibration_section:
       name: Calibration
       icon: mdi:compass
@@ -1157,7 +1157,7 @@ blueprint:
             number:
               min: 5
               max: 68
-              step: 1
+              step: 0.5
               mode: box
               unit_of_measurement: °C / °F
 
@@ -1189,7 +1189,7 @@ blueprint:
             number:
               min: 5
               max: 68
-              step: 1
+              step: 0.5
               mode: box
               unit_of_measurement: °C / °F
 
@@ -1637,9 +1637,15 @@ trigger:
 
   # aggressive mode
   - trigger: state
-    id: calibration_aggressive_mode_thermostat_change
+    id: calibration_aggressive_mode_thermostat_current_temp_change
     entity_id: !input input_trvs
     attribute: current_temperature
+    for: !input input_calibration_timeout
+
+  - trigger: state
+    id: calibration_aggressive_mode_thermostat_temp_change
+    entity_id: !input input_trvs
+    attribute: temperature
     for: !input input_calibration_timeout
 
   # calibration trigger
@@ -2320,7 +2326,7 @@ variables:
     {% elif is_aggressive_mode_calibration and trigger_id_defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
     {% else %}
-      {{ trigger_id_defined and 'calibration' in trigger.id and not input_calibration_generic }}
+      {{ trigger_id_defined and 'calibration' in trigger.id and not input_calibration_generic and not trigger.id == 'calibration_aggressive_mode_thermostat_temp_change' }}
     {% endif %}
 
   # changes
