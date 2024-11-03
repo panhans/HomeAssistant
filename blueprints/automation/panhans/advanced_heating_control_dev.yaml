@@ -1646,7 +1646,8 @@ trigger:
     id: calibration_aggressive_mode_thermostat_temp_change
     entity_id: !input input_trvs
     attribute: temperature
-    for: !input input_calibration_timeout
+    for:
+      seconds: 30
 
   # calibration trigger
   - trigger: template
