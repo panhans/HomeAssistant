@@ -2929,7 +2929,7 @@ actions:
           - condition: template
             value_template: "{{ is_scene_create_trigger }}"
           - condition: template
-            value_template: "{{ states[scene_to_create] is not defined  }}"
+            value_template: "{{ states[scene_to_create] is undefined  }}"
         then:
           - action: scene.create
             data:
