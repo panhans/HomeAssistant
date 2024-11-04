@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411041621
+    **Version**: 5.0.rc2_2411042055
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2929,7 +2929,7 @@ actions:
           - condition: template
             value_template: "{{ is_scene_create_trigger }}"
           - condition: template
-            value_template: "{{ states[scene_to_create] is undefined  }}"
+            value_template: "{{ states[scene_to_create] == none }}"
         then:
           - action: scene.create
             data:
@@ -2950,7 +2950,7 @@ actions:
                     scene_to_destroy: "{{ scenes_to_destroy[repeat.index-1] }}"
                 - if:
                     - condition: template
-                      value_template: "{{ states[scene_to_destroy] is defined }}"
+                      value_template: "{{ states[scene_to_destroy] != none }}"
                   then:
                     - action: scene.delete
                       target:
@@ -2962,7 +2962,7 @@ actions:
             {% if scene_to_apply != none and states[scene_to_apply] != none %}
               {{ scene_to_apply }}
             {% else %}
-              {{ scenes_all | expand | reject('==',none) | map(attribute="entity_id") | list | default(none) }}
+              {{ scenes_all | expand | reject('==',none) | map(attribute="entity_id") | list | first | default(none) }}
             {% endif %}
       - if:
           - condition: template
@@ -2970,6 +2970,13 @@ actions:
           - condition: template
             value_template: "{{ scene_to_apply_tmp != none and states[scene_to_apply_tmp] != none }}"
         then:
+          - action: system_log.write
+            data:
+              message: >
+                {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
+                'apply scene: ' + scene_to_apply_tmp | string + ' state: ' + states[scene_to_apply_tmp] | string }}
+              level: !input input_log_level
+              logger: blueprints.panhans.heatingcontrol
           - action: scene.turn_on
             target:
               entity_id: "{{ scene_to_apply_tmp }}"
