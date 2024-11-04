@@ -108,7 +108,7 @@ blueprint:
               * generic calibration
 
             Note: This is an additional sensor inside your room usually next to your favourite spot. [Thermostats](https://www.home-assistant.io/integrations/climate/) or its integration (e.g. Z2M or ZHA) except Tado should provide a seperate calibration entity.
-          default:
+          default: []
           selector:
             entity:
               filter:
@@ -1255,7 +1255,7 @@ trigger_variables:
   # thermostats / sensors
   input_trvs: !input input_trvs
   input_temperature_sensor: !input input_temperature_sensor
-  is_temperature_sensor_defined: "{{ input_temperature_sensor != none }}"
+  is_temperature_sensor_defined: "{{ input_temperature_sensor != [] }}"
 
   # people
   input_persons: !input input_persons
@@ -1562,7 +1562,7 @@ trigger:
         {{ false }}
       {% else %}
         {% set outside_state = false %}
-        {% set use_room_temp = input_mode_room_temperature and is_presence_sensor_defined %}
+        {% set use_room_temp = input_mode_room_temperature and is_temperature_sensor_defined %}
         {% set room_state = iif(use_room_temp, false, true) %}
 
         {% set state = states(input_mode_outside_temperature) %}
@@ -1591,7 +1591,7 @@ trigger:
         {{ false }}
       {% else %}
         {% set outside_state = false %}
-        {% set use_room_temp = input_mode_room_temperature and is_presence_sensor_defined %}
+        {% set use_room_temp = input_mode_room_temperature and is_temperature_sensor_defined %}
         {% set room_state = iif(use_room_temp, false, true) %}
 
         {% set state = states(input_mode_outside_temperature) %}
@@ -1649,24 +1649,23 @@ trigger:
     for:
       seconds: 30
 
-  # calibration trigger
-  - trigger: template
-    id: calibration_sensor_change
-    value_template: >
-      {% if is_temperature_sensor_defined %}
-        {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(**input_calibration_timeout) }}
-      {% else %}
-        {{ false }}
-      {% endif %}
+  - trigger: state
+    id: aggressive_mode_sensor_change
+    entity_id: !input input_temperature_sensor
+    for:
+      seconds: 30
 
-  - trigger: template
+  # calibration trigger
+  - trigger: state
+    id: calibration_sensor_change
+    entity_id: !input input_temperature_sensor
+    for: !input input_calibration_timeout
+
+  - trigger: state
     id: calibration_popp_change
-    value_template: >
-      {% if is_temperature_sensor_defined %}
-        {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(seconds=2) }}
-      {% else %}
-        {{ false }}
-      {% endif %}
+    entity_id: !input input_temperature_sensor
+    for:
+      seconds: 2
 
   - trigger: template
     id: calibration_popp_ping
@@ -1773,7 +1772,7 @@ trigger:
     id: temperature_change_room_temp_above_target
     value_template: >
       {% if is_temperature_sensor_defined and is_heat_only_if_below_real_temp %}
-        {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(**input_calibration_timeout) }}
+        {{ (now() - states.sensor[input_temperature_sensor.split('.')[1]].last_updated) >= timedelta(minutes=1) }}
       {% else %}
         {{ false }}
       {% endif %}
@@ -1886,7 +1885,8 @@ variables:
   # global
   factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
   current_time_stamp: "{{ now() }}"
-  is_metric: "{{ input_temperature_sensor == none or (input_temperature_sensor != none and state_attr(input_temperature_sensor,VAR_UNIT_OF_MEASUREMENT) == '°C') }}"
+  is_temperature_sensor_defined: "{{ input_temperature_sensor != [] }}"
+  is_metric: "{{ not is_temperature_sensor_defined or (is_temperature_sensor_defined and state_attr(input_temperature_sensor,VAR_UNIT_OF_MEASUREMENT) == '°C') }}"
 
   # uptime
   up_time_sensor: "{{ integration_entities('uptime') | first | default(none) }}"
@@ -1904,7 +1904,7 @@ variables:
       {{ none }}
     {% else %}
       {% set outside_state = false %}
-      {% set use_room_temp = input_mode_room_temperature and is_presence_sensor_defined %}
+      {% set use_room_temp = input_mode_room_temperature and is_temperature_sensor_defined %}
       {% set room_state = iif(use_room_temp, false, true) %}
 
       {% set state = states(input_mode_outside_temperature) %}
@@ -2127,7 +2127,7 @@ variables:
 
   # aggressive mode
   is_aggressive_mode: "{{ input_aggressive_mode_offset > 0 }}"
-  is_aggressive_mode_calibration: "{{ is_aggressive_mode and input_aggressive_mode_calibration and input_temperature_sensor != none }}"
+  is_aggressive_mode_calibration: "{{ is_aggressive_mode and input_aggressive_mode_calibration and is_temperature_sensor_defined }}"
 
   # frost protection
   is_frost_protection: >
@@ -2352,6 +2352,8 @@ variables:
     {{ (is_reset_temperature and is_change_trigger) or 
         is_pysical_change or is_adjustment_trigger }}
 
+  is_aggressive_mode_trigger: "{{ is_aggressive_mode and trigger_id_defined and 'aggressive_mode' in trigger.id }}"
+
   is_changes_trigger: >
     {% if state_window %}
       {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
@@ -2361,6 +2363,8 @@ variables:
       {% endif %}
     {% elif trigger_id_defined and trigger.id == 'temperature_change_valve_target' %}
       {{ false }}
+    {% elif is_aggressive_mode_trigger %}
+      {{ true }}
     {% else %}
       {{ (trigger_id_defined and 'temperature_change' in trigger.id) or is_generic_calibration_trigger }}
     {% endif %}
@@ -2683,7 +2687,7 @@ variables:
 
           {% if is_aggressive_mode and not is_aggressive_mode_calibration %}
 
-            {% if input_calibration_generic %}
+            {% if is_temperature_sensor_defined %}
               {% set current_valve_temp = value_temperature_sensor | float %}
             {% endif %}
 
