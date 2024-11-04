@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411040928
+    **Version**: 5.0.rc2_2411041621
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2376,8 +2376,8 @@ variables:
 
   # scene management
   scene_entities: "{{ valves }}"
-  scene_window_id: "{{ 'scene.' + this.entity_id | replace('.','_') + '_window' }}"
-  scene_party_id: "{{ 'scene.' + this.entity_id | replace('.','_') + '_party' }}"
+  scene_window_id: "{{ 'scene.' + this.entity_id | replace('automation.','') | replace('.','_') + '_window' }}"
+  scene_party_id: "{{ 'scene.' + this.entity_id | replace('automation.','') | replace('.','_') + '_party' }}"
   scenes_all: "{{ [scene_window_id, scene_party_id] }}"
 
   scene_to_apply: >
