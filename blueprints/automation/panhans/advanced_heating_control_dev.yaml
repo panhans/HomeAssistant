@@ -1692,12 +1692,7 @@ trigger:
           | sort(attribute='time', reverse = true)
           | list  %}
 
-      {% set latest_entry = plan | selectattr('days', 'undefined') | selectattr('scheduler', 'undefined') | first %}
-      {% set latest_entry_day = plan | rejectattr('days', 'undefined') | selectattr('days', 'search', current_day) | first %}
-
-      {% set item = [latest_entry,latest_entry_day] | reject ('undefined') | list | last | default(none) %}
-
-      {{ item != none and now() < now().replace(second=2) }}
+      {{ plan | count > 0 and now() < now().replace(second=2) }}
 
   # liming protection
   - trigger: template
@@ -2793,6 +2788,8 @@ variables:
       {% set messages = messages + ['Aggressive Mode in combination with physical change / sync feature is not recommended. Expect unwanted side effects.'] %}
     {% elif is_generic_calibration and is_physical_change_enabled %}
       {% set messages = messages + ['Generic Calibration in combination with physical change / sync feature is not recommended. Expect unwanted side effects.'] %}
+    {% elif valves_unsupported | count > 0 %}
+      {% set messages = messages + ['Unsupported climate entities: ' + valves_unsupported | join(',') | string ] %}
     {% endif %}
 
     {{ messages }}
