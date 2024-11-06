@@ -2974,7 +2974,7 @@ actions:
           - action: system_log.write
             data:
               message: >
-                {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
+                {{ 'AHC - Calibration - ' + automation_name | string + ' \n ' +
                 'apply scene: ' + scene_to_apply_tmp | string + ' state: ' + states[scene_to_apply_tmp] | string }}
               level: !input input_log_level
               logger: blueprints.panhans.heatingcontrol
@@ -3032,15 +3032,16 @@ actions:
                       index: "{{ repeat.index-1 }}"
                       thermostat: "{{ (changes.keys() | list) [index] }}"
                       mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
-                      target_temperature: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
+                      temp_target: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
                   - action: system_log.write
                     data:
                       message: >
-                        AHC - Change - automation_name {{" \n "}}
-                        thermostat: {{ thermostat }} {{" \n "}}
-                        mode: {{ mode }} {{" \n "}}
-                        new_target: {{ target_temperature }} {{" \n "}}
-                        current_target: {{ state_attr(thermostat,'temperature') }}
+                        AHC - Change - {{ automation_name }} {{" \n "}}
+                        Trigger ID: {{ iif(trigger_id_defined, trigger.id, '') }}
+                        Thermostat: {{ thermostat }} {{" \n "}}
+                        Mode: {{ mode }} {{" \n "}}
+                        New Target Temp: {{ temp_target }} {{" \n "}}
+                        Current Target Temp: {{ state_attr(thermostat,'temperature') }}
                       level: !input input_log_level
                       logger: blueprints.panhans.heatingcontrol
 
@@ -3056,12 +3057,12 @@ actions:
 
                   - if:
                       - condition: template
-                        value_template: "{{ state_attr(thermostat, 'temperature') != target_temperature and mode != 'off' }}"
+                        value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
                     then:
                       - action: climate.set_temperature
                         data:
                           entity_id: "{{ thermostat }}"
-                          temperature: "{{ target_temperature | float }}"
+                          temperature: "{{ temp_target | float }}"
                       - delay: !input input_action_call_delay
             
       # custom action
