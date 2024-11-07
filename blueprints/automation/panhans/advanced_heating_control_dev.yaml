@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411071626
+    **Version**: 5.0.rc2_2411071859
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2806,6 +2806,9 @@ variables:
     {% endif %}
 
     {{ messages }}
+
+  thermostat_temperatures: >
+    {{ input_trvs | expand | map(attribute='attributes.current_temperature') | list }}
 
 conditions:
   - condition: or
