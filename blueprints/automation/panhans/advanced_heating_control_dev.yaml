@@ -2851,6 +2851,8 @@ actions:
       target_temperature: "{{ target_temperature }}"
       set_max_temperature: "{{ set_max_temperature }}"
       last_trigger_id: "{{ iif(trigger_id_defined, trigger.id, '') }}"
+      calibration_trigger: "{{ calibration_trigger }}"
+      change_trigger: "{{ change_trigger }}"
       warnings: "{{ warnings | count > 0 }}"
 
   - choose:

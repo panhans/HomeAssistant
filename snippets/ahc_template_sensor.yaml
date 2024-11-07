@@ -37,5 +37,5 @@ template:
           target_temperature: "{{ trigger.event.data.target_temperature}}"
           set_max_temperature: "{{ trigger.event.data.set_max_temperature}}"
           last_trigger_id: "{{ trigger.event.data.last_trigger_id}}"
-          last_calibration: "{{ iif('calibration' in trigger.event.data.last_trigger_id,now(),this.attributes.last_calibration) }}"
-          last_temperature_change: "{{ iif('temperature_change' in trigger.event.data.last_trigger_id,now(),this.attributes.last_temperature_change) }}"
+          last_calibration: "{{ iif(trigger.event.data.calibration_trigger, now(), this.attributes.last_calibration)}}" 
+          last_temperature_change: "{{ iif(trigger.event.data.change_trigger, now(), this.attributes.last_temperature_change)}}"
