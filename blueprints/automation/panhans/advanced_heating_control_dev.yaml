@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411071859
+    **Version**: 5.0.rc2_2411071933
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2684,7 +2684,7 @@ variables:
         
         {% set ref_temp = current_valve_temp %}
         {% if is_temperature_sensor_defined %}
-          {% set ref_temp = value_temperature_sensor %}
+          {% set ref_temp = value_temperature_sensor | float(current_valve_temp) %}
         {% endif %}
 
         {% if is_heat_only_if_below_real_temp and target_temperature > ref_temp %}
@@ -2695,11 +2695,7 @@ variables:
 
           {% if is_aggressive_mode and not is_aggressive_mode_calibration %}
 
-            {% if is_temperature_sensor_defined %}
-              {% set current_valve_temp = value_temperature_sensor | float %}
-            {% endif %}
-
-            {% set temp_diff = valve_temp - current_valve_temp %}
+            {% set temp_diff = valve_temp - ref_temp %}
 
             {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
               {% set valve_temp = valve_temp - input_aggressive_mode_offset * factor %}
@@ -2711,10 +2707,8 @@ variables:
 
           {% if input_calibration_generic %}
 
-            {% set sensor_temp = value_temperature_sensor | float(current_valve_temp) %}
-
-            {% if current_valve_temp != sensor_temp %}
-              {% set offset = sensor_temp - current_valve_temp %}
+            {% if current_valve_temp != ref_temp %}
+              {% set offset = ref_temp - current_valve_temp %}
 
               {% set offset = iif(offset > float(input_generic_calibration_offset), input_generic_calibration_offset, offset) %}
               {% set offset = iif(offset < float(input_generic_calibration_offset) * -1, input_generic_calibration_offset * -1, offset) %}
