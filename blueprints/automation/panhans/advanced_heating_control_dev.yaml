@@ -1706,7 +1706,7 @@ trigger:
         {% endif %}
 
         {% set is_liming_day = input_liming_protection_day == now().strftime('%a') %}
-        {% set is_liming_time = input_liming_protection_time[:-3] in now().strftime('%H:%M:%S') %}
+        {% set is_liming_time = input_liming_protection_time[:-3] in now().strftime('%H:%M') %}
 
         {{ enable_liming and is_liming_day and is_liming_time }}
       {% endif %}
@@ -1723,7 +1723,7 @@ trigger:
         {% endif %}
 
         {% set is_liming_day = input_liming_protection_day == now().strftime('%a') %}
-        {% set is_liming_time = input_liming_protection_time[:-3] in now() | string %}
+        {% set is_liming_time = input_liming_protection_time[:-3] in now().strftime('%H:%M') %}
 
         {{ not (enable_liming and is_liming_day and is_liming_time) }}
       {% endif %}
@@ -2169,7 +2169,7 @@ variables:
       {% set current_ts = current_time_stamp | as_datetime %}
 
       {% set is_liming_day = input_liming_protection_day == current_ts.strftime('%a') %}
-      {% set is_liming_time = input_liming_protection_time[:-3] in current_ts.strftime('%H:%M:%S') %}
+      {% set is_liming_time = input_liming_protection_time[:-3] in current_ts.strftime('%H:%M') %}
 
       {{ enable_liming and is_liming_day and is_liming_time }}
     {% endif %}
