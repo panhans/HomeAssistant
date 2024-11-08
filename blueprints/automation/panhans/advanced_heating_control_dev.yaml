@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411081015
+    **Version**: 5.0.rc2_2411081411
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2310,11 +2310,8 @@ variables:
   trigger_id_defined: "{{ trigger.id is defined }}"
 
   # calibration
-  is_calibration_popp_trigger: >
-    {{ valves_dph | count > 0 and trigger_id_defined and (trigger.id in ['calibration_popp_ping'] or trigger.id in ['calibration_popp_change']) }}
-
   is_calibration_trigger: >
-    {% if is_calibration_popp_trigger %}
+    {% if valves_dph | count > 0 and trigger_id_defined and trigger.id in ['calibration_popp_ping','calibration_popp_change'] %}
       {{ true }}
     {% elif is_aggressive_mode_calibration and trigger_id_defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
@@ -2489,7 +2486,7 @@ variables:
   # DANFOSS, POPP, HIVE
   calibration_dph: >
     {% set n = namespace(dict=[]) %}
-    {% if is_calibration_popp_trigger and is_native_calibration %}
+    {% if is_native_calibration_trigger %}
 
       {% for valve in valves_dph %}
 
