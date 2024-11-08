@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411080801
+    **Version**: 5.0.rc2_2411080834
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2322,11 +2322,12 @@ variables:
     {% elif is_aggressive_mode_calibration and trigger_id_defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
     {% else %}
-      {{ trigger_id_defined and 'calibration' in trigger.id and not input_calibration_generic and not trigger.id == 'calibration_aggressive_mode_thermostat_temp_change' }}
+      {{ trigger_id_defined and 'calibration' in trigger.id and not trigger.id == 'calibration_aggressive_mode_thermostat_temp_change' }}
     {% endif %}
 
   # changes
   is_generic_calibration_trigger: "{{ is_calibration_trigger and input_calibration_generic }}"
+  is_generic_calibration: "{{ is_generic_calibration_trigger and entry_calibration and is_temperature_sensor_defined }}"
 
   is_change_trigger: >
     {{ trigger_id_defined and 
@@ -2360,8 +2361,10 @@ variables:
       {{ false }}
     {% elif is_aggressive_mode_trigger %}
       {{ true }}
+    {% elif is_generic_calibration %}
+      {{ true }}
     {% else %}
-      {{ (trigger_id_defined and 'temperature_change' in trigger.id) or is_generic_calibration_trigger }}
+      {{ trigger_id_defined and 'temperature_change' in trigger.id}}
     {% endif %}
 
   is_scene_create_trigger: >
@@ -2404,7 +2407,7 @@ variables:
   #####################################################################################
 
   is_native_calibration: "{{ is_calibration_trigger and not input_calibration_generic and entry_calibration and is_temperature_sensor_defined }}"
-  is_generic_calibration: "{{ is_generic_calibration_trigger and input_calibration_generic and entry_calibration and is_temperature_sensor_defined }}"
+  
 
   value_temperature_sensor: >
     {% if is_temperature_sensor_defined %}
@@ -2783,7 +2786,7 @@ variables:
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
   change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
   reset_trigger: "{{ is_reset_trigger and not no_changes }}"
-  calibration_trigger: "{{ is_calibration_trigger and (calibration_value_set | count > 0 or calibration_tado | count > 0) }}"
+  calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_value_set | count > 0 or calibration_tado | count > 0) }}"
 
   # warnings
   automation_name: "{{ state_attr(this.entity_id,'friendly_name') }}"
@@ -2869,7 +2872,7 @@ actions:
       # calibration
       - conditions:
           - condition: template
-            value_template: "{{ is_calibration_trigger }}"
+            value_template: "{{ calibration_trigger }}"
         sequence:
           - action: system_log.write
             data:
