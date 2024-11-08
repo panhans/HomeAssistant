@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411080834
+    **Version**: 5.0.rc2_2411080858
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2311,7 +2311,7 @@ variables:
 
   # calibration
   is_calibration_popp_periodical_trigger: >
-    {{ trigger_id_defined and trigger.id in ['calibration_popp_ping','hastart','reload'] }}
+    {{ trigger_id_defined and trigger.id in ['calibration_popp_ping'] }}
 
   is_calibration_difference_popp_trigger: >
     {{ trigger_id_defined and trigger.id in ['calibration_popp_change'] }}
@@ -2406,9 +2406,9 @@ variables:
   ################################## CALIBRATION ######################################
   #####################################################################################
 
-  is_native_calibration: "{{ is_calibration_trigger and not input_calibration_generic and entry_calibration and is_temperature_sensor_defined }}"
+  is_native_calibration: "{{ not input_calibration_generic and entry_calibration and is_temperature_sensor_defined }}"
+  is_native_calibration_trigger: "{{ is_calibration_trigger and is_native_calibration }}"
   
-
   value_temperature_sensor: >
     {% if is_temperature_sensor_defined %}
       {{ states(input_temperature_sensor) | float(0)  }}
@@ -2422,7 +2422,7 @@ variables:
   calibration_tado: >
     {% set n = namespace(dict=[]) %}
 
-    {% if is_native_calibration %}
+    {% if is_native_calibration_trigger %}
       {% for valve in valves_tado %}
 
         {% set offset_old = state_attr(valve, iif(is_metric, 'offset_celsius', 'offset_fahrenheit')) | float(0) %}
@@ -2455,7 +2455,7 @@ variables:
   calibration_xiaomi: >
     {% set n = namespace(dict=[]) %}
 
-    {% if is_native_calibration %}
+    {% if is_native_calibration_trigger %}
       {% for valve in valves_xiaomi %}
 
         {% set calibration_entities = device_entities(device_id(valve)) |
@@ -2551,7 +2551,7 @@ variables:
   calibration_common: >
     {% set n = namespace(dict=[]) %}
 
-    {% if is_native_calibration %}
+    {% if is_native_calibration_trigger %}
 
       {% for valve in valves_calibration_common %}
 
