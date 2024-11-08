@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411071933
+    **Version**: 5.0.rc2_2411080801
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1706,7 +1706,7 @@ trigger:
         {% endif %}
 
         {% set is_liming_day = input_liming_protection_day == now().strftime('%a') %}
-        {% set is_liming_time = input_liming_protection_time[:-3] in now() | string %}
+        {% set is_liming_time = input_liming_protection_time[:-3] in now().strftime('%H:%M:%S') %}
 
         {{ enable_liming and is_liming_day and is_liming_time }}
       {% endif %}
@@ -2169,7 +2169,7 @@ variables:
       {% set current_ts = current_time_stamp | as_datetime %}
 
       {% set is_liming_day = input_liming_protection_day == current_ts.strftime('%a') %}
-      {% set is_liming_time = input_liming_protection_time[:-3] in current_time_stamp %}
+      {% set is_liming_time = input_liming_protection_time[:-3] in current_ts.strftime('%H:%M:%S') %}
 
       {{ enable_liming and is_liming_day and is_liming_time }}
     {% endif %}
