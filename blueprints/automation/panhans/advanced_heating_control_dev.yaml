@@ -2287,7 +2287,7 @@ variables:
     {% if entry != none  %}
       {% set entry_hour = entry['time'].split(':')[0] | int %}
       {% set entry_minute = entry['time'].split(':')[1] | int %}
-      {{ as_datetime(current_time_stamp).replace(hour=entry_hour, minute=entry_minute, second=0, microsecond=0) }}
+      {{ as_datetime(current_time_stamp).replace(hour=entry_hour, minute=entry_minute, second=0, microsecond=0) + timedelta(days=iif(latest_entry_today == none,-1,0))  }}
     {% endif %}
 
   entry_comfort_temp: >
@@ -2781,7 +2781,7 @@ variables:
       input_schedulers | count == 0 and 
       input_presence_sensor == none and 
       input_proximity == none) or
-      (is_temperature_sensor_defined and valid_temperature_sensor)
+      (is_temperature_sensor_defined and not valid_temperature_sensor)
     }}
 
   # conditions 
@@ -2802,7 +2802,7 @@ variables:
       {% set messages = messages + ['Generic Calibration in combination with physical change / sync feature is not recommended. Expect unwanted side effects.'] %}
     {% elif valves_unsupported | count > 0 %}
       {% set messages = messages + ['Unsupported climate entities: ' + valves_unsupported | join(',') | string ] %}
-    {% elif is_temperature_sensor_defined and valid_temperature_sensor %}
+    {% elif is_temperature_sensor_defined and not valid_temperature_sensor %}
       {% set messages = messages + ['The temperature sensor' + input_temperature_sensor + ' has an invalid state: ' + states(input_temperature_sensor) ] %}
     {% endif %}
 
