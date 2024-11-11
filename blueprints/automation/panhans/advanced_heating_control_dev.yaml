@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.rc2_2411081545
+    **Version**: 5.0.rc2_2411110825
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1878,9 +1878,18 @@ variables:
   #####################################################################################
 
   # global
+  is_temperature_sensor_defined: "{{ input_temperature_sensor != [] }}"
+  invalid_states: >
+    {{ ['unknown', 'unavailable'] }}
+
+  value_temperature_sensor: >
+    {{ states(input_temperature_sensor) | default('unknown')  }}
+
+  valid_temperature_sensor: >
+    {{ value_temperature_sensor not in invalid_states }}
+
   factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
   current_time_stamp: "{{ now() }}"
-  is_temperature_sensor_defined: "{{ input_temperature_sensor != [] }}"
   is_metric: "{{ not is_temperature_sensor_defined or (is_temperature_sensor_defined and state_attr(input_temperature_sensor,VAR_UNIT_OF_MEASUREMENT) == '°C') }}"
 
   # uptime
@@ -1899,7 +1908,7 @@ variables:
       {{ none }}
     {% else %}
       {% set outside_state = false %}
-      {% set use_room_temp = input_mode_room_temperature and is_temperature_sensor_defined %}
+      {% set use_room_temp = input_mode_room_temperature and valid_temperature_sensor %}
       {% set room_state = iif(use_room_temp, false, true) %}
 
       {% set state = states(input_mode_outside_temperature) %}
@@ -2122,7 +2131,7 @@ variables:
 
   # aggressive mode
   is_aggressive_mode: "{{ input_aggressive_mode_offset > 0 }}"
-  is_aggressive_mode_calibration: "{{ is_aggressive_mode and input_aggressive_mode_calibration and is_temperature_sensor_defined }}"
+  is_aggressive_mode_calibration: "{{ is_aggressive_mode and input_aggressive_mode_calibration and valid_temperature_sensor }}"
 
   # frost protection
   is_frost_protection: >
@@ -2209,7 +2218,6 @@ variables:
   valves_calibration_common: "{{ valves | reject('in', valves_tado + valves_dph + valves_xiaomi) | list }}"
 
   # global
-  no_changes: "{{ input_persons | count == 0 and input_mode_guest == none and input_schedulers | count == 0 and input_presence_sensor == none and input_proximity == none }}"
   last_comfort_entity_change: "{{ [input_temperature_comfort_entity] | expand | map(attribute='last_changed') | list | first | default(none) }}"
   last_eco_entity_change: "{{ [input_temperature_eco_entity] | expand | map(attribute='last_changed') | list | first | default(none) }}"
 
@@ -2321,7 +2329,7 @@ variables:
 
   # changes
   is_generic_calibration_trigger: "{{ is_calibration_trigger and input_calibration_generic }}"
-  is_generic_calibration: "{{ is_generic_calibration_trigger and entry_calibration and is_temperature_sensor_defined }}"
+  is_generic_calibration: "{{ is_generic_calibration_trigger and entry_calibration and valid_temperature_sensor }}"
 
   is_change_trigger: >
     {{ trigger_id_defined and 
@@ -2399,17 +2407,11 @@ variables:
   #####################################################################################
   ################################## CALIBRATION ######################################
   #####################################################################################
+  
 
-  is_native_calibration: "{{ not input_calibration_generic and entry_calibration and is_temperature_sensor_defined }}"
+  is_native_calibration: "{{ not input_calibration_generic and entry_calibration and valid_temperature_sensor }}"
   is_native_calibration_trigger: "{{ is_calibration_trigger and is_native_calibration }}"
   
-  value_temperature_sensor: >
-    {% if is_temperature_sensor_defined %}
-      {{ states(input_temperature_sensor) | float(0)  }}
-    {% else %}
-      {{ float(0) }}
-    {% endif %}
-
   rounding: "{{ iif(is_rounded_values, 0, 2) | int }}"
 
   # TADO
@@ -2464,7 +2466,7 @@ variables:
           {% set offset_new = value_temperature_sensor | float %}
           
           {% if is_aggressive_mode_calibration %}           
-            {% set temp_diff = state_attr(valve,'temperature') | float(temperature) - value_temperature_sensor %}
+            {% set temp_diff = state_attr(valve,'temperature') | float(temperature) - value_temperature_senso | float %}
 
             {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
               {% set offset_new = offset_new + input_aggressive_mode_offset * factor %}
@@ -2504,7 +2506,7 @@ variables:
         {% set old_state = states(calibration_entity) | float %}
 
         {% if is_aggressive_mode_calibration %}           
-          {% set temp_diff = state_attr(valve,'temperature') | float(temperature) - value_temperature_sensor %}
+          {% set temp_diff = state_attr(valve,'temperature') | float(temperature) - value_temperature_sensor | float %}
 
           {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
             {% set new_state = new_state + input_aggressive_mode_offset * factor %}
@@ -2676,7 +2678,7 @@ variables:
         {% set valve_mode = iif(mode == 'off' and dont_turn_off, current_valve_mode, mode) %}
         
         {% set ref_temp = current_valve_temp %}
-        {% if is_temperature_sensor_defined %}
+        {% if valid_temperature_sensor %}
           {% set ref_temp = value_temperature_sensor | float(current_valve_temp) %}
         {% endif %}
 
@@ -2772,6 +2774,16 @@ variables:
 
   is_reset_trigger: "{{ is_reset and reset_data | count > 0 }}"
 
+  no_changes: >
+    {{ 
+      (input_persons | count == 0 and 
+      input_mode_guest == none and 
+      input_schedulers | count == 0 and 
+      input_presence_sensor == none and 
+      input_proximity == none) or
+      (is_temperature_sensor_defined and valid_temperature_sensor)
+    }}
+
   # conditions 
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
   change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
@@ -2790,6 +2802,8 @@ variables:
       {% set messages = messages + ['Generic Calibration in combination with physical change / sync feature is not recommended. Expect unwanted side effects.'] %}
     {% elif valves_unsupported | count > 0 %}
       {% set messages = messages + ['Unsupported climate entities: ' + valves_unsupported | join(',') | string ] %}
+    {% elif is_temperature_sensor_defined and valid_temperature_sensor %}
+      {% set messages = messages + ['The temperature sensor' + input_temperature_sensor + ' has an invalid state: ' + states(input_temperature_sensor) ] %}
     {% endif %}
 
     {{ messages }}
