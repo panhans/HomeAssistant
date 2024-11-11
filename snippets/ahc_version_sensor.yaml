@@ -1,0 +1,6 @@
+command_line:
+  - sensor:
+      command: 'curl https://raw.githubusercontent.com/panhans/HomeAssistant/refs/heads/main/blueprints/automation/panhans/advanced_heating_control.yaml'
+      name: "AHC Latest Version"
+      value_template: "{{ value | regex_findall('\\*\\*Version\\*\\*:(.+\\d+.\\d+.\\d+)', '\\1') | first | trim }}"
+      scan_interval: 3600 # every hour
