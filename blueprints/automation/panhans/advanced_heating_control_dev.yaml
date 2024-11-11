@@ -2466,7 +2466,7 @@ variables:
           {% set offset_new = value_temperature_sensor | float %}
           
           {% if is_aggressive_mode_calibration %}           
-            {% set temp_diff = state_attr(valve,'temperature') | float(temperature) - value_temperature_senso | float %}
+            {% set temp_diff = state_attr(valve,'temperature') | float(temperature) - value_temperature_sensor | float %}
 
             {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
               {% set offset_new = offset_new + input_aggressive_mode_offset * factor %}
