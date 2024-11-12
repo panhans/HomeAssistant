@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.2
+    **Version**: 5.0.3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2868,7 +2868,7 @@ actions:
       target_temperature: "{{ target_temperature }}"
       set_max_temperature: "{{ set_max_temperature }}"
       last_trigger_id: "{{ iif(trigger_id_defined, trigger.id, '') }}"
-      calibration_trigger: "{{ calibration_trigger }}"
+      calibration_trigger: "{{ is_generic_calibration_trigger or calibration_trigger }}"
       change_trigger: "{{ change_trigger }}"
       warnings: "{{ warnings | count > 0 }}"
 
