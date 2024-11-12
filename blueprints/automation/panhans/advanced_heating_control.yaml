@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.1
+    **Version**: 5.0.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2325,6 +2325,8 @@ variables:
   is_generic_calibration_trigger: "{{ is_calibration_trigger and input_calibration_generic }}"
   is_generic_calibration: "{{ is_generic_calibration_trigger and entry_calibration and valid_temperature_sensor }}"
 
+  is_aggressive_mode_trigger: "{{ is_aggressive_mode and trigger_id_defined and 'aggressive_mode' in trigger.id }}"
+
   is_change_trigger: >
     {{ trigger_id_defined and 
         'temperature_change' in trigger.id and 
@@ -2344,8 +2346,6 @@ variables:
     {{ (is_reset_temperature and is_change_trigger) or 
         is_pysical_change or is_adjustment_trigger }}
 
-  is_aggressive_mode_trigger: "{{ is_aggressive_mode and trigger_id_defined and 'aggressive_mode' in trigger.id }}"
-
   is_changes_trigger: >
     {% if state_window %}
       {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
@@ -2354,6 +2354,8 @@ variables:
         {{ false }}
       {% endif %}
     {% elif trigger_id_defined and trigger.id == 'temperature_change_valve_target' %}
+      {{ false }}
+    {% elif is_aggressive_mode_calibration and is_aggressive_mode_trigger %}
       {{ false }}
     {% elif is_aggressive_mode_trigger %}
       {{ true }}
