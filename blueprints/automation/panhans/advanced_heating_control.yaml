@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0
+    **Version**: 5.0.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1873,7 +1873,11 @@ variables:
     {{ ['unknown', 'unavailable'] }}
 
   value_temperature_sensor: >
-    {{ states(input_temperature_sensor) | default('unknown')  }}
+    {% if is_temperature_sensor_defined %}
+      {{ states(input_temperature_sensor) }}
+    {% else %}
+      {{ 'unknown' }}
+    {% endif %}
 
   valid_temperature_sensor: >
     {{ value_temperature_sensor not in invalid_states }}
