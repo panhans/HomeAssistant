@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.4_a
+    **Version**: 5.0.4_b
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2602,7 +2602,7 @@ variables:
         {% set local_temperature = state_attr(valve, 'current_temperature') | float %}
         {% set calibration_sensor_temperature = value_temperature_sensor | float %}
         
-        {% set offset_new = (-(local_temperature - calibration_sensor_temperature) + offset_old) | round(1) %}
+        {% set offset_new = (-(local_temperature - calibration_sensor_temperature) + offset_old) %}
 
         {% if is_aggressive_mode_calibration %}           
           {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - calibration_sensor_temperature %}
@@ -2615,7 +2615,7 @@ variables:
         {% endif %}
 
         {% if (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) %}
-          {% set n.dict = n.dict + [(valve, [{'value': offset_new}])] %}
+          {% set n.dict = n.dict + [(valve, [{'value': offset_new | round(1) }])] %}
         {% endif %}
 
       {% endfor %}
