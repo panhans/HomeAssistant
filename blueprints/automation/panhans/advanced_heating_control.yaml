@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.4_b
+    **Version**: 5.0.4_c
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2614,8 +2614,16 @@ variables:
           {% endif %}
         {% endif %}
 
+        {% set t_min = -10.9 %}
+        {% set t_max = 10.9 %}
+
+        {% set offset_new = iif(offset_new > t_max, t_max, offset_new) %}
+        {% set offset_new = iif(offset_new < t_min, t_min, offset_new) %}
+
+        {% set offset_new = offset_new | round(1) %}
+
         {% if (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) %}
-          {% set n.dict = n.dict + [(valve, [{'value': offset_new | round(1) }])] %}
+          {% set n.dict = n.dict + [(valve, [{'value': offset_new }])] %}
         {% endif %}
 
       {% endfor %}
