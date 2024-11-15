@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.4_d
+    **Version**: 5.0.5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2097,6 +2097,8 @@ variables:
       {{ (is_scheduler_away_mode and state_scheduler) or (is_presence_away_mode and state_presence_scheduler and not state_presence) }}
     {% elif presence_ignor_people and is_presence_away_mode %}
       {{ state_presence_scheduler and not state_presence }}
+    {% elif is_presence_away_mode and is_person_defined and is_anybody_home_or_proximity and not presence_ignor_people %}
+      {{ not state_presence }}
     {% else %}
       {{ false }}
     {% endif %}
