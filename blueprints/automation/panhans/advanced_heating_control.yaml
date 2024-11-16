@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.6
+    **Version**: 5.0.7
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -734,6 +734,7 @@ blueprint:
               filter:
                 - domain:
                     - binary_sensor
+                    - sensor
               multiple: true
 
         input_windows_reaction_time_open:
@@ -1516,12 +1517,12 @@ trigger:
 
   # window
   - trigger: template
-    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count > 0 }}"
+    value_template: "{{ expand(input_windows) | selectattr('state', 'in', ['on','open','tilted']) | list | count > 0 }}"
     for: !input input_windows_reaction_time_open
     id: temperature_change_window_on
 
   - trigger: template
-    value_template: "{{ expand(input_windows) | selectattr('state', 'eq', 'on') | list | count == 0 }}"
+    value_template: "{{ expand(input_windows) | selectattr('state', 'in', ['on','open','tilted']) | list | count == 0 }}"
     for: !input input_windows_reaction_time_close
     id: temperature_change_window_off
 
@@ -2111,14 +2112,14 @@ variables:
 
     {% set has_open_windows = input_windows 
         | expand
-        | selectattr('state', 'eq', 'on')
+        | selectattr('state', 'in', ['on','open','tilted'])
         | selectattr('last_changed', '<=', on_time_delta)
         | list
         | count > 0 %}
 
     {% set closed_but_not_in_duration = input_windows 
         | expand
-        | selectattr('state', 'eq', 'off')
+        | selectattr('state', 'in', ['off','closed'])
         | selectattr('last_changed', '>=', off_time_delta)
         | list
         | count > 0 %}
