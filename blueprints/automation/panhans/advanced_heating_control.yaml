@@ -45,7 +45,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.5
+    **Version**: 5.0.6
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1975,7 +1975,7 @@ variables:
     {{ towards_and_in_distance }}
 
   # persons
-  is_person_defined: "{{ input_persons | count > 0 }}"
+  is_person_defined: "{{ input_persons | count > 0 or input_mode_guest != none }}"
   is_guest_mode: "{{ input_mode_guest != none and is_state(input_mode_guest, 'on') }}"
   is_anybody_home: >
     {% if is_guest_mode %}
