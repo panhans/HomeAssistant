@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.8
+    **Version**: 5.0.9
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2395,7 +2395,9 @@ variables:
   #####################################################################################
 
   set_comfort: >
-    {% if is_away %}
+    {% if state_party or is_force_max_temperature %}
+      {{ true }}
+    {% elif is_away %}
       {{ true }}
     {% elif not is_scheduler_defined and not is_presence_sensor_defined %}
       {{ is_anybody_home_or_proximity }}
