@@ -1,0 +1,12 @@
+# You may need to put the blueprint directory to the allow list in your configuration 
+#
+# homeassistant:
+#   allowlist_external_dirs:
+#     - /config/blueprints/automation/panhans
+
+sensor:
+  unique_id: "ahc_blueprint_version_local"
+  command: "cat /config/blueprints/automation/panhans/advanced_heating_control.yaml"
+  name: "AHC Blueprint Local Version"
+  value_template: "{{ value | regex_findall('\\*\\*Version\\*\\*:(.+\\d+.\\d+.\\d+)', '\\1') | first | trim }}"
+  scan_interval: 3600 # every hour
