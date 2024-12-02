@@ -1484,7 +1484,7 @@ trigger:
       {% set entities_distances = proximity_entities  
           | expand 
           | selectattr('attributes.device_class', 'eq', 'distance')
-          | selectattr('state', '<', input_proximity_distance | string)
+          | selectattr('state', '<=', input_proximity_distance | string)
           | map(attribute='entity_id')
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
@@ -1514,7 +1514,7 @@ trigger:
       {% set entities_distances = proximity_entities  
           | expand 
           | selectattr('attributes.device_class', 'eq', 'distance')
-          | selectattr('state', '<', input_proximity_distance | string)
+          | selectattr('state', '<=', input_proximity_distance | string)
           | map(attribute='entity_id')
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
@@ -1967,7 +1967,7 @@ variables:
     {% set entities_distances = proximity_entities  
         | expand 
         | selectattr('attributes.device_class', 'eq', 'distance')
-        | selectattr('state', '<', input_proximity_distance | string)
+        | selectattr('state', '<=', input_proximity_distance | string)
         | map(attribute='entity_id')
         | map('regex_replace','_(?=[^_]*$)(.*)', '')
         | list %}
@@ -2291,14 +2291,25 @@ variables:
 
   entry_comfort_temp: >
     {% if entry != none and 'comfort' in entry.keys() and (last_comfort_entity_change == none or as_datetime(entry_time) > as_datetime(last_comfort_entity_change)) %}
-      {{ entry['comfort'] }}
+      {% set entry_temp = entry['comfort']%}  
+      {% if is_number(entry_temp) %}
+        {{ entry_temp }}
+      {% elif states[entry_temp] != none %}
+        {{ states(entry_temp) }}
+      {% endif %}
     {% else %}
       {{ none }}
     {% endif %}
 
   entry_eco_temp: >
     {% if entry != none and 'eco' in entry.keys() and (last_eco_entity_change == none or as_datetime(entry_time) > as_datetime(last_eco_entity_change)) %}
-      {{ entry['eco'] }}
+      {% set entry_temp = entry['eco']%}  
+      {% if is_number(entry_temp) %}
+        {{ entry_temp }}
+      {% elif states[entry_temp] != none %}
+        {{ states(entry_temp) }}
+      {% endif %}
+    {{ entry['eco'] }}
     {% else %}
       {{ none }}
     {% endif %}
