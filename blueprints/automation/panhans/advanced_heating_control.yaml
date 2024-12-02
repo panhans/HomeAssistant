@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.0.9
+    **Version**: 5.1.0
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2353,7 +2353,10 @@ variables:
         and not trigger.id == 'temperature_change_valve_target' }}
 
   is_pysical_change: >
-    {{ trigger_id_defined and trigger.id == 'temperature_change_valve_target' and is_physical_change_enabled }}
+    {{  trigger_id_defined 
+        and trigger.id == 'temperature_change_valve_target' 
+        and is_physical_change_enabled
+        and not state_window }}
 
   is_adjustment_trigger: "{{ trigger_id_defined and trigger.id == 'temperature_change_heating_adjustment' and
                               (entry_comfort_temp != none or entry_eco_temp != none) }}"
