@@ -275,7 +275,7 @@ blueprint:
 
     # modes
     mode_section:
-      name: Force Comfort Mode
+      name: Force Comfort/Eco Mode
       icon: mdi:fire
       collapsed: true
       input:
@@ -310,7 +310,22 @@ blueprint:
 
 
             **HINT:** Implemented by developer for maintenance reasons. Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
-          default:
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_boolean
+              multiple: false
+
+        input_force_eco_temperature:
+          name: 🌱 Force Eco Temperature
+          description: >
+            `optional`
+
+
+            If enabled *eco* temperature will be forced.
+          default: []
           selector:
             entity:
               filter:
@@ -1276,7 +1291,6 @@ trigger_variables:
 
   # party / force max
   input_mode_party: !input input_mode_party
-  input_force_max_temperature: !input input_force_max_temperature
 
   # adjustments / heating plan
   input_adjustments: !input input_adjustments
@@ -1600,14 +1614,15 @@ trigger:
     for: !input input_action_call_delay
 
   # force max temp
-  - trigger: template
+  - trigger: state
     id: temperature_change_force_max_temperature_on
-    value_template: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'on') }}"
+    entity_id: !input input_force_max_temperature
     for: !input input_action_call_delay
 
-  - trigger: template
-    id: temperature_change_force_max_temperature_off
-    value_template: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'off') }}"
+  # force eco temp
+  - trigger: state
+    id: temperature_change_force_eco_temperature
+    entity_id: !input input_force_eco_temperature
     for: !input input_action_call_delay
 
   # party
@@ -1815,6 +1830,7 @@ variables:
   # force comfort
   input_mode_party: !input input_mode_party
   input_force_max_temperature: !input input_force_max_temperature
+  input_force_eco_temperature: !input input_force_eco_temperature
 
   # calibration
   input_calibration_delta: !input input_calibration_delta
@@ -2061,7 +2077,8 @@ variables:
     {{ iif(is_presence_scheduler_defined, state_presence_scheduler and state_presence_sensor, state_presence_sensor) }}
 
   # force max temperature
-  is_force_max_temperature: "{{ input_force_max_temperature != none and is_state(input_force_max_temperature, 'on') }}"
+  is_force_max_temperature: "{{ input_force_max_temperature != [] and is_state(input_force_max_temperature, 'on') }}"
+  is_force_eco_temperature: "{{ input_force_eco_temperature != [] and is_state(input_force_eco_temperature, 'on') }}"
 
   # party
   active_party_entity: "{{ input_mode_party | expand | selectattr('state', 'in', ['active','on']) | map(attribute='entity_id') | first | default(none) }}"
@@ -2397,6 +2414,8 @@ variables:
   set_comfort: >
     {% if state_party or is_force_max_temperature %}
       {{ true }}
+    {% elif is_force_eco_temperature %}
+      {{ false }}
     {% elif is_away %}
       {{ true }}
     {% elif not is_scheduler_defined and not is_presence_sensor_defined %}
@@ -2446,6 +2465,8 @@ variables:
       {{ input_window_open_temperature }}
     {% elif state_party %}
       {{ iif(party_temp != none, party_temp, temperature_comfort) }}
+    {% elif is_frost_protection %}
+      {{ input_frost_protection_temp }}
     {% else %}
       {{ iif(set_comfort, iif(is_away, temperature_away, temperature_comfort), temperature_eco) }}
     {% endif %}
@@ -2852,6 +2873,7 @@ actions:
       state_proximity_arrived: "{{ state_proximity_arrived }}"
       state_proximity_way_home: "{{ state_proximity_way_home }}"
       is_force_max_temperature: "{{ is_force_max_temperature }}"
+      is_force_eco_temperature: "{{ is_force_eco_temperature }}"
       active_party_entity: "{{ active_party_entity }}"
       party_temp: "{{ party_temp }}"
       is_away: "{{ is_away }}"
