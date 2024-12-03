@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.0
+    **Version**: 5.1.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2309,7 +2309,6 @@ variables:
       {% elif states[entry_temp] != none %}
         {{ states(entry_temp) }}
       {% endif %}
-    {{ entry['eco'] }}
     {% else %}
       {{ none }}
     {% endif %}
