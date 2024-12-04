@@ -2255,7 +2255,13 @@ variables:
                                   | selectattr('scheduler','in',[Undefined]) 
                                   | list %}
 
-    {{ (selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only) | sort(attribute='time', reverse = true) | first  }}
+    {% set selected_entries = selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only %}
+
+    {% if selected_entries | count > 0%}
+      {{ selected_entries | sort(attribute='time', reverse = true) | first  }}
+    {% else %}
+      {{ none }}
+    {% endif %}
 
   latest_entry_day_before: >
     {% set timestamp = as_datetime(current_time_stamp).replace(hour=23,minute=59) + timedelta(days=-1) %}
@@ -2288,7 +2294,13 @@ variables:
                                   | selectattr('scheduler','in',[Undefined]) 
                                   | list %}
 
-    {{ (selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only) | sort(attribute='time', reverse = true) | first  }}
+    {% set selected_entries = selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only %}
+
+    {% if selected_entries | count > 0%}
+      {{ selected_entries | sort(attribute='time', reverse = true) | first  }}
+    {% else %}
+      {{ none }}
+    {% endif %}
 
   entry: "{{ iif(latest_entry_today != none, latest_entry_today, latest_entry_day_before) }}"
 
