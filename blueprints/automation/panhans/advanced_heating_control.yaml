@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.1
+    **Version**: 5.1.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2237,20 +2237,25 @@ variables:
 
     {% set plan = input_adjustments | rejectattr('time', 'undefined') 
         | selectattr('time','<=', current_time| string)
-        | sort(attribute='time', reverse = true)
         | list  %}
 
-    {% set latest_entry = plan | selectattr('days', 'undefined') | selectattr('scheduler', 'undefined') | first %}
-    {% set latest_entry_scheduler = plan | selectattr('days', 'undefined') | rejectattr('scheduler', 'undefined') | selectattr('scheduler','eq', scheduler_name) | first %}
-    {% set latest_entry_day = plan | rejectattr('days', 'undefined') | selectattr('days', 'search', current_day) | first %}
-    {% set latest_entry_day_scheduler = plan | rejectattr('days', 'undefined') | selectattr('days', 'search', current_day) | rejectattr('scheduler', 'undefined') | selectattr('scheduler','eq', scheduler_name) | first %}
+    {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
+                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+                               | list %}
 
-    {% set relevant_entries = [latest_entry,latest_entry_scheduler,latest_entry_day,latest_entry_day_scheduler] | reject ('undefined') | list %}
-    {% set latest_time = relevant_entries | sort(attribute='time', reverse = true) | map(attribute='time') | first %}
-    {% set relevant_entries_filtered_by_time = relevant_entries | selectattr('time', 'eq', latest_time) | list %}
-    {% set item = relevant_entries_filtered_by_time | last | default(none) %}
+    {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
+                                        | selectattr('scheduler','in',[Undefined])
+                                        | list %}
 
-    {{ item }}
+    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+                                            | selectattr('days','in',[Undefined])
+                                            | list %}
+
+    {% set selected_entries_time_only = plan | selectattr('days','in',[Undefined]) 
+                                  | selectattr('scheduler','in',[Undefined]) 
+                                  | list %}
+
+    {{ (selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only) | sort(attribute='time', reverse = true) | first  }}
 
   latest_entry_day_before: >
     {% set timestamp = as_datetime(current_time_stamp).replace(hour=23,minute=59) + timedelta(days=-1) %}
@@ -2265,20 +2270,25 @@ variables:
 
     {% set plan = input_adjustments | rejectattr('time', 'undefined') 
         | selectattr('time','<=', current_time| string)
-        | sort(attribute='time', reverse = true)
         | list  %}
 
-    {% set latest_entry = plan | selectattr('days', 'undefined') | selectattr('scheduler', 'undefined') | first %}
-    {% set latest_entry_scheduler = plan | selectattr('days', 'undefined') | rejectattr('scheduler', 'undefined') | selectattr('scheduler','eq', scheduler_name) | first %}
-    {% set latest_entry_day = plan | rejectattr('days', 'undefined') | selectattr('days', 'search', current_day) | first %}
-    {% set latest_entry_day_scheduler = plan | rejectattr('days', 'undefined') | selectattr('days', 'search', current_day) | rejectattr('scheduler', 'undefined') | selectattr('scheduler','eq', scheduler_name) | first %}
+    {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
+                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+                               | list %}
 
-    {% set relevant_entries = [latest_entry,latest_entry_scheduler,latest_entry_day,latest_entry_day_scheduler] | reject ('undefined') | list %}
-    {% set latest_time = relevant_entries | sort(attribute='time', reverse = true) | map(attribute='time') | first %}
-    {% set relevant_entries_filtered_by_time = relevant_entries | selectattr('time', 'eq', latest_time) | list %}
-    {% set item = relevant_entries_filtered_by_time | last | default(none) %}
+    {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
+                                        | selectattr('scheduler','in',[Undefined])
+                                        | list %}
 
-    {{ item }}
+    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+                                            | selectattr('days','in',[Undefined])
+                                            | list %}
+
+    {% set selected_entries_time_only = plan | selectattr('days','in',[Undefined]) 
+                                  | selectattr('scheduler','in',[Undefined]) 
+                                  | list %}
+
+    {{ (selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only) | sort(attribute='time', reverse = true) | first  }}
 
   entry: "{{ iif(latest_entry_today != none, latest_entry_today, latest_entry_day_before) }}"
 
