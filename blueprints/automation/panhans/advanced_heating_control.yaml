@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.4
+    **Version**: 5.1.5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1945,7 +1945,7 @@ variables:
       {{ none }}
     {% else %}
       {% set difference =  (current_time_stamp | as_datetime - uptime | as_datetime).total_seconds() %}
-      {% set real_start_delay = (start_delay_seconds - difference) * 2 %}
+      {% set real_start_delay = (start_delay_seconds - difference) %}
 
       {{ iif(real_start_delay > 0, real_start_delay, none) }}
     {% endif %}
@@ -2940,7 +2940,7 @@ actions:
         sequence:
           - action: system_log.write
             data:
-              level: warning
+              level: !input input_log_level
               logger: blueprints.panhans.heatingcontrol
               message: >
                 {{ 'AHC - ' + automation_name + ':\n' + ' automation will be delayed for ' + startup_delay | string + 'seconds' }}
