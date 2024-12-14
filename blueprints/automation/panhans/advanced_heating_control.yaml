@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.5
+    **Version**: 5.1.6
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2750,6 +2750,9 @@ variables:
           {% set calibration_entity = calibration_entities | first %}
           {% set offset_old = states(calibration_entity) | float(0) %}
           {% set offset_new = value_temperature_sensor | float %}
+          {% set step = state_attr(calibration_entity, 'step') | float(1) %}
+          {% set min_val = state_attr(calibration_entity,'min') | float(0) %}
+          {% set max_val = state_attr(calibration_entity,'max') | float(55) %}
           
           {% if is_aggressive_mode_calibration %}           
             {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - value_temperature_sensor | float %}
@@ -2760,6 +2763,12 @@ variables:
               {% set offset_new = offset_new - input_aggressive_mode_offset * factor %}
             {% endif %}
           {% endif %}
+
+          {% set round_size = iif('.' in (step | string) and not is_rounded_values, (step | string).split('.')[1] | length, 0) %}
+          {% set offset_new = ((offset_new | float(0) / step) | round(0) * step) | round(round_size) | float %}
+
+          {% set offset_new = iif(offset_new > max_val, max_val, offset_new) %}
+          {% set offset_new = iif(offset_new < min_val, min_val, offset_new) %}
 
           {% if (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) %}
             {% set n.dict = n.dict + [(calibration_entity, [{'value': offset_new, 'valve': valve}])] %}
