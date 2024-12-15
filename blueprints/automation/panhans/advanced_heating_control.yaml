@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.6
+    **Version**: 5.1.7
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -856,16 +856,26 @@ blueprint:
           selector:
             text:
 
-        input_calibration_rounded_values:
-          name: 🌕 Fully Rounded Values
+        input_calibration_step_size:
+          name: 🦶 Step Size
           description: >
             `calibration`
 
 
-            Enable this if you [thermostat](https://www.home-assistant.io/integrations/climate/) calibration entity accept floating values but only save them as integers.
-          default: false
+            Usually the step size is determined automatically. You can overwrite the step size by selecting another option if you know your thermostat handles the calibration not like the entities are exposed.
+          default: auto
           selector:
-            boolean:
+            select:
+              mode: dropdown
+              options:
+                - label: Auto
+                  value: auto
+                - label: "0.1"
+                  value: "0.1"
+                - label: "0.5"
+                  value: "0.5"
+                - label: "Full Values"
+                  value: "full"
 
         input_calibration_generic:
           name: 🧭 Generic Calibration
@@ -1873,7 +1883,7 @@ variables:
   # calibration
   input_calibration_delta: !input input_calibration_delta
   input_calibration_generic: !input input_calibration_generic
-  is_rounded_values: !input input_calibration_rounded_values
+  input_calibration_step_size: !input input_calibration_step_size
   input_calibration_key_word: !input input_calibration_key_word
   input_generic_calibration_offset: !input input_generic_calibration_offset
   
@@ -2691,7 +2701,12 @@ variables:
   is_native_calibration: "{{ not input_calibration_generic and entry_calibration and valid_temperature_sensor }}"
   is_native_calibration_trigger: "{{ is_calibration_trigger and is_native_calibration }}"
   
-  rounding: "{{ iif(is_rounded_values, 0, 2) | int }}"
+  rounding_mode: >
+    {% if is_number(input_calibration_step_size) or input_calibration_step_size == 'full' %}
+      {{ 'manual' }}
+    {% else %}
+      {{ 'auto' }}
+    {% endif %}
 
   # TADO
   calibration_tado: >
@@ -2750,7 +2765,12 @@ variables:
           {% set calibration_entity = calibration_entities | first %}
           {% set offset_old = states(calibration_entity) | float(0) %}
           {% set offset_new = value_temperature_sensor | float %}
+          
           {% set step = state_attr(calibration_entity, 'step') | float(1) %}
+          {% if rounding_mode == 'manual' %} 
+              {% set step = input_calibration_step_size | float(1) %}
+          {% endif %}
+
           {% set min_val = state_attr(calibration_entity,'min') | float(0) %}
           {% set max_val = state_attr(calibration_entity,'max') | float(55) %}
           
@@ -2794,7 +2814,12 @@ variables:
 
         {% set min_val = state_attr(calibration_entity,'min')%}
         {% set max_val = state_attr(calibration_entity,'max')%}
-        {% set step = state_attr(calibration_entity,'step')%}
+        
+        {% set step = state_attr(calibration_entity, 'step') | float(1) %}
+        {% if rounding_mode == 'manual' %} 
+            {% set step = input_calibration_step_size | float(1) %}
+        {% endif %}
+
         {% set current_temp = state_attr(valve,'current_temperature') | float(20) %}
 
         {% set new_state = value_temperature_sensor | float(current_temp) %}
@@ -2850,7 +2875,12 @@ variables:
         {% if calibration_entities | count > 0%}
 
           {% set calibration_entity = calibration_entities | first %}
-          {% set step = state_attr(calibration_entity, 'step') | float %}
+          
+          {% set step = state_attr(calibration_entity, 'step') | float(1) %}
+          {% if rounding_mode == 'manual' %} 
+              {% set step = input_calibration_step_size | float(1) %}
+          {% endif %}
+
           {% set min_calibration_value = state_attr(calibration_entity,'min') | float %}
           {% set max_calibration_value = state_attr(calibration_entity,'max') | float %}
           {% set thermostat_temperature = state_attr(valve, 'current_temperature') | float %}
