@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.7
+    **Version**: 5.1.8
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2632,7 +2632,7 @@ variables:
 
               {% set temp_with_offset = (temp_with_offset | float(0) / float(step)) | round(0) * float(step) %}
 
-              {% set valve_temp = iif(is_rounded_values == true, float(temp_with_offset) | round(), temp_with_offset | round(1)) %}
+              {% set valve_temp = iif(input_calibration_step_size == 'full', float(temp_with_offset) | round(), temp_with_offset | round(1)) %}
 
             {% endif %}
           {% endif %}
@@ -2784,7 +2784,7 @@ variables:
             {% endif %}
           {% endif %}
 
-          {% set round_size = iif('.' in (step | string) and not is_rounded_values, (step | string).split('.')[1] | length, 0) %}
+          {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
           {% set offset_new = ((offset_new | float(0) / step) | round(0) * step) | round(round_size) | float %}
 
           {% set offset_new = iif(offset_new > max_val, max_val, offset_new) %}
@@ -2836,7 +2836,7 @@ variables:
         {% endif %}
 
         {% if step <= 1 and max_val | string | count < 4 %}
-          {% set round_size = iif('.' in (step | string) and not is_rounded_values, (step | string).split('.')[1] | length, 0) %}
+          {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
           {% set new_state = ((new_state | float(0) / step) | round(0) * step) | round(round_size) | float %}
         {% else %}
           {% set new_state = new_state * 100 | int %}
@@ -2901,7 +2901,7 @@ variables:
           {% set new_calibration_value = iif(new_calibration_value > max_calibration_value, max_calibration_value, new_calibration_value) %}
           {% set new_calibration_value = iif(new_calibration_value < min_calibration_value, min_calibration_value, new_calibration_value) %}
 
-          {% set round_size = iif('.' in (step | string) and not is_rounded_values, (step | string).split('.')[1] | length, 0) %}
+          {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
 
           {% set offset_new = ((new_calibration_value | float(0) / step) | round(0) * step) | round(round_size) | float %}
 
