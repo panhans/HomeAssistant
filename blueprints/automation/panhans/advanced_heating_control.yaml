@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.8
+    **Version**: 5.1.9
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1529,10 +1529,20 @@ trigger:
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
 
+      {% set distances = proximity_entities  
+        | expand 
+        | selectattr('attributes.device_class', 'eq', 'distance')
+        | map(attribute='state')
+        | reject('eq', 'unknown')
+        | map('int')
+        | select('<=', input_proximity_distance | int)
+        | map('string')
+        | list %}
+
       {% set entities_distances = proximity_entities  
           | expand 
           | selectattr('attributes.device_class', 'eq', 'distance')
-          | selectattr('state', '<=', input_proximity_distance | string)
+          | selectattr('state', 'in', distances)
           | map(attribute='entity_id')
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
@@ -1559,10 +1569,20 @@ trigger:
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
 
+      {% set distances = proximity_entities  
+        | expand 
+        | selectattr('attributes.device_class', 'eq', 'distance')
+        | map(attribute='state')
+        | reject('eq', 'unknown')
+        | map('int')
+        | select('<=', input_proximity_distance | int)
+        | map('string')
+        | list %}
+
       {% set entities_distances = proximity_entities  
           | expand 
           | selectattr('attributes.device_class', 'eq', 'distance')
-          | selectattr('state', '<=', input_proximity_distance | string)
+          | selectattr('state', 'in', distances)
           | map(attribute='entity_id')
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
@@ -2026,10 +2046,20 @@ variables:
         | map('regex_replace','_(?=[^_]*$)(.*)', '')
         | list %}
 
+    {% set distances = proximity_entities  
+        | expand 
+        | selectattr('attributes.device_class', 'eq', 'distance')
+        | map(attribute='state')
+        | reject('eq', 'unknown')
+        | map('int')
+        | select('<=', input_proximity_distance | int)
+        | map('string')
+        | list %}
+
     {% set entities_distances = proximity_entities  
         | expand 
         | selectattr('attributes.device_class', 'eq', 'distance')
-        | selectattr('state', '<=', input_proximity_distance | string)
+        | selectattr('state', 'in', distances)
         | map(attribute='entity_id')
         | map('regex_replace','_(?=[^_]*$)(.*)', '')
         | list %}
