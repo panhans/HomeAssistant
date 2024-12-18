@@ -317,7 +317,6 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
-                    - timer
               multiple: false
 
         input_force_eco_temperature:
@@ -334,7 +333,6 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
-                    - timer
               multiple: false
 
         input_party_legacy_restore:
