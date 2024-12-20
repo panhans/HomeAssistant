@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.1.10
+    **Version**: 5.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1206,6 +1206,89 @@ blueprint:
               mode: box
               unit_of_measurement: °C / °F
 
+    # valve positioning
+    valve_positioning_section:
+      name: "Dynamic Valve Positioning"
+      icon: mdi:valve
+      collapsed: true
+      input:
+        input_valve_positioning_enabled:
+          name: 🤏 Enable Dynamic Valve Positioning
+          description: >
+            `valve positioning`
+
+
+            If your thermostat supports valve positioning you can enable this here. Everytime the autmation gets triggered the code checks if there is an adjustment needed.
+          default: false
+          selector:
+            boolean:
+
+        input_fully_open_difference:
+          name: ↔️ Positioning Temperature Difference
+          description: >
+            `valve positioning`
+
+
+            The difference between target and set temperature when dynamic valve positioninig should happen.
+
+
+            <details>
+            <summary><code><strong>CLICK HERE:</strong> Example</code></summary>
+            <br/>
+
+
+            > Positioning Temperature Difference: 1°
+
+            > Target Temperature: 21°<br/>
+
+
+            > Positioning takes place in a range between 21° and 20° (21°-1°)
+
+
+            > If the local temperature is 21.5° the valve positioning is calculated and set.
+
+            > If the local temperture is below this range the valve is fully open.
+
+            </details>
+              
+          default: 1
+          selector:
+            number:
+              min: 0.5
+              max: 20
+              step: 0.5
+              mode: box
+              unit_of_measurement: °C / °F
+
+        input_valve_positioning_step_size:
+          name: 🦶 Valve Positioning Step Size
+          description: >
+            `valve positioning`
+
+
+            The step size of for opening/closing the valve.
+          default: '10'
+          selector:
+            select:
+              options:
+                - label: '5%'
+                  value: '5'
+                - label: '10%'
+                  value: '10'
+                - label: '20%'
+                  value: '20'
+
+        input_valve_opening_keyword:
+          name: 🗝️ Positioning Entity Keyword
+          description: >
+            `valve positioning`
+
+
+            The key word for selecting the opening entity of your thermostats.
+          default: 'valve_opening_degree'
+          selector:
+            text:
+
     # tweaks
     tweak_section:
       name: Custom Settings
@@ -1941,6 +2024,11 @@ variables:
   input_action_call_delay: !input input_action_call_delay
   input_custom_action: !input input_custom_action
   input_startup_delay: !input input_startup_delay
+
+  input_valve_positioning_enabled: !input input_valve_positioning_enabled
+  input_fully_open_difference: !input input_fully_open_difference
+  input_valve_opening_keyword: !input input_valve_opening_keyword
+  input_valve_positioning_step_size: !input input_valve_positioning_step_size
   
   #####################################################################################
   #################################### EVALUATION #####################################
@@ -2696,6 +2784,48 @@ variables:
       {{ dict.from_keys(n.dict) }}
     {% endif %}
 
+  positioning: >
+    {% set n = namespace(dict=[]) %}
+
+    {% if not input_valve_positioning_enabled %}
+      {{ n.dict }}
+    {% else %}
+      {% for valve in input_trvs %}
+
+        {% set current_temp = state_attr(valve, 'current_temperature') | float(none) %}
+        {% set target_temp = state_attr(valve, 'temperature') | float(none) %}
+
+        {% set open_valve_entity = device_entities(device_id(valve)) | expand 
+            | selectattr('domain','in','number') 
+            | selectattr('entity_id', 'search', input_valve_opening_keyword) 
+            | map(attribute='entity_id') 
+            | list | first | default(none) %}
+
+        {% if open_valve_entity != none and current_temp != none and target_temp != none %}
+
+          {% set opening = 100 %}
+          {% set difference = target_temp - current_temp %}
+          {% set step_size = input_valve_positioning_step_size | int %}
+
+          {% if input_fully_open_difference > 0 %}
+            {% set opening = ((100 / input_fully_open_difference) * difference) | default(100) %}
+            {% set opening = iif(difference >= input_fully_open_difference, 100, opening) %}
+            {% set opening = iif(difference < 0, 0, opening) %}
+            {% set opening = ((opening + step_size / 2) // step_size * step_size) | int %}
+          {% endif %}
+
+          {% set open_valve_entity_value = states(open_valve_entity) | int %}
+
+          {% if open_valve_entity_value != opening %}
+            {% set n.dict = n.dict + [(valve, [{'entity': open_valve_entity , 'value': opening}])] %}
+          {% endif %}
+
+        {% endif %}
+      {% endfor %}
+
+      {{ dict.from_keys(n.dict) }}
+    {% endif %}
+
   # reset temperature
   reset_data: >
     {% set result = [] %}
@@ -2975,6 +3105,7 @@ variables:
   change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
   reset_trigger: "{{ is_reset_trigger and not no_changes }}"
   calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_value_set | count > 0 or calibration_tado | count > 0) }}"
+  positioning_trigger: "{{ positioning | count > 0 }}"
 
   # warnings
   automation_name: "{{ state_attr(this.entity_id,'friendly_name') }}"
@@ -3008,6 +3139,8 @@ conditions:
         value_template: "{{ change_trigger }}"
       - condition: template
         value_template: "{{ reset_trigger }}"
+      - condition: template
+        value_template: "{{ positioning_trigger }}"
 
 actions:
   - variables: 
@@ -3078,7 +3211,6 @@ actions:
           change_trigger: "{{ change_trigger }}"
           warnings: "{{ warnings | count > 0 }}"
 
-
       # calibration
       - if:
           - condition: template
@@ -3147,6 +3279,36 @@ actions:
                   data:
                     offset: "{{ offset }}"
                     entity_id: "{{ thermostat }}"
+                - delay: !input input_action_call_delay
+
+      # valve opening
+      - if:
+        - condition: template
+          value_template: "{{ positioning_trigger }}"
+        then:
+          - repeat:
+              count: "{{ positioning | count | int }}"
+              sequence:
+                - variables:
+                    index: "{{ repeat.index-1 }}"
+                    thermostat: "{{ (positioning.keys() | list) [index] }}"
+                    positioning_value: "{{ (((positioning.values() | list) [index]) | first) ['value'] }}"
+                    positioning_entity: "{{ (((positioning.values() | list) [index]) | first) ['entity'] }}"
+
+                - action: system_log.write
+                  data:
+                    message: >
+                      {{ 'AHC - Positioning - ' + automation_name | string  + ' \n ' +
+                      'entity: ' + positioning_entity | string  + ' \n ' +
+                      'value: ' + positioning_value | string }}
+                    level: !input input_log_level
+                    logger: blueprints.panhans.heatingcontrol
+
+                - action: number.set_value
+                  data:
+                    value: "{{ positioning_value | int }}"
+                  target:
+                    entity_id: "{{ positioning_entity }}"
                 - delay: !input input_action_call_delay
                 
       # scenes
