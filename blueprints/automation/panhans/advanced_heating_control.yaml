@@ -1214,16 +1214,35 @@ blueprint:
       icon: mdi:valve
       collapsed: true
       input:
-        input_valve_positioning_enabled:
-          name: 🤏 Enable Dynamic Valve Positioning
+        input_valve_positioning_mode:
+          name: 🦶 Valve Positioning Mode
           description: >
             `valve positioning`
 
 
-            If your thermostat supports valve positioning you can enable this here. Everytime the autmation gets triggered the code checks if there is an adjustment needed.
-          default: false
+             If your thermostat supports valve positioning you can enable this here. Everytime the autmation gets triggered the code checks if there is an adjustment needed.
+
+
+            📈 **regular**: means linear. The valve will open close proportional to the difference of the target and room temperature.
+
+
+            😊 **optimistic**: The valve opening is reduced earlier, as it is assumed that the radiator still has enough residual heat to heat the room.
+
+
+            🙁 **pessimistic**: The valve opening is initially left relatively open and only closes rapidly when the target temperature is almost reached.
+          default: 'off'
           selector:
-            boolean:
+            select:
+              mode: dropdown
+              options:
+                - label: 'off'
+                  value: 'off'
+                - label: 'regular'
+                  value: 'regular'
+                - label: 'optimistic'
+                  value: 'optimistic'
+                - label: 'pessimistic'
+                  value: 'pessimistic'
 
         input_fully_open_difference:
           name: ↔️ Positioning Temperature Difference
@@ -1280,29 +1299,6 @@ blueprint:
                   value: '10'
                 - label: '20%'
                   value: '20'
-
-        input_valve_positioning_mode:
-          name: 🦶 Valve Positioning Mode
-          description: >
-            `valve positioning`
-
-
-            📈 **regular**: means linear. The valve will open close proportional to the difference of the target and room temperature.
-
-            😊 **optimistic**: The valve opening is reduced earlier, as it is assumed that the radiator still has enough residual heat to heat the room.
-
-            🙁 **pessimistic**: The valve opening is initially left relatively open and only closes rapidly when the target temperature is almost reached.
-          default: 'regular'
-          selector:
-            select:
-              mode: dropdown
-              options:
-                - label: 'regular'
-                  value: 'regular'
-                - label: 'optimistic'
-                  value: 'optimistic'
-                - label: 'pessimistic'
-                  value: 'pessimistic'
 
         input_valve_opening_keyword:
           name: 🗝️ Positioning Entity Keyword
@@ -2051,7 +2047,6 @@ variables:
   input_custom_action: !input input_custom_action
   input_startup_delay: !input input_startup_delay
 
-  input_valve_positioning_enabled: !input input_valve_positioning_enabled
   input_fully_open_difference: !input input_fully_open_difference
   input_valve_opening_keyword: !input input_valve_opening_keyword
   input_valve_positioning_step_size: !input input_valve_positioning_step_size
@@ -2814,7 +2809,7 @@ variables:
   positioning: >
     {% set n = namespace(dict=[]) %}
 
-    {% if not input_valve_positioning_enabled %}
+    {% if input_valve_positioning_mode == 'off' %}
       {{ n.dict }}
     {% else %}
       {% for valve in input_trvs %}
