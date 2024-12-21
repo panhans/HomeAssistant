@@ -42,7 +42,7 @@ blueprint:
 
 
 
-    **Version**: 5.2
+    **Version**: 5.2.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1270,6 +1270,7 @@ blueprint:
           default: '10'
           selector:
             select:
+              mode: dropdown
               options:
                 - label: '5%'
                   value: '5'
@@ -1277,6 +1278,29 @@ blueprint:
                   value: '10'
                 - label: '20%'
                   value: '20'
+
+        input_valve_positioning_mode:
+          name: 🦶 Valve Positioning Mode
+          description: >
+            `valve positioning`
+
+
+            📈 **regular**: means linear. The valve will open close proportional to the difference of the target and room temperature.
+
+            😊 **optimistic**: The valve opening is reduced earlier, as it is assumed that the radiator still has enough residual heat to heat the room.
+
+            🙁 **pessimistic**: The valve opening is initially left relatively open and only closes rapidly when the target temperature is almost reached.
+          default: 'regular'
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: 'regular'
+                  value: 'regular'
+                - label: 'optimistic'
+                  value: 'optimistic'
+                - label: 'pessimistic'
+                  value: 'pessimistic'
 
         input_valve_opening_keyword:
           name: 🗝️ Positioning Entity Keyword
@@ -2029,6 +2053,7 @@ variables:
   input_fully_open_difference: !input input_fully_open_difference
   input_valve_opening_keyword: !input input_valve_opening_keyword
   input_valve_positioning_step_size: !input input_valve_positioning_step_size
+  input_valve_positioning_mode: !input input_valve_positioning_mode
   
   #####################################################################################
   #################################### EVALUATION #####################################
@@ -2808,7 +2833,15 @@ variables:
           {% set step_size = input_valve_positioning_step_size | int %}
 
           {% if input_fully_open_difference > 0 %}
-            {% set opening = ((100 / input_fully_open_difference) * difference) | default(100) %}
+
+            {% set opening_regular = (100 / input_fully_open_difference) * difference %}
+            {% set opening_pessimistic = sqrt(((100 / input_fully_open_difference) * difference) | abs) * 10 %}
+            {% set opening_optimistic = ((100 / input_fully_open_difference) * difference)**2 / 100 %}
+
+            {% set opening = opening_regular %}
+            {% set opening = iif(input_valve_positioning_mode == 'pessimistic', opening_pessimistic, opening) %}
+            {% set opening = iif(input_valve_positioning_mode == 'optimistic', opening_optimistic, opening) %}
+
             {% set opening = iif(difference >= input_fully_open_difference, 100, opening) %}
             {% set opening = iif(difference < 0, 0, opening) %}
             {% set opening = ((opening + step_size / 2) // step_size * step_size) | int %}
@@ -3411,6 +3444,8 @@ actions:
           - if:
               - condition: and
                 conditions: !input input_custom_condition
+              - condition: template
+                value_template: "{{ changes | count | int > 0 }}"
             then:
             - repeat:
                 count: "{{ changes | count | int }}"
