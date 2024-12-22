@@ -1,7 +1,6 @@
 ---
 title: Temperatures
-hide:
-  - toc
+description: Comfort & Eco Temperatures
 ---
 # Temperatures
 
