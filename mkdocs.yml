@@ -1,4 +1,5 @@
 site_name: Panhans | Blueprints and Snippets
+site_url: https://panhans.github.io/HomeAssistant/
 
 nav:
   - 🏠 Home: "index.md"
