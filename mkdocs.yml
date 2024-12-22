@@ -1,0 +1,71 @@
+site_name: Panhans | Blueprints and Snippets
+
+nav:
+  - 🏠 Home: "index.md"
+  - 🔥 Advanced Heating Control:
+    - 📖 Sections:
+      - 🔘 Thermostats & Sensors: "ahc/thermostats_sensors.md"
+      - 🌡️ Temperatures: "ahc/temperatures.md"
+      - 🎛️ Adjustements & Heating Plan: "ahc/adjustments_heating_plan.md"
+
+theme:
+  name: "material"
+  language: "en"
+  font: false
+  # logo: "assets/logos/website_logo.png"
+  # favicon: "assets/logos/favicon/favicon-32x32.png"
+  # custom_dir: "docs/assets/overrides"
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      primary: "white"
+      toggle:
+        icon: "material/weather-night"
+        name: "Dark mode"
+    - media: "(prefers-color-scheme: dark)"
+      scheme: "slate"
+      toggle:
+        icon: "material/weather-sunny"
+        name: "Light mode"
+  features:
+    - "navigation.instant"
+    - "navigation.tracking"
+    - "navigation.top"
+    - "navigation.tabs"
+    - "navigation.indexes"
+    - "search.suggest"
+    - "search.highlight"
+    - "search.share"
+    - "content.code.annotate"
+    - "content.tabs.link"
+
+markdown_extensions:
+  - "meta"
+  - "pymdownx.superfences"
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - "admonition"
+  - "pymdownx.details"
+  - "pymdownx.inlinehilite"
+  # - pymdownx.snippets:
+  #    base_path: [".", "custom_components/ui_lovelace_minimalist"]
+  #    check_paths: true
+  - "pymdownx.critic"
+  - "pymdownx.caret"
+  - "pymdownx.keys"
+  - "pymdownx.tilde"
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: "UI-Lovelace-Minimalist"
+      repo: "UI"
+  - "tables"
+  - "footnotes"
+  - "attr_list"
+  - "md_in_html"
+  - "def_list"
+  - toc:
+      permalink: true
+
+plugins:
+  - "search"
+  - "awesome-pages"

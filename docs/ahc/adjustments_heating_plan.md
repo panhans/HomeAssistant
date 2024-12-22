@@ -1,9 +1,8 @@
 ---
-title: Adjustments
 hide:
   - toc
 ---
-# Adjustments / Heating Plan
+# 🎛️ Adjustments / Heating Plan
 
 In the adjustments, you can set your temperatures or enable/disable the calibration of your thermostats.
 You can set these settings for a specific time, but also specify that they only apply on certain days or only when a specific schedule is active. The time is a mandatory field.

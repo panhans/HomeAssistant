@@ -1,8 +1,8 @@
 ---
-title: Temperatures
-description: Comfort & Eco Temperatures
+hide:
+  - toc
 ---
-# Temperatures
+# 🌡️ Temperatures
 
 ## 🛋️ Static Comfort Temperature
 
