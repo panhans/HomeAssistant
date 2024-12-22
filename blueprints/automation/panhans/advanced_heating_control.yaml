@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.1
+    **Version**: 5.2.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1802,7 +1802,7 @@ trigger:
 
   # force eco temp
   - trigger: state
-    id: temperature_change_force_eco_temperature
+    id: temperature_change_force_eco_temperature_ds
     entity_id: !input input_force_eco_temperature
     for: !input input_action_call_delay
 
@@ -2580,7 +2580,8 @@ variables:
         ('presence' in trigger.id or 
         'scheduler' in trigger.id or 
         'proximity' in trigger.id or 
-        'person' in trigger.id)
+        'person' in trigger.id or
+        '_ds' in trigger.id)
         and not trigger.id == 'temperature_change_valve_target' }}
 
   is_pysical_change: >
