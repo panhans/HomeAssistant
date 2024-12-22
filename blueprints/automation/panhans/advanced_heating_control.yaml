@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.2
+    **Version**: 5.2.3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1300,6 +1300,20 @@ blueprint:
                 - label: '20%'
                   value: '20'
 
+        input_valve_positioning_timeout:
+          name: ⏱️ Valve Positioning Timeout
+          description: >
+            `valve positioning`
+
+
+            Timeout that must lie between two adjustments before the second is executed.
+          default:
+            hours: 0
+            minutes: 20
+            seconds: 0
+          selector:
+            duration:
+
         input_valve_opening_keyword:
           name: 🗝️ Positioning Entity Keyword
           description: >
@@ -2047,10 +2061,12 @@ variables:
   input_custom_action: !input input_custom_action
   input_startup_delay: !input input_startup_delay
 
+  # valve positioning
   input_fully_open_difference: !input input_fully_open_difference
   input_valve_opening_keyword: !input input_valve_opening_keyword
   input_valve_positioning_step_size: !input input_valve_positioning_step_size
   input_valve_positioning_mode: !input input_valve_positioning_mode
+  input_valve_positioning_timeout: !input input_valve_positioning_timeout
   
   #####################################################################################
   #################################### EVALUATION #####################################
@@ -2820,7 +2836,8 @@ variables:
 
         {% set open_valve_entity = device_entities(device_id(valve)) | expand 
             | selectattr('domain','in','number') 
-            | selectattr('entity_id', 'search', input_valve_opening_keyword) 
+            | selectattr('entity_id', 'search', input_valve_opening_keyword)
+            | selectattr('last_changed', '<=', now() - timedelta(**input_valve_positioning_timeout))
             | map(attribute='entity_id') 
             | list | first | default(none) %}
 
