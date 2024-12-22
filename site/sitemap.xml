@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://panhans.github.io/HomeAssistant/</loc>
+         <lastmod>2024-12-22</lastmod>
+    </url>
+    <url>
+         <loc>https://panhans.github.io/HomeAssistant/ahc/adjustments_heating_plan/</loc>
+         <lastmod>2024-12-22</lastmod>
+    </url>
+    <url>
+         <loc>https://panhans.github.io/HomeAssistant/ahc/temperatures/</loc>
+         <lastmod>2024-12-22</lastmod>
+    </url>
+    <url>
+         <loc>https://panhans.github.io/HomeAssistant/ahc/thermostats_sensors/</loc>
+         <lastmod>2024-12-22</lastmod>
+    </url>
+</urlset>
