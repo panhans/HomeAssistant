@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.3
+    **Version**: 5.2.4
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2837,17 +2837,17 @@ variables:
         {% set open_valve_entity = device_entities(device_id(valve)) | expand 
             | selectattr('domain','in','number') 
             | selectattr('entity_id', 'search', input_valve_opening_keyword)
-            | selectattr('last_changed', '<=', now() - timedelta(**input_valve_positioning_timeout))
             | map(attribute='entity_id') 
             | list | first | default(none) %}
 
-        {% if open_valve_entity != none and current_temp != none and target_temp != none %}
+        {%  if open_valve_entity != none and current_temp != none and target_temp != none and
+            (is_force_max_temperature or ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) >= now()) %}
 
           {% set opening = 100 %}
           {% set difference = target_temp - current_temp %}
           {% set step_size = input_valve_positioning_step_size | int %}
 
-          {% if input_fully_open_difference > 0 %}
+          {% if input_fully_open_difference > 0 and not is_force_max_temperature %}
 
             {% set opening_regular = (100 / input_fully_open_difference) * difference %}
             {% set opening_pessimistic = sqrt(((100 / input_fully_open_difference) * difference) | abs) * 10 %}
