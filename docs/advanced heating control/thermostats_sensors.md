@@ -1,3 +1,8 @@
+---
+title: Thermostats
+hide:
+  - toc
+---
 # Thermostats & Sensors
 
 ## 🔥 Thermostats / Climates

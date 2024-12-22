@@ -1,3 +1,8 @@
+---
+title: Adjustments
+hide:
+  - toc
+---
 # Adjustments / Heating Plan
 
 In the adjustments, you can set your temperatures or enable/disable the calibration of your thermostats.

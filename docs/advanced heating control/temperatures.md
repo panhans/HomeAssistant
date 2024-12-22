@@ -1,3 +1,8 @@
+---
+title: Temperatures
+hide:
+  - toc
+---
 # Temperatures
 
 ## 🛋️ Static Comfort Temperature
