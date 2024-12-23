@@ -9,6 +9,10 @@ nav:
       - 🌡️ Temperatures: "ahc/temperatures.md"
       - 🎛️ Adjustements & Heating Plan: "ahc/adjustments_heating_plan.md"
 
+docs_dir: src_src
+edit_uri: edit/main/src/
+site_dir: docs
+
 theme:
   name: "material"
   language: "en"
