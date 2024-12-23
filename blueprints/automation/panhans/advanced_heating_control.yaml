@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.4
+    **Version**: 5.2.5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2841,7 +2841,7 @@ variables:
             | list | first | default(none) %}
 
         {%  if open_valve_entity != none and current_temp != none and target_temp != none and
-            (is_force_max_temperature or ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) >= now()) %}
+            (is_force_max_temperature or ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now()) %}
 
           {% set opening = 100 %}
           {% set difference = target_temp - current_temp %}
