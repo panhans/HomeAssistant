@@ -1,4 +1,4 @@
-name: ci 
+name: docs action 
 on:
   push:
     branches:
@@ -24,5 +24,5 @@ jobs:
           path: .cache
           restore-keys: |
             mkdocs-material-
-      - run: pip install mkdocs-material 
+      - run: pip install mkdocs-material search awesome-pages
       - run: mkdocs gh-deploy --force
