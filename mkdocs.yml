@@ -9,6 +9,7 @@ nav:
       - 🌡️ Temperatures: "ahc/temperatures.md"
       - 🎛️ Adjustements & Heating Plan: "ahc/adjustments_heating_plan.md"
       - 🤜 Force Comfort/Eco Mode: "ahc/force_comfort_eco.md"
+      - 🎚️ Temperature Tweaks: "ahc/temperature_tweaks.md"
 
 docs_dir: docs_src
 edit_uri: edit/main/src/
@@ -62,8 +63,13 @@ markdown_extensions:
   - "pymdownx.tilde"
   - pymdownx.magiclink:
       repo_url_shorthand: true
-      user: "UI-Lovelace-Minimalist"
-      repo: "UI"
+      user: "Panhans"
+      repo: "HomeAssistant"
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - "tables"
   - "footnotes"
   - "attr_list"
