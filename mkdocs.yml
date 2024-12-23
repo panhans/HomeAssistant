@@ -8,6 +8,7 @@ nav:
       - 🔘 Thermostats & Sensors: "ahc/thermostats_sensors.md"
       - 🌡️ Temperatures: "ahc/temperatures.md"
       - 🎛️ Adjustements & Heating Plan: "ahc/adjustments_heating_plan.md"
+      - 🤜 Force Comfort/Eco Mode: "ahc/force_comfort_eco.md"
 
 docs_dir: docs_src
 edit_uri: edit/main/src/
