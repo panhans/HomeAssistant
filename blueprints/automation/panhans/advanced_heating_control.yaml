@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.5
+    **Version**: 5.2.6
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1936,23 +1936,28 @@ trigger:
         {{ false }}
       {% else %}
         
-        {% set is_presence_fp = [input_presence_sensor] 
-            | reject('eq',none)
-            | reject('is_state','on')
-            | list
-            | count > 0 %}
+        {% set relevant_entities = [input_presence_sensor] + [input_mode_guest] + input_persons %}
+        {% set relevant_entities_count = relevant_entities | reject('eq',none) | list | count %}
 
-        {% set is_person_fp = input_persons
-            | reject('is_state','home')
-            | list
-            | count > 0  %}
+        {% if relevant_entities_count > 0 %}
+          {% set presence_count = [input_presence_sensor] 
+              | reject('eq',none)
+              | reject('is_state','on')
+              | list
+              | count %}
 
-        {% if is_person_defined and is_presence_sensor_defined %}
-          {{ is_person_fp and is_presence_fp }}
-        {% elif is_person_defined %}
-          {{ is_person_fp }}
-        {% elif is_presence_sensor_defined %}
-          {{ is_presence_fp }}
+          {% set guest_mode_count = [input_mode_guest] 
+              | reject('eq',none)
+              | reject('is_state','on')
+              | list
+              | count %}
+
+          {% set person_count = input_persons
+              | reject('is_state','home')
+              | list
+              | count %}
+
+          {{ presence_count + guest_mode_count + person_count == relevant_entities_count }}
         {% else %}
           {{ false }}
         {% endif %}
@@ -2364,27 +2369,33 @@ variables:
     {% if frost_protection_timestamp == as_datetime(current_time_stamp) %}
       {{ false }}
     {% else %}
-      {% set is_presence_fp = [input_presence_sensor] 
-          | reject('eq',none)
-          | reject('is_state','on')
-          | expand 
-          | selectattr('last_changed', '<=', frost_protection_timestamp)
-          | list
-          | count > 0 %}
+      {% set relevant_entities = [input_presence_sensor] + [input_mode_guest] + input_persons %}
+      {% set relevant_entities_count = relevant_entities | reject('eq',none) | list | count %}
 
-      {% set is_person_fp = input_persons
-          | reject('is_state','home')
-          | expand
-          | selectattr('last_changed', '<=', frost_protection_timestamp)
-          | list
-          | count > 0  %}
+      {% if relevant_entities_count > 0 %}
 
-      {% if is_person_defined and is_presence_sensor_defined %}
-        {{ is_person_fp and is_presence_fp }}
-      {% elif is_person_defined %}
-        {{ is_person_fp }}
-      {% elif is_presence_sensor_defined %}
-        {{ is_presence_fp }}
+        {% set presence_count = [input_presence_sensor] 
+            | reject('eq',none)
+            | reject('is_state','on')
+            | expand 
+            | selectattr('last_changed', '<=', frost_protection_timestamp)
+            | list | count %}
+
+        {% set persons_count = input_persons
+            | reject('eq',none)
+            | reject('is_state','home')
+            | expand
+            | selectattr('last_changed', '<=', frost_protection_timestamp)
+            | list | count %}
+
+        {% set guest_mode_count = [input_mode_guest] 
+            | reject('eq',none)
+            | reject('is_state','on')
+            | expand 
+            | selectattr('last_changed', '<=', frost_protection_timestamp)
+            | list | count %}
+
+        {{ presence_count + guest_mode_count + persons_count == relevant_entities_count }}
       {% else %}
         {{ false }}
       {% endif %}
