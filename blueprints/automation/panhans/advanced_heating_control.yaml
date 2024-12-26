@@ -473,7 +473,7 @@ blueprint:
             duration:
 
         input_mode_guest:
-          name: 🤝 Guest mode
+          name: 🤝 Guest Mode
           description: >
             `person` `optional`
 

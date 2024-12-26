@@ -10,6 +10,7 @@ nav:
       - 🎛️ Adjustements & Heating Plan: "ahc/adjustments_heating_plan.md"
       - 🤜 Force Comfort/Eco Mode: "ahc/force_comfort_eco.md"
       - 🎚️ Temperature Tweaks: "ahc/temperature_tweaks.md"
+      - 👥 Persons: "ahc/persons.md"
 
 docs_dir: docs_src
 edit_uri: edit/main/src/
