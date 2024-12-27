@@ -6,12 +6,13 @@ nav:
   - 🔥 Advanced Heating Control:
     - 📖 Sections & Inputs:
       - 🔘 Thermostats & Sensors: "ahc/thermostats_sensors.md"
-      - 🌡️ Temperatures: "ahc/temperatures.md"
+      - 🌡️ Temperatures: "//ahc/temperatures.md"
       - 🎛️ Adjustements & Heating Plan: "ahc/adjustments_heating_plan.md"
       - 🤜 Force Comfort/Eco Mode: "ahc/force_comfort_eco.md"
       - 🎚️ Temperature Tweaks: "ahc/temperature_tweaks.md"
       - 👥 Persons: "ahc/persons.md"
-      - 🕑 Schedules: "ahc/schedules.md"
+      - 🕑 Scheduling: "ahc/schedules.md"
+      - 🚶 Presence Detection: "ahc/presence_detection.md"
 
 docs_dir: docs_src
 edit_uri: edit/main/src/

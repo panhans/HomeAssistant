@@ -2,7 +2,7 @@
 hide:
   - toc
 ---
-# 🕑 Schedules
+# 🕑 Scheduling
 
 Mit Schedules kannst du einen einfachen Heizplan erstellen mit dem du zwischen der Eco und der Comfort Temperatur wechseln kannst. Weiterhin kannst du mit den Heating Adjustments und auch mit Personen Einfluss auf das Verhalten und auf die Temperaturen nehmen.
 
