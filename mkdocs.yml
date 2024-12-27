@@ -4,13 +4,14 @@ site_url: https://panhans.github.io/HomeAssistant/
 nav:
   - 🏠 Home: "index.md"
   - 🔥 Advanced Heating Control:
-    - 📖 Sections:
+    - 📖 Sections & Inputs:
       - 🔘 Thermostats & Sensors: "ahc/thermostats_sensors.md"
       - 🌡️ Temperatures: "ahc/temperatures.md"
       - 🎛️ Adjustements & Heating Plan: "ahc/adjustments_heating_plan.md"
       - 🤜 Force Comfort/Eco Mode: "ahc/force_comfort_eco.md"
       - 🎚️ Temperature Tweaks: "ahc/temperature_tweaks.md"
       - 👥 Persons: "ahc/persons.md"
+      - 🕑 Schedules: "ahc/schedules.md"
 
 docs_dir: docs_src
 edit_uri: edit/main/src/
@@ -62,6 +63,7 @@ markdown_extensions:
   - "pymdownx.caret"
   - "pymdownx.keys"
   - "pymdownx.tilde"
+  - pymdownx.blocks.caption
   - pymdownx.magiclink:
       repo_url_shorthand: true
       user: "Panhans"
@@ -82,3 +84,4 @@ markdown_extensions:
 plugins:
   - "search"
   - "awesome-pages"
+  - "glightbox"
