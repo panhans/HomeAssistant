@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.6
+    **Version**: 5.2.7
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3260,6 +3260,7 @@ actions:
           is_liming_protection: "{{ is_liming_protection }}"
           state_outside_temp: "{{ state_outside_temp }}"
           entry_time: "{{ entry_time }}"
+          thermostats: "{{ input_trvs }}"
           hvac_mode: "{{ mode }}"
           temperature_comfort: "{{ temperature_comfort }}"
           temperature_eco: "{{ temperature_eco }}"
