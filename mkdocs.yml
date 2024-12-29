@@ -17,11 +17,15 @@ nav:
       - 🏃 Away Mode: "ahc/away_mode.md"
       - 🪟 Windows & Doors: "ahc/windows_doors.md"
       - 🧭 Calibration: "ahc/calibration.md"
+      - 😡 Aggressive Mode: "ahc/aggressive_mode.md"
       - ⌖ Dynamic Valve Positioning: "ahc/dynamic_valve_positioning.md"
 
 docs_dir: docs_src
 edit_uri: edit/main/src/
 site_dir: docs
+
+extra_css:
+  - style.css
 
 theme:
   name: "material"

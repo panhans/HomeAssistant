@@ -4,7 +4,7 @@ hide:
 ---
 # ⌖ Dynamic Valve Positioning
 
-To prevent your thermostat from behaving like a relay, i.e., only opening and closing, you can dynamically influence the valve position here.
+Usually, the valves of your thermostats are always 100% open, except the target temperature is reached. To prevent your thermostat from behaving like a relay, i.e., only opening and closing, you can dynamically influence the valve position here.
 
 !!! info "Your thermostat must support this and the respective integration must provide an entity for the valve opening."
 
@@ -82,7 +82,7 @@ The positioning mode determines when and how much the valve is closed or opened.
 
 ## ↔️ Positioning Temperature Difference
 
-Usually, the valves of your thermostats are always 100% open. Here you can specify when the automation should modulate the valve opening depending on your target temperature.
+Here you can specify when the automation should modulate the valve opening depending on your target temperature.
 In the graphs shown above, the target temperature is 20°. Modulation starts at 16°. So, a *Positioning Temperature Difference* of 4° is set here.
 
 ## 🦶 Valve Positioning Step Size
