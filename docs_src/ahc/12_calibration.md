@@ -53,4 +53,4 @@ If your thermostat does not support native calibration, you can enable Generic C
 
 ## ↕️ Generic Calibration Offset
 
-If the calculated offset is too high, you can limit it with this option.
+If the calculated offset is too high for you, you can limit it with this option.
