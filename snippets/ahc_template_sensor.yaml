@@ -31,6 +31,7 @@ template:
           is_liming_protection: "{{ trigger.event.data.is_liming_protection }}"
           state_outside_temp: "{{ trigger.event.data.state_outside_temp }}"
           entry_time: "{{ trigger.event.data.entry_time }}"
+          thermostats: "{{ trigger.event.data.thermostats }}"
           hvac_mode: "{{ trigger.event.data.hvac_mode }}"
           temperature_comfort: "{{ trigger.event.data.temperature_comfort }}"
           temperature_eco: "{{ trigger.event.data.temperature_eco}}"
