@@ -1,0 +1,507 @@
+blueprint:
+  name: "Entity State Notification"
+  description: ""
+  domain: automation
+
+  input:
+    sensor_section:
+      name: Entities
+      icon: mdi:broadcast
+      collapsed: true
+      input:
+        input_entities:
+          name: "🖲️ Observed Entities"
+          description: >
+            `target`
+
+
+            Entities which trigger the notification.
+          default: []
+          selector:
+            entity:
+              multiple: true
+
+        input_entity_operator:
+          name: "🔃 Operator"
+          description: >
+            `target`
+
+            Operator to compare the state of the entity.
+          default: "eq"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: "🟰 equal"
+                  value: "eq"
+                - label: "▶️ greater"
+                  value: ">"
+                - label: "◀️ smaller"
+                  value: "<"
+                - label: "◀️▶️ not equal"
+                  value: "!="
+                - label: "🟰▶️ equal or greater"
+                  value: ">="
+                - label: "🟰◀️ equal or smaller"
+                  value: "<="
+
+        input_entity_state:
+          name: "🟢 Entity State"
+          description: >
+            `target`
+
+
+            Target state that triggers the automation.
+          default: ""
+
+        input_entity_state_duration:
+          name: "⏲️ State Duration"
+          description: >
+            `target`
+
+            Duration the entity must be in target state.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 0
+          selector:
+            duration:
+
+    mobile_notifcation_section:
+      name: Mobile Notification Settings
+      icon: mdi:chat
+      collapsed: true
+      input:
+        input_notify_devices:
+          name: "📱 Device to notify"
+          description: >
+            `notification`
+
+
+            Devices that receive the notification.
+          default: []
+          selector:
+            device:
+              multiple: true
+              filter:
+                integration: mobile_app
+
+        input_notify_groups:
+          name: "🫂 Notification Group"
+          description: >
+            `notification`
+
+
+            Name of the notification groups.
+          default: []
+          selector:
+            text:
+              multiple: true
+
+        input_title:
+          name: "📕 Notification Title"
+          description: >
+            `notification`
+
+
+            Title of the notification.
+          default: "{{ entity_name }} is {{ new_state }}"
+
+        input_message:
+          name: "💬 Notification Message"
+          description: >
+            `notification`
+
+
+            Message of the notification.
+          default: "Keep in mind: {{ entity_name }} is {{ new_state }}"
+
+        input_persistent_notification:
+          name: "🪨 Persistent Notification"
+          description: >
+            `notification`
+
+            If turned on you can't swipe away the notification. It only disappears if the observed entity leave the target state combined with the operator.
+          default: false
+          selector:
+            boolean:
+
+        input_ha_notification:
+          name: "🏠 Persistent HomeAssistant Notification"
+          description: >
+            `notification`
+
+
+            Creates a notification in your home assistant frontend.
+          default: false
+          selector:
+            boolean:
+
+    mobile_appearance_section:
+      name: Mobile Notification Appearance
+      icon: mdi:palette
+      collapsed: true
+      input:
+        input_status_bar_icon:
+          name: "🌠 Status Bar Icon"
+          description: >
+            `Android` `optional`
+
+
+            Sets the status bar icon.
+          default: mdi:home-assistant
+          selector:
+            icon:
+              placeholder: mdi:home-assistant
+
+        input_notification_color:
+          name: "🎨 Notification Color"
+          description: >
+            `Android` `optional`
+
+
+            Color of the notification.
+          default: [100, 200, 240]
+          selector:
+            color_rgb:
+
+        input_channel:
+          name: "📭 Notification Channel"
+          description: >
+            `Android` `optional`
+
+
+            You can set a notification channel. In your companion app you can set e.g. a custom sound for notifications in this channel.
+          default: "General"
+
+        input_group:
+          name: "📑 Notification Group"
+          description: >
+            `Android` `optional`
+
+
+            Group notifications by using this identifier.
+          default: "espn-notification-group"
+
+        input_vibration_pattern:
+          name: "📳 Vibration Pattern"
+          description: >
+            `Android` `optional`
+
+
+            Pattern of the vibration when notification arrives."
+          default: "100, 100"
+
+        input_led_color:
+          name: "💡 Notification LED Color"
+          description: >
+            `Android` `optional`
+
+
+            Color of the phone LED after incoming notification."
+          default: [100, 200, 240]
+          selector:
+            color_rgb:
+
+    peridodic_notification_section:
+      name: Periodic Notification Settings
+      icon: mdi:refresh
+      collapsed: true
+      input:
+        input_period:
+          name: "🔄 Periodical Notification"
+          description: >
+            `periodical` `notification`
+
+
+            Sends notification periodically. 0 means off.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 0
+          selector:
+            duration:
+
+        input_stop_button_text:
+          name: "💬 Stop Button Text"
+          description: >
+            `periodical` `optional`
+
+
+            Text for stop button in the notification to interrupt the periodical send notifications.
+          default: "Stop notifying"
+
+    custom_section:
+      name: Custom Actions / Conditions
+      icon: mdi:cog
+      collapsed: true
+      input:
+        input_custom_condition:
+          name: "❌ Conditions"
+          description: >
+            `optional`
+
+
+            Condition that must be met for the notification to be triggered.
+          default: []
+          selector:
+            condition:
+
+        input_custom_action_on:
+          name: "🎬 Custom Action On"
+          description: >
+            `optional`
+
+
+            Custom action when your observed entity enters the target states.
+          default: []
+          selector:
+            action: {}
+
+        input_custom_action_off:
+          name: "🎬 Custom Action Off"
+          description: >
+            `optional`
+
+
+            Custom action when observed entity leave the target state. Keep in mind this action also will be fired if your custom condition doesn't match.
+          default: []
+          selector:
+            action: {}
+
+trigger:
+  - id: "on"
+    trigger: state
+    entity_id: !input input_entities
+    for: !input input_entity_state_duration
+
+  - id: "off"
+    trigger: state
+    entity_id: !input input_entities
+
+  - id: "period"
+    trigger: event
+    event_type: esn_event
+    event_data:
+      automation: "{{ this.entity_id }}"
+
+variables:
+  # variables
+  input_entity_operator: !input input_entity_operator
+  input_entity_state: !input input_entity_state
+  input_entity_state_duration: !input input_entity_state_duration
+  input_period: !input input_period
+  input_notify_devices: !input input_notify_devices
+  input_notify_groups: !input input_notify_groups
+  input_notification_color: !input input_notification_color
+  input_led_color: !input input_led_color
+  input_stop_button_text: !input input_stop_button_text
+
+  # helper
+  is_period_trigger: "{{ trigger.id == 'period' }}"
+  now_ts: "{{ now() }}"
+  is_perodical: "{{ as_datetime(now_ts) != as_datetime(now_ts) + timedelta(**input_period) }}"
+  entity: >
+    {% if is_period_trigger %}
+      {{ trigger.event.data.entity }}
+    {% else %}
+      {{ trigger.entity_id }}
+    {% endif %}
+
+  entity_name: "{{ state_attr(entity, 'friendly_name') }}"
+
+  action_tag: "STOP_{{ this.entity_id }}_{{ entity }}"
+  tag: "{{ this.entity_id.split('.')[1] + entity.split('.')[1] }}"
+  notification_color_hex: "#{{ '%02x%02x%02x' | format(input_notification_color[0], input_notification_color[1], input_notification_color[2]) }}"
+  led_color_hex: "#{{ '%02x%02x%02x' | format(input_led_color[0], input_led_color[1], input_led_color[2]) }}"
+  action: >
+    {% if is_perodical %}
+      {{ [{'action': action_tag, 'title': input_stop_button_text}] }}
+    {% else %}
+      {{ [] }}
+    {% endif %}
+
+  trigger_change_ts: >
+    {% if is_period_trigger %}
+      {{ trigger.event.data.last_changed }}
+    {% else %}
+      {{ as_timestamp([entity] | expand | map(attribute='last_changed') | first) }}
+    {% endif %}
+
+  # state evaluation
+  new_state: >
+    {% if is_period_trigger %}
+      {{ states(entity) }}
+    {% else %}
+      {{ trigger.to_state.state }}
+    {% endif %}
+  is_new_state_number: "{{ is_number(new_state) }}"
+  is_new_state_condition: >
+    {% if input_entity_operator == 'eq' %}
+      {{ [new_state | string ] | select('eq', input_entity_state) | list | count > 0 }}
+    {% elif is_new_state_number %}
+      {{ [new_state | float ] | select(input_entity_operator, input_entity_state | float) | list | count > 0 }}
+    {% else %}
+      {{ false }}
+    {% endif %}
+
+  old_state: >
+    {% if is_period_trigger %}
+      {{ trigger.event.data.last_state }}
+    {% else %}
+      {{ trigger.from_state.state }}
+    {% endif %}
+
+  is_old_state_number: "{{ is_number(old_state) }}"
+  is_old_state_condition: >
+    {% if input_entity_operator == 'eq' %}
+      {{ [ old_state | string ] | select('eq', input_entity_state) | list | count > 0 }}
+    {% elif is_old_state_number %}
+      {{ [ old_state | float ] | select(input_entity_operator, input_entity_state | float) | list | count > 0 }}
+    {% else %}
+      {{ false }}
+    {% endif %}
+
+  # devices
+  notify_devices: "{{ input_notify_devices | map('device_attr', 'name') | list }}"
+
+  notify: >
+    {% set result = namespace(r=[]) %}
+    {% for device in notify_devices %}
+      {% set result.r = result.r + ['notify.mobile_app_' + device | slugify] %}
+    {% endfor %}
+    {% for group in input_notify_groups %}
+      {% set result.r = result.r + ['notify.' + group] %}
+    {% endfor %}
+
+    {{ result.r }}
+
+  # trigger evaluation
+  is_state_change: "{{ is_new_state_condition != is_old_state_condition }}"
+  is_on_trigger: "{{ (is_period_trigger or trigger.id == 'on' or as_datetime(now_ts) == as_datetime(now_ts) + timedelta(**input_entity_state_duration)) and is_new_state_condition }}"
+
+condition:
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: "{{ is_state_change or not is_on_trigger }}"
+      - condition: and
+        conditions:
+          - condition: and
+            conditions: !input input_custom_condition
+          - condition: template
+            value_template: "{{ is_state_change or is_on_trigger }}"
+
+action:
+  - if:
+      - condition: template
+        value_template: "{{ is_on_trigger }}"
+    then:
+      # Notify
+      - action: system_log.write
+        data:
+          message: >
+            State Change: {{ is_state_change }} On Trigger: {{ is_on_trigger }} New State: {{ new_state }} Old State: {{ old_state }}
+          level: "warning"
+
+      - if:
+          - condition: template
+            value_template: !input input_ha_notification
+        then:
+          - action: persistent_notification.create
+            data:
+              title: !input input_title
+              message: !input input_message
+              notification_id: "{{ tag }}"
+
+      - variables:
+          custom_action_on: !input input_custom_action_on
+      - if:
+          - condition: template
+            value_template: "{{ custom_action_on != none }}"
+        then:
+          - choose: []
+            default: !input input_custom_action_on
+
+      - repeat:
+          count: "{{ notify | count | int }}"
+          sequence:
+            - variables:
+                index: "{{ repeat.index-1 }}"
+                notify_device: "{{ notify[index] }}"
+            - action: "{{ notify_device }}"
+              data:
+                title: !input input_title
+                message: !input input_message
+                data:
+                  ttl: 0
+                  priority: high
+                  notification_icon: !input "input_status_bar_icon"
+                  tag: "{{ tag }}"
+                  persistent: !input input_persistent_notification
+                  sticky: !input input_persistent_notification
+                  channel: !input input_channel
+                  group: !input input_group
+                  color: "{{ notification_color_hex }}"
+                  vibrationPattern: !input input_vibration_pattern
+                  ledColor: "{{ led_color_hex }}"
+                  actions: "{{ action }}"
+
+      - if:
+          - condition: template
+            value_template: "{{ is_perodical }}"
+        then:
+          # period logic
+          - wait_for_trigger:
+              - trigger: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ action_tag }}"
+            timeout: !input input_period
+          - variables:
+              latest_state: "{{ states(entity) }}"
+              latest_change_ts: "{{ as_timestamp([entity] | expand | map(attribute='last_changed') | first) }}"
+              latest_state_condition: >
+                {% if input_entity_operator == 'eq' %}
+                  {{ [latest_state | string ] | select('eq', input_entity_state) | list | count > 0 }}
+                {% elif is_number(latest_state) %}
+                  {{ [latest_state | float ] | select(input_entity_operator, input_entity_state | float) | list | count > 0 }}
+                {% else %}
+                  {{ false }}
+                {% endif %}
+          - if:
+              - condition: template
+                value_template: "{{ latest_state_condition }}"
+              - condition: template
+                value_template: "{{ wait.trigger == none }}"
+              - condition: template
+                value_template: "{{ trigger_change_ts == latest_change_ts }}"
+            then:
+              - event: esn_event
+                event_data:
+                  entity: "{{ entity }}"
+                  automation: "{{ this.entity_id }}"
+                  last_changed: "{{ latest_change_ts }}"
+                  last_state: "{{ latest_state }}"
+    else:
+      # Delete Notifications
+      - action: notify.notify
+        data:
+          data:
+            tag: "{{ tag }}"
+            ttl: 0
+            priority: high
+          message: clear_notification
+      - action: persistent_notification.dismiss
+        data:
+          notification_id: "{{ tag }}"
+      - variables:
+          custom_action_off: !input input_custom_action_off
+      - if:
+          - condition: template
+            value_template: "{{ custom_action_off != none }}"
+        then:
+          - choose: []
+            default: !input input_custom_action_off
+
+mode: parallel
