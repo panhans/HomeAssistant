@@ -933,7 +933,8 @@ blueprint:
             `aggressive mode` `tweak`
 
 
-            Activate this option if your [thermostats](https://www.home-assistant.io/integrations/climate/) react slowly or only start to react at a large temperature difference between actual and set temperature.
+            Activate this option if your [thermostats](https://www.home-assistant.io/integrations/climate/) react slowly or only start to react at a large temperature difference 
+            between actual and set temperature.
             Define a range when your real target temperature shall be set. 
 
             <details>
@@ -942,7 +943,8 @@ blueprint:
 
             E.g. you target temperature is 20°C and your room temperature is 19.5°C.
             If your range is set to 0.5°C the real target temperature (20°C) will be set when room temperature is between 19.5°C and 20.5°C.
-            If the room temperature is above or lower than range, it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react. (see Aggressive Mode - Offset)
+            If the room temperature is above or lower than range, it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react. 
+            (see Aggressive Mode - Offset)
 
             </details>
 
@@ -977,10 +979,12 @@ blueprint:
           description: >
             `aggressive mode` `tweak` `experimental` 
 
-            If you'd setup an temperature sensor and your thermostats allow calibration, you can enable this feature. If enabled the aggressive offset will be add to the calibration value and not the target temperature.
+            If you'd setup an temperature sensor and your thermostats allow calibration, you can enable this feature. If enabled the aggressive offset will be add 
+            to the calibration value and not the target temperature.
             
-            *Note*: This feature is marked as experimental since not every calibration method could be tested. If you notice any problems simple open an issue or post a message in the [AHC-Thread](https://community.home-assistant.io/t/advanced-heating-control). 
-            Enable this only if native calibration works for you not when using generic calibration.
+            *Note*: This feature is marked as experimental since not every calibration method could be tested. If you notice any problems simple open an issue or 
+            post a message in the [AHC-Thread](https://community.home-assistant.io/t/advanced-heating-control/469873). 
+            Enable this only if native calibration does NOT work when using generic calibration.
           default: false
           selector:
             boolean:
@@ -1165,7 +1169,8 @@ blueprint:
             `activation`
 
 
-            If you'd select a temperature [sensor](https://www.home-assistant.io/integrations/sensor/) or a [weather entity](https://www.home-assistant.io/integrations/weather/) for controlling heating you can adjust the temperature threshold here.
+            If you'd select a temperature [sensor](https://www.home-assistant.io/integrations/sensor/) or a [weather entity](https://www.home-assistant.io/integrations/weather/) 
+            for controlling heating you can adjust the temperature threshold here.
             If the outside temperature falls below the threshold value, heating is activated.
           default: 15
           selector:
@@ -1353,7 +1358,8 @@ blueprint:
             `tweak`  
 
 
-            If your AHC automation is triggered directly after a Home Assistant restart, but the required integrations have not yet been loaded or certain sensors have not yet been initialized, you can set an automation delay here.
+            If your AHC automation is triggered directly after a Home Assistant restart, but the required integrations have not yet been loaded or certain sensors 
+            have not yet been initialized, you can set an automation delay here.
             
             *Note:* Make sure that you have set up the uptime integration for this purpose.
           default:
