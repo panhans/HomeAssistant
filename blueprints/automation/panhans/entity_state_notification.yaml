@@ -1,6 +1,48 @@
 blueprint:
-  name: "Entity State Notification"
-  description: ""
+  name: "💬 Entity State Notification"
+  description: "
+
+    ## 💥 New In Version 3.0
+
+    🔃 support for operators (=, >, <, !=, >=, <=)
+
+    🤯 new logic for better troubleshooting and further development
+
+    📱 multiple groups and devices for notifications possible
+  
+
+    ## 🤙 Features
+
+    🎯 monitor entities for a specific state and trigger a notification
+
+    📝 modify message, title, icon, color, channel, group etc
+
+    🧷 persistent notification until entity leaves specified state
+
+    🔄 periodical notification with stop functionality
+
+    🎬 custom actions
+
+    ✅ custom conditions
+
+
+    ℹ️ **Hints**
+
+    If you want to test this automation, you need to change the state of an observed entity. You can do this in the developer options. 
+    Simply filter for your entity, select it and change the state to the trigger state manually.
+
+
+    📖 **Documentation:** [panhans.github.io/HomeAssistant/](https://panhans.github.io/HomeAssistant/)
+
+
+    ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
+
+
+    💿 **Version**: 3.0.0
+
+    
+    [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
+    "
   domain: automation
 
   input:
