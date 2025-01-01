@@ -2,14 +2,14 @@ blueprint:
   name: "💬 Entity State Notification"
   description: "
 
-    ## 💥 New In Version 3.0
+    ## 💥 New In Version 3
 
-    🔃 support for operators (=, >, <, !=, >=, <=)
+    🔃 support for multiple states or nummeric comarision (above/below)
 
     🤯 new logic for better troubleshooting and further development
 
     📱 multiple groups and devices for notifications possible
-  
+
 
     ## 🤙 Features
 
@@ -28,7 +28,7 @@ blueprint:
 
     ℹ️ **Hints**
 
-    If you want to test this automation, you need to change the state of an observed entity. You can do this in the developer options. 
+    If you want to test this automation, you need to change the state of an observed entity. You can do this in the developer options.
     Simply filter for your entity, select it and change the state to the trigger state manually.
 
 
@@ -38,17 +38,17 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.0.0
+    💿 **Version**: 3.1.0
 
-    
+
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
     "
   domain: automation
 
   input:
     sensor_section:
-      name: Entities
-      icon: mdi:broadcast
+      name: Entities / Equal Comparison
+      icon: mdi:equal-box
       collapsed: true
       input:
         input_entities:
@@ -63,38 +63,17 @@ blueprint:
             entity:
               multiple: true
 
-        input_entity_operator:
-          name: "🔃 Operator"
-          description: >
-            `target`
-
-            Operator to compare the state of the entity.
-          default: "eq"
-          selector:
-            select:
-              mode: dropdown
-              options:
-                - label: "🟰 equal"
-                  value: "eq"
-                - label: "▶️ greater"
-                  value: ">"
-                - label: "◀️ smaller"
-                  value: "<"
-                - label: "◀️▶️ not equal"
-                  value: "!="
-                - label: "🟰▶️ equal or greater"
-                  value: ">="
-                - label: "🟰◀️ equal or smaller"
-                  value: "<="
-
-        input_entity_state:
-          name: "🟢 Entity State"
+        input_entity_states:
+          name: "🟢 Entity States"
           description: >
             `target`
 
 
             Target state that triggers the automation.
-          default: ""
+          default: []
+          selector:
+            text:
+              multiple: true
 
         input_entity_state_duration:
           name: "⏲️ State Duration"
@@ -105,7 +84,65 @@ blueprint:
           default:
             hours: 0
             minutes: 0
-            seconds: 0
+            seconds: 2
+          selector:
+            duration:
+
+    numeric_entity_section:
+      name: Numeric Above/Below Comparison
+      icon: mdi:code-greater-than
+      collapsed: true
+      input:
+        input_numeric_entities:
+          name: "🖲️ Observed Numeric Entities"
+          description: >
+            `target`
+
+
+            Entities which trigger the notification.
+          default: []
+          selector:
+            entity:
+              multiple: true
+
+        input_numeric_entity_operator:
+          name: "🔃 Operator"
+          description: >
+            `target`
+
+
+            Operator to compare the state of the entity.
+          default: "above"
+          selector:
+            select:
+              options:
+                - label: "▶️ above"
+                  value: "above"
+                - label: "◀️ below"
+                  value: "below"
+
+        input_numeric_entity_state:
+          name: "🟢 Entity State"
+          description: >
+            `target`
+
+
+            Target state that triggers the automation.
+          default: 0
+          selector:
+            number:
+
+        input_numeric_entity_state_duration:
+          name: "⏲️ State Duration"
+          description: >
+            `target`
+
+
+            Duration the entity must be in target state.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 2
           selector:
             duration:
 
@@ -311,15 +348,42 @@ blueprint:
           selector:
             action: {}
 
+trigger_variables:
+  input_entities: !input input_entities
+
 trigger:
-  - id: "on"
+  - id: "state_on"
     trigger: state
     entity_id: !input input_entities
+    to: !input input_entity_states
     for: !input input_entity_state_duration
 
-  - id: "off"
+  - id: "state_off"
     trigger: state
     entity_id: !input input_entities
+    not_to: !input input_entity_states
+
+  - id: "above"
+    trigger: numeric_state
+    entity_id: !input input_numeric_entities
+    above: !input input_numeric_entity_state
+    for: !input input_numeric_entity_state_duration
+
+  - id: "below"
+    trigger: numeric_state
+    entity_id: !input input_numeric_entities
+    below: !input input_numeric_entity_state
+    for: !input input_numeric_entity_state_duration
+
+  - id: "above_off"
+    trigger: numeric_state
+    entity_id: !input input_numeric_entities
+    above: !input input_numeric_entity_state
+
+  - id: "below_off"
+    trigger: numeric_state
+    entity_id: !input input_numeric_entities
+    below: !input input_numeric_entity_state
 
   - id: "period"
     trigger: event
@@ -329,15 +393,15 @@ trigger:
 
 variables:
   # variables
-  input_entity_operator: !input input_entity_operator
-  input_entity_state: !input input_entity_state
-  input_entity_state_duration: !input input_entity_state_duration
+  input_numeric_entity_operator: !input input_numeric_entity_operator
+  input_numeric_entity_state: !input input_numeric_entity_state
   input_period: !input input_period
   input_notify_devices: !input input_notify_devices
   input_notify_groups: !input input_notify_groups
   input_notification_color: !input input_notification_color
   input_led_color: !input input_led_color
   input_stop_button_text: !input input_stop_button_text
+  input_entity_states: !input input_entity_states
 
   # helper
   is_period_trigger: "{{ trigger.id == 'period' }}"
@@ -377,31 +441,12 @@ variables:
     {% else %}
       {{ trigger.to_state.state }}
     {% endif %}
-  is_new_state_number: "{{ is_number(new_state) }}"
-  is_new_state_condition: >
-    {% if input_entity_operator == 'eq' %}
-      {{ [new_state | string ] | select('eq', input_entity_state) | list | count > 0 }}
-    {% elif is_new_state_number %}
-      {{ [new_state | float ] | select(input_entity_operator, input_entity_state | float) | list | count > 0 }}
-    {% else %}
-      {{ false }}
-    {% endif %}
 
   old_state: >
     {% if is_period_trigger %}
       {{ trigger.event.data.last_state }}
     {% else %}
       {{ trigger.from_state.state }}
-    {% endif %}
-
-  is_old_state_number: "{{ is_number(old_state) }}"
-  is_old_state_condition: >
-    {% if input_entity_operator == 'eq' %}
-      {{ [ old_state | string ] | select('eq', input_entity_state) | list | count > 0 }}
-    {% elif is_old_state_number %}
-      {{ [ old_state | float ] | select(input_entity_operator, input_entity_state | float) | list | count > 0 }}
-    {% else %}
-      {{ false }}
     {% endif %}
 
   # devices
@@ -419,33 +464,31 @@ variables:
     {{ result.r }}
 
   # trigger evaluation
-  is_state_change: "{{ is_new_state_condition != is_old_state_condition }}"
-  is_on_trigger: "{{ (is_period_trigger or trigger.id == 'on' or as_datetime(now_ts) == as_datetime(now_ts) + timedelta(**input_entity_state_duration)) and is_new_state_condition }}"
+  create_notifictaion: >
+    {{ 
+      trigger.id in ['state_on','period'] or 
+      (trigger.id in ['above'] and input_numeric_entity_operator == 'above') or
+      (trigger.id in ['below'] and input_numeric_entity_operator == 'below')
+    }}
 
 condition:
   - condition: or
     conditions:
       - condition: template
-        value_template: "{{ is_state_change or not is_on_trigger }}"
+        value_template: "{{ not create_notifictaion }}"
       - condition: and
         conditions:
           - condition: and
             conditions: !input input_custom_condition
           - condition: template
-            value_template: "{{ is_state_change or is_on_trigger }}"
+            value_template: "{{ create_notifictaion }}"
 
 action:
   - if:
       - condition: template
-        value_template: "{{ is_on_trigger }}"
+        value_template: "{{ create_notifictaion }}"
     then:
       # Notify
-      - action: system_log.write
-        data:
-          message: >
-            State Change: {{ is_state_change }} On Trigger: {{ is_on_trigger }} New State: {{ new_state }} Old State: {{ old_state }}
-          level: "warning"
-
       - if:
           - condition: template
             value_template: !input input_ha_notification
@@ -502,29 +545,32 @@ action:
             timeout: !input input_period
           - variables:
               latest_state: "{{ states(entity) }}"
-              latest_change_ts: "{{ as_timestamp([entity] | expand | map(attribute='last_changed') | first) }}"
-              latest_state_condition: >
-                {% if input_entity_operator == 'eq' %}
-                  {{ [latest_state | string ] | select('eq', input_entity_state) | list | count > 0 }}
-                {% elif is_number(latest_state) %}
-                  {{ [latest_state | float ] | select(input_entity_operator, input_entity_state | float) | list | count > 0 }}
+              latest_trigger_id: >
+                {% if is_period_trigger %}
+                  {{ trigger.event.data.trigger_id }}
                 {% else %}
-                  {{ false }}
+                  {{ trigger.id }}
+                {% endif %}
+              latest_state_condition: >
+                {% if latest_trigger_id == 'state_on' %}
+                  {{ latest_state in input_entity_states }}
+                {% elif latest_trigger_id == 'above' %}
+                  {{ latest_state | float > input_numeric_entity_state | float }}
+                {% elif latest_trigger_id == 'below' %}
+                  {{ latest_state | float < input_numeric_entity_state | float }}
                 {% endif %}
           - if:
               - condition: template
                 value_template: "{{ latest_state_condition }}"
               - condition: template
                 value_template: "{{ wait.trigger == none }}"
-              - condition: template
-                value_template: "{{ trigger_change_ts == latest_change_ts }}"
             then:
               - event: esn_event
                 event_data:
                   entity: "{{ entity }}"
                   automation: "{{ this.entity_id }}"
-                  last_changed: "{{ latest_change_ts }}"
                   last_state: "{{ latest_state }}"
+                  trigger_id: "{{ latest_trigger_id }}"
     else:
       # Delete Notifications
       - action: notify.notify
