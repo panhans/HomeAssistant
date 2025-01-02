@@ -38,7 +38,7 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.1.0
+    💿 **Version**: 3.1.1
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
@@ -84,7 +84,7 @@ blueprint:
           default:
             hours: 0
             minutes: 0
-            seconds: 2
+            seconds: 0
           selector:
             duration:
 
@@ -131,6 +131,8 @@ blueprint:
           default: 0
           selector:
             number:
+              max: 9999999999
+              min: -9999999999
 
         input_numeric_entity_state_duration:
           name: "⏲️ State Duration"
@@ -142,7 +144,7 @@ blueprint:
           default:
             hours: 0
             minutes: 0
-            seconds: 2
+            seconds: 0
           selector:
             duration:
 
