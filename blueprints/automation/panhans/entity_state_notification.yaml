@@ -84,7 +84,7 @@ blueprint:
           default:
             hours: 0
             minutes: 0
-            seconds: 0
+            seconds: 2
           selector:
             duration:
 
@@ -144,7 +144,7 @@ blueprint:
           default:
             hours: 0
             minutes: 0
-            seconds: 0
+            seconds: 2
           selector:
             duration:
 
