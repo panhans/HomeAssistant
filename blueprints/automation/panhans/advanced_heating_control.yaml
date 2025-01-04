@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.8
+    **Version**: 5.2.9
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2617,6 +2617,8 @@ variables:
         '_ds' in trigger.id)
         and not trigger.id == 'temperature_change_valve_target' }}
 
+  set_max_temperature: "{{ is_force_max_temperature or is_liming_protection }}"
+
   is_pysical_change: >
     {{  trigger_id_defined 
         and trigger.id == 'temperature_change_valve_target' 
@@ -2711,8 +2713,6 @@ variables:
         {{ comfort_state }}
       {% endif %}
     {% endif %}
-
-  set_max_temperature: "{{ is_force_max_temperature or is_liming_protection }}"
 
   mode: >
     {% if not state_ahc %}
