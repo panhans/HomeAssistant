@@ -411,7 +411,7 @@ blueprint:
             boolean:
 
         input_off_if_nobody_home:
-          name: ↕️ Off If Nobody Home
+          name: 🏠🚶‍➡️ Off If Nobody Home
           description: >
 
             Turns your [climate](https://www.home-assistant.io/integrations/climate/) entity *off* if persons are set and nobody is home.
