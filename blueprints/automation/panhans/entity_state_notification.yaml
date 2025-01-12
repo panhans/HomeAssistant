@@ -38,7 +38,7 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.1.1
+    💿 **Version**: 3.1.2
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
@@ -427,13 +427,6 @@ variables:
       {{ [{'action': action_tag, 'title': input_stop_button_text}] }}
     {% else %}
       {{ [] }}
-    {% endif %}
-
-  trigger_change_ts: >
-    {% if is_period_trigger %}
-      {{ trigger.event.data.last_changed }}
-    {% else %}
-      {{ as_timestamp([entity] | expand | map(attribute='last_changed') | first) }}
     {% endif %}
 
   # state evaluation
