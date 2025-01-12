@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.9
+    **Version**: 5.2.10
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -405,6 +405,16 @@ blueprint:
           description: >
 
             Turns your [climate](https://www.home-assistant.io/integrations/climate/) entity *off* if the target temperature is below(cooling) / above(heating) the room temperature.
+
+          default: false
+          selector:
+            boolean:
+
+        input_off_if_nobody_home:
+          name: ↕️ Off If Nobody Home
+          description: >
+
+            Turns your [climate](https://www.home-assistant.io/integrations/climate/) entity *off* if persons are set and nobody is home.
 
           default: false
           selector:
@@ -2066,6 +2076,7 @@ variables:
   is_fahrenheit: !input input_fahrenheit
   is_heat_only_if_below_real_temp: !input input_off_if_above_room_temperature
   is_physical_change_enabled: !input input_physical_change
+  is_off_if_nobody_home: !input input_off_if_nobody_home
 
   # custom tweaks
   input_action_call_delay: !input input_action_call_delay
@@ -2719,7 +2730,9 @@ variables:
       {{ 'off' }}
     {% elif state_window and input_window_open_temperature | int == 0 and not set_max_temperature %}
       {{ 'off' }}
-    {% elif is_off_instead_min and not set_comfort %}
+    {% elif is_off_instead_min and not set_comfort %} 
+      {{ 'off' }}
+    {% elif is_off_if_nobody_home and is_person_defined and not is_anybody_home_or_proximity and not set_comfort %}
       {{ 'off' }}
     {% else %}
       {{ input_hvac_mode }}
