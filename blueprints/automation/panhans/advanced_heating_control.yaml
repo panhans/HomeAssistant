@@ -2872,7 +2872,12 @@ variables:
             | list | first | default(none) %}
 
         {%  if open_valve_entity != none and current_temp != none and target_temp != none and
-            (is_force_max_temperature or ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now()) %}
+            (
+              is_force_max_temperature or 
+              ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now() or
+              (trigger_id_defined and 'temperature_change_window_on' in trigger.id)
+            )
+        %}
 
           {% set opening = 100 %}
           {% set difference = target_temp - current_temp %}
