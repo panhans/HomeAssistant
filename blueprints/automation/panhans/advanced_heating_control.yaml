@@ -2494,14 +2494,14 @@ variables:
         | list  %}
 
     {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
-                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
                                | list %}
 
     {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
                                         | selectattr('scheduler','in',[Undefined])
                                         | list %}
 
-    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
                                             | selectattr('days','in',[Undefined])
                                             | list %}
 
@@ -2533,14 +2533,14 @@ variables:
         | list  %}
 
     {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
-                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
                                | list %}
 
     {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
                                         | selectattr('scheduler','in',[Undefined])
                                         | list %}
 
-    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',[scheduler_name]) 
+    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
                                             | selectattr('days','in',[Undefined])
                                             | list %}
 
