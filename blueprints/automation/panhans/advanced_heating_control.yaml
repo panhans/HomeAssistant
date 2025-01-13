@@ -2818,12 +2818,12 @@ variables:
           {% if input_calibration_generic %}
 
             {% if current_valve_temp != ref_temp %}
-              {% set offset = ref_temp - current_valve_temp %}
+              {% set offset = current_valve_temp - ref_temp %}
 
               {% set offset = iif(offset > float(input_generic_calibration_offset), input_generic_calibration_offset, offset) %}
               {% set offset = iif(offset < float(input_generic_calibration_offset) * -1, input_generic_calibration_offset * -1, offset) %}
 
-              {% set temp_with_offset = float(valve_temp) - float(offset) %}
+              {% set temp_with_offset = float(valve_temp) + float(offset) %}
               {% set step = state_attr(valve, 'target_temp_step') | float(0.5) %}
 
               {% set temp_with_offset = (temp_with_offset | float(0) / float(step)) | round(0) * float(step) %}
