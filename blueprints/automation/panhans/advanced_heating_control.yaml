@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.10
+    **Version**: 5.2.11
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3209,8 +3209,17 @@ variables:
 
     {{ messages }}
 
-  thermostat_temperatures: >
-    {{ input_trvs | expand | map(attribute='attributes.current_temperature') | list }}
+  climates_information: >
+    {% set n = namespace(dict=[]) %}
+
+    {% for valve in input_trvs %}
+      {% set temperature = state_attr(valve,'temperature') %}
+      {% set current_temperature = state_attr(valve,'current_temperature') %}
+      {% set state = states(valve) %}
+      {% set n.dict = n.dict + [{'entity_id': valve, 'state': state, 'temperature': temperature, 'current_temperature': current_temperature}] %}
+    {% endfor %}
+
+    {{ n.dict }}
 
 conditions:
   - condition: or
