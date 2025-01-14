@@ -43,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.12
+    **Version**: 5.2.12_preset_mode
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -432,7 +432,86 @@ blueprint:
             boolean:
 
     preset_section:
-      name:
+      name: Preset
+      icon: mdi:note
+      collapsed: true
+      input:
+        input_enable_preset_mode:
+          name: 📝 Enable Preset Mode
+          description: >
+            `preset`
+
+
+            If you do not want to control your thermostats directly via the HVAC mode and temperatures, you can enable this option to use presets of your thermostats.
+          default: false
+          selector:
+            boolean:
+
+        input_preset_eco:
+          name: 🍃 Eco Preset
+          description: >
+            `preset` `fallback` 
+
+
+            Preset for the Eco mode. This is also used if another mode is not defined and thus serves as a fallback.
+          default: ""
+          selector:
+            text:
+
+        input_preset_comfort:
+          name: 🛋️ Comfort Preset
+          description: >
+            `preset` `optional`
+
+
+            Preset for the Comfort mode.
+          default: ""
+          selector:
+            text:
+
+        input_preset_off:
+          name: 🔴 Off Preset
+          description: >
+            `preset` `optional`
+
+
+            Preset for the Off mode.
+          default: ""
+          selector:
+            text:
+
+        input_preset_party:
+          name: 🎈 Party Preset
+          description: >
+            `preset` `optional`
+
+
+            Preset for the Party mode.
+          default: ""
+          selector:
+            text:
+
+        input_preset_away:
+          name: 🚶 Away Preset
+          description: >
+            `preset` `optional`
+
+
+            Preset for the away mode.
+          default: ""
+          selector:
+            text:
+
+        input_preset_frost_protection:
+          name: 🥶 Frost Protection Preset
+          description: >
+            `preset` `optional`
+
+
+            Preset for the frost protection mode.
+          default: ""
+          selector:
+            text:
 
     # persons
     person_section:
@@ -2077,6 +2156,14 @@ variables:
   # heating adjustments
   input_adjustments: !input input_adjustments
 
+  # preset mode
+  is_preset_mode: !input input_enable_preset_mode
+  input_preset_eco: !input input_preset_eco
+  input_preset_comfort: !input input_preset_comfort
+  input_preset_off: !input input_preset_off
+  input_preset_away: !input input_preset_away
+  input_preset_frost_protection: !input input_preset_frost_protection
+
   # temperature tweaks
   is_reset_temperature: !input input_reset_temperature
   is_off_instead_min: !input input_off_instead_of_eco
@@ -2779,7 +2866,7 @@ variables:
 
     {% set original_mode = mode %}
 
-    {% if not is_changes_trigger %}
+    {% if not is_changes_trigger and not is_preset_mode %}
       {{ n.dict }}
     {% else %}
       {% for valve in input_trvs %}
@@ -2861,6 +2948,43 @@ variables:
 
       {{ dict.from_keys(n.dict) }}
     {% endif %}
+
+  # preset
+  preset_to_set: >
+    {% if is_preset_mode %}
+      {% set preset = none %}
+
+      {% if mode == 'off' %}
+        {% set preset = input_preset_off %}
+      {% elif state_party %}
+        {% set preset = input_preset_party %}
+      {% elif is_frost_protection %}
+        {% set preset = input_preset_frost_protection %}
+      {% elif is_away %}
+        {% set preset = input_preset_away %}
+      {% elif mode == 'comfort' %}
+        {% set preset = input_preset_comfort %}
+      {% elif mode == 'eco' %}
+        {% set preset = input_preset_eco %}
+      {% endif %}
+
+      {{ iif(preset == none or preset | trim == "", input_preset_eco, preset) }}
+
+    {% endif %}
+
+  preset_changes: >
+    {% if is_preset_mode %}
+      {% for valve in input_trvs %}
+        {% if state_attr(valve,'preset_mode') != preset_to_set and preset_to_set in state_attr(valve,'preset_modes') %}
+          {% set n.dict = n.dict + [(valve, [{'preset': preset , 'temp': valve_temp}])] %}
+        {% endif %}
+      {% endfor %}
+
+      {{ dict.from_keys(n.dict) }}
+    {% endif %}
+
+  preset_is_supported: >
+    {{ input_trvs | expand | selectattr('attributes.preset_modes', 'defined') | selectattr('attributes.preset_modes','search', preset_to_set) | map(attribute='entity_id') | list | count == input_trvs | count }}
 
   positioning: >
     {% set n = namespace(dict=[]) %}
@@ -3193,7 +3317,8 @@ variables:
 
   # conditions 
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
-  change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
+  change_trigger: "{{ not is_preset_mode and is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
+  preset_trigger: "{{ is_preset_mode and is_changes_trigger and preset_changes | count > 0 and not no_changes }}"
   reset_trigger: "{{ is_reset_trigger and not no_changes }}"
   calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_value_set | count > 0 or calibration_tado | count > 0) }}"
   positioning_trigger: "{{ positioning | count > 0 }}"
@@ -3212,6 +3337,8 @@ variables:
       {% set messages = messages + ['Unsupported climate entities: ' + valves_unsupported | join(',') | string ] %}
     {% elif is_temperature_sensor_defined and not valid_temperature_sensor %}
       {% set messages = messages + ['The temperature sensor' + input_temperature_sensor + ' has an invalid state: ' + states(input_temperature_sensor) ] %}
+    {% elif is_preset_mode and not preset_is_supported %}
+      {% set messages = messages + ['You have enabled preset mode but the preset ' + preset_to_set + ' is not supported by at least one of your thermostats.' ] %}
     {% endif %}
 
     {{ messages }}
@@ -3236,7 +3363,7 @@ conditions:
       - condition: template
         value_template: "{{ scene_trigger }}"
       - condition: template
-        value_template: "{{ change_trigger }}"
+        value_template: "{{ change_trigger or preset_trigger }}"
       - condition: template
         value_template: "{{ reset_trigger }}"
       - condition: template
@@ -3555,10 +3682,27 @@ actions:
                           entity_id: "{{ thermostat }}"
                           temperature: "{{ temp_target | float }}"
                       - delay: !input input_action_call_delay
-
+            - if:
+                - condition: template
+                  value_template: "{{ preset_changes | count | int > 0 }}"
+              then:
+                - repeat:
+                    count: "{{ preset_changes | count | int }}"
+                    sequence:
+                      - variables:
+                          index: "{{ repeat.index-1 }}"
+                          thermostat: "{{ (preset_changes.keys() | list) [index] }}"
+                          preset: "{{ (((preset_changes.values() | list) [index]) | first) ['preset'] }}"
+                      - action: climate.set_preset_mode
+                        data:
+                          entity_id: "{{ thermostat }}"
+                          preset_mode: "{{ preset }}"
+                      - delay: !input input_action_call_delay
       - if:
         - condition: template
-          value_template: "{{ input_valve_positioning_mode != 'off' and (is_scene_apply_trigger or changes | count | int > 0) }}"
+          value_template: "{{ input_valve_positioning_mode != 'off' }}"
+        - condition: template
+          value_template: "{{ is_scene_apply_trigger or changes | count | int > 0 or preset_changes | count | int > 0 }}"
         then:
         - event: ahc_positioning_event
           event_data:
