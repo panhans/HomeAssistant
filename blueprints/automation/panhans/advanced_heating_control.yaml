@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.11
+    **Version**: 5.2.12
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3097,7 +3097,7 @@ variables:
 
         {% set update_calibration = old_state != new_state %}
 
-        {% if is_periodical_popp_calibration and not update_calibration %}
+        {% if is_calibration_trigger and not update_calibration %}
           {% set last_updated = [calibration_entity] | expand | map(attribute='last_updated') | first %}
           {% set update_calibration = as_datetime(current_time_stamp) - timedelta(minutes=20) >= last_updated %}
         {% endif %}
