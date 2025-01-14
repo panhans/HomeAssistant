@@ -15,7 +15,6 @@ blueprint:
 
     ↔️ proximity aka geo fencing
 
-
     🥶 frost protection
 
     😡 adjustable aggressive mode
@@ -44,7 +43,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.11
+    **Version**: 5.2.12
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -431,6 +430,9 @@ blueprint:
           default: false
           selector:
             boolean:
+
+    preset_section:
+      name:
 
     # persons
     person_section:
@@ -1509,6 +1511,12 @@ trigger:
   - trigger: event
     event_type: ahc_delay_event
     id: delayed_call_temperature_change
+    event_data:
+      automation: "{{ this.entity_id }}"
+
+  - trigger: event
+    event_type: ahc_positioning_event
+    id: positioning_event
     event_data:
       automation: "{{ this.entity_id }}"
 
@@ -2873,9 +2881,8 @@ variables:
 
         {%  if open_valve_entity != none and current_temp != none and target_temp != none and
             (
-              is_force_max_temperature or 
-              ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now() or
-              (trigger_id_defined and 'temperature_change_window_on' in trigger.id)
+              (trigger_id_defined and trigger.id == 'positioning_event') or 
+              ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now()
             )
         %}
 
@@ -3253,6 +3260,7 @@ actions:
         - event: ahc_delay_event
           event_data:
             automation: "{{ this.entity_id }}"
+            type: "reload"
       
     default:
       - if:
@@ -3547,6 +3555,14 @@ actions:
                           entity_id: "{{ thermostat }}"
                           temperature: "{{ temp_target | float }}"
                       - delay: !input input_action_call_delay
+
+      - if:
+        - condition: template
+          value_template: "{{ input_valve_positioning_mode != 'off' and (is_scene_apply_trigger or changes | count | int > 0) }}"
+        then:
+        - event: ahc_positioning_event
+          event_data:
+            automation: "{{ this.entity_id }}"
             
       # custom action
       - if:
