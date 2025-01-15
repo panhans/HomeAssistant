@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.13
+    **Version**: 5.2.14
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3104,52 +3104,58 @@ variables:
 
       {% for valve in valves_dph %}
 
-        {% set calibration_entity = device_entities(device_id(valve)) |
+        {% set calibration_entities = device_entities(device_id(valve)) |
                                     expand | selectattr('domain','in','number') |
                                     selectattr('entity_id', 'search', input_calibration_key_word) |
-                                    map(attribute='entity_id') | first %}
+                                    map(attribute='entity_id') | list %}
 
-        {% set min_val = state_attr(calibration_entity,'min')%}
-        {% set max_val = state_attr(calibration_entity,'max')%}
-        
-        {% set step = state_attr(calibration_entity, 'step') | float(1) %}
-        {% if rounding_mode == 'manual' %} 
-            {% set step = input_calibration_step_size | float(1) %}
-        {% endif %}
+        {% if calibration_entity != calibration_entities | count > 0 %}
 
-        {% set current_temp = state_attr(valve,'current_temperature') | float(20) %}
+          {% set calibration_entity = calibration_entities | first %}
 
-        {% set new_state = value_temperature_sensor | float(current_temp) %}
-        {% set old_state = states(calibration_entity) | float %}
-
-        {% if is_aggressive_mode_calibration %}           
-          {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - value_temperature_sensor | float %}
-
-          {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
-            {% set new_state = new_state + input_aggressive_mode_offset * factor %}
-          {% elif temp_diff * factor > input_aggressive_mode_range %}
-            {% set new_state = new_state - input_aggressive_mode_offset * factor %}
+          {% set min_val = state_attr(calibration_entity,'min')%}
+          {% set max_val = state_attr(calibration_entity,'max')%}
+          
+          {% set step = state_attr(calibration_entity, 'step') | float(1) %}
+          {% if rounding_mode == 'manual' %} 
+              {% set step = input_calibration_step_size | float(1) %}
           {% endif %}
+
+          {% set current_temp = state_attr(valve,'current_temperature') | float(20) %}
+
+          {% set new_state = value_temperature_sensor | float(current_temp) %}
+          {% set old_state = states(calibration_entity) | float %}
+
+          {% if is_aggressive_mode_calibration %}           
+            {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - value_temperature_sensor | float %}
+
+            {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
+              {% set new_state = new_state + input_aggressive_mode_offset * factor %}
+            {% elif temp_diff * factor > input_aggressive_mode_range %}
+              {% set new_state = new_state - input_aggressive_mode_offset * factor %}
+            {% endif %}
+          {% endif %}
+
+          {% if step <= 1 and max_val | string | count < 4 %}
+            {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
+            {% set new_state = ((new_state | float(0) / step) | round(0) * step) | round(round_size) | float %}
+          {% else %}
+            {% set new_state = new_state * 100 | int %}
+            {% set old_state = old_state | int %}
+          {% endif %}
+
+          {% set update_calibration = old_state != new_state %}
+
+          {% if is_calibration_trigger and not update_calibration %}
+            {% set last_updated = [calibration_entity] | expand | map(attribute='last_updated') | first %}
+            {% set update_calibration = as_datetime(current_time_stamp) - timedelta(minutes=20) >= last_updated %}
+          {% endif %}
+
+          {% if update_calibration %}
+            {% set n.dict = n.dict + [(calibration_entity, [{'value': new_state, 'valve': valve}])] %}
+          {% endif%}
+
         {% endif %}
-
-        {% if step <= 1 and max_val | string | count < 4 %}
-          {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
-          {% set new_state = ((new_state | float(0) / step) | round(0) * step) | round(round_size) | float %}
-        {% else %}
-          {% set new_state = new_state * 100 | int %}
-          {% set old_state = old_state | int %}
-        {% endif %}
-
-        {% set update_calibration = old_state != new_state %}
-
-        {% if is_calibration_trigger and not update_calibration %}
-          {% set last_updated = [calibration_entity] | expand | map(attribute='last_updated') | first %}
-          {% set update_calibration = as_datetime(current_time_stamp) - timedelta(minutes=20) >= last_updated %}
-        {% endif %}
-
-        {% if update_calibration %}
-          {% set n.dict = n.dict + [(calibration_entity, [{'value': new_state, 'valve': valve}])] %}
-        {% endif%}
 
       {% endfor %}
     {% endif %}
