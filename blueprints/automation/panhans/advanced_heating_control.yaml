@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.12
+    **Version**: 5.2.13
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1096,6 +1096,22 @@ blueprint:
           selector:
             time:
 
+        input_liming_protection_duration:
+          name: 🕖 Liming Protection Duration
+          description: >
+            `liming protection`
+
+
+            Duration of liming protection before the thermostat is reset to its initial state.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 30
+              step: 1
+              mode: slider
+              unit_of_measurement: min
+
         input_liming_in_winter:
           name: 🌨️ Liming In Winter / Liming If Automation is Disabled
           description: >
@@ -1495,6 +1511,7 @@ trigger_variables:
   input_liming_protection_day: !input input_liming_protection_day
   input_liming_protection_time: !input input_liming_protection_time
   input_liming_in_winter: !input input_liming_in_winter
+  input_liming_protection_duration: !input input_liming_protection_duration
 
 trigger:
   # system
@@ -1917,8 +1934,17 @@ trigger:
           {% set enable_liming = is_state(input_mode_winter,'on') or input_liming_in_winter %}
         {% endif %}
 
-        {% set is_liming_day = input_liming_protection_day == now().strftime('%a') %}
-        {% set is_liming_time = input_liming_protection_time[:-3] in now().strftime('%H:%M') %}
+        {% set current_timestamp = now() %}
+
+        {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
+
+        {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
+        {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
+
+        {% set today_start = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) %}
+        {% set today_end = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) + timedelta(minutes=input_liming_protection_duration | int) %}
+
+        {% set is_liming_time = as_datetime(current_timestamp) >= today_start and as_datetime(current_timestamp) <= today_end %}
 
         {{ enable_liming and is_liming_day and is_liming_time }}
       {% endif %}
@@ -1934,8 +1960,19 @@ trigger:
           {% set enable_liming = is_state(input_mode_winter,'on') or input_liming_in_winter %}
         {% endif %}
 
-        {% set is_liming_day = input_liming_protection_day == now().strftime('%a') %}
-        {% set is_liming_time = input_liming_protection_time[:-3] in now().strftime('%H:%M') %}
+        {% set current_timestamp = now() %}
+
+        {% set current_timestamp = now() %}
+
+        {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
+
+        {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
+        {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
+
+        {% set today_start = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) %}
+        {% set today_end = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) + timedelta(minutes=input_liming_protection_duration | int) %}
+
+        {% set is_liming_time = as_datetime(current_timestamp) >= today_start and as_datetime(current_timestamp) <= today_end %}
 
         {{ not (enable_liming and is_liming_day and is_liming_time) }}
       {% endif %}
@@ -2006,6 +2043,7 @@ variables:
   input_liming_protection_day: !input input_liming_protection_day
   input_liming_protection_time: !input input_liming_protection_time
   input_liming_in_winter: !input input_liming_in_winter
+  input_liming_protection_duration: !input input_liming_protection_duration
 
   # heating scheduler
   input_schedulers: !input input_schedulers
@@ -2428,10 +2466,17 @@ variables:
         {% set enable_liming = is_state(input_mode_winter,'on') or input_liming_in_winter %}
       {% endif %}
 
-      {% set current_ts = current_time_stamp | as_datetime %}
+      {% set current_timestamp = now() %}
 
-      {% set is_liming_day = input_liming_protection_day == current_ts.strftime('%a') %}
-      {% set is_liming_time = input_liming_protection_time[:-3] in current_ts.strftime('%H:%M') %}
+      {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
+
+      {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
+      {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
+
+      {% set today_start = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) %}
+      {% set today_end = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) + timedelta(minutes=input_liming_protection_duration | int) %}
+
+      {% set is_liming_time = as_datetime(current_timestamp) >= today_start and as_datetime(current_timestamp) <= today_end %}
 
       {{ enable_liming and is_liming_day and is_liming_time }}
     {% endif %}
