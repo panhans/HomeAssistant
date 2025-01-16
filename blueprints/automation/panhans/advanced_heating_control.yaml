@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.14
+    **Version**: 5.2.15
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1529,6 +1529,12 @@ trigger:
     event_data:
       automation: "{{ this.entity_id }}"
 
+  - trigger: event
+    event_type: ahc_positioning_event
+    id: positioning_event
+    event_data:
+      automation: "{{ this.entity_id }}"
+
   # thermostats become available
   - trigger: state
     entity_id: !input input_trvs
@@ -2908,6 +2914,10 @@ variables:
       {% for valve in input_trvs %}
 
         {% set current_temp = state_attr(valve, 'current_temperature') | float(none) %}
+        {% if valid_temperature_sensor %}
+          {% set current_temp = value_temperature_sensor | float(none) %}
+        {% endif %}
+
         {% set target_temp = state_attr(valve, 'temperature') | float(none) %}
 
         {% set open_valve_entity = device_entities(device_id(valve)) | expand 
@@ -2918,9 +2928,8 @@ variables:
 
         {%  if open_valve_entity != none and current_temp != none and target_temp != none and
             (
-              is_force_max_temperature or 
-              ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now() or
-              (trigger_id_defined and 'temperature_change_window_on' in trigger.id)
+              (trigger_id_defined and trigger.id == 'positioning_event') or 
+              ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now()
             )
         %}
 
@@ -2946,7 +2955,7 @@ variables:
           {% set open_valve_entity_value = states(open_valve_entity) | int %}
 
           {% if open_valve_entity_value != opening %}
-            {% set n.dict = n.dict + [(valve, [{'entity': open_valve_entity , 'value': opening}])] %}
+            {% set n.dict = n.dict + [(valve, [{'entity': open_valve_entity , 'value': opening, 'current_temp': current_temp, 'target_temp': target_temp, 'difference': difference}])] %}
           {% endif %}
 
         {% endif %}
@@ -3599,6 +3608,19 @@ actions:
                           temperature: "{{ temp_target | float }}"
                       - delay: !input input_action_call_delay
             
+      - if:
+          - condition: template
+            value_template: "{{ input_valve_positioning_mode != 'off' }}"
+          - condition: template
+            value_template: "{{ changes | count | int > 0 or is_scene_apply_trigger }}"
+        then:
+          - delay: 
+              seconds: 10
+          - event: ahc_positioning_event
+            event_data:
+              automation: "{{ this.entity_id }}"
+          - delay: !input input_action_call_delay
+
       # custom action
       - if:
         - condition: template
