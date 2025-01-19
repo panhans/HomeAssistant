@@ -3699,7 +3699,7 @@ actions:
                   # apply preset or temperature
                   - if:
                       - condition: template
-                        value_template: "{{ input_enable_preset_mode }}"
+                        value_template: "{{ is_preset_mode }}"
                     then:
                       - if:
                           - condition: template
