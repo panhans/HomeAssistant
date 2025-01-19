@@ -2899,7 +2899,7 @@ variables:
     {% endif %}
   target_preset: >
     {% if state_window and input_window_open_temperature > 0 %}
-      {{ input_preset_eco }}
+      {{ input_preset_window_open }}
     {% elif state_party %}
       {{ iif(input_preset_party != none, input_preset_party, input_preset_comfort) }}
     {% elif is_frost_protection %}
