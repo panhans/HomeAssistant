@@ -3681,7 +3681,7 @@ actions:
                         Mode: {{ mode }} {{" \n "}}
                         New Target Temp: {{ temp_target }} {{" \n "}}
                         New Target Preset: {{ preset_target }} {{" \n "}}
-                        Current Target Temp: {{ state_attr(thermostat,'temperature') }}
+                        Current Target Temp: {{ state_attr(thermostat,'temperature') }} {{" \n "}}
                         Current Target Preset: {{ state_attr(thermostat,'preset_mode') }}
                       level: !input input_log_level
                       logger: blueprints.panhans.heatingcontrol
