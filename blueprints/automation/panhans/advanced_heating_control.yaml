@@ -1,5 +1,5 @@
 blueprint:
-  name: 🔥 Advanced Heating Control V5
+  name: 🔥 Advanced Heating Control V5-preset
   author: panhans
   homeassistant:
     min_version: "2024.10.0"
@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.15
+    **Version**: 5.2.15_preset
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -431,6 +431,77 @@ blueprint:
           default: false
           selector:
             boolean:
+
+    # presets
+    preset_section:
+      name: Preset
+      icon: mdi:note
+      collapsed: true
+      input:
+        input_enable_preset_mode:
+          name: 📝 Enable Preset Mode
+          description: >
+            `preset`
+            If you do not want to control your thermostats directly via the HVAC mode and temperatures, you can enable this option to use presets of your thermostats.
+          default: false
+          selector:
+            boolean:
+        input_preset_eco:
+          name: 🍃 Eco Preset
+          description: >
+            `preset` `fallback` 
+            Preset for the Eco mode. This is also used if another mode is not defined and thus serves as a fallback.
+          default: ""
+          selector:
+            text:
+        input_preset_comfort:
+          name: 🛋️ Comfort Preset
+          description: >
+            `preset` `optional`
+            Preset for the Comfort mode.
+          default: ""
+          selector:
+            text:
+        input_preset_off:
+          name: 🔴 Off Preset
+          description: >
+            `preset` `optional`
+            Preset for the Off mode.
+          default: ""
+          selector:
+            text:
+        input_preset_party:
+          name: 🎈 Party Preset
+          description: >
+            `preset` `optional`
+            Preset for the Party mode.
+          default: ""
+          selector:
+            text:
+        input_preset_away:
+          name: 🚶 Away Preset
+          description: >
+            `preset` `optional`
+            Preset for the away mode.
+          default: ""
+          selector:
+            text:
+        input_preset_frost_protection:
+          name: 🥶 Frost Protection Preset
+          description: >
+            `preset` `optional`
+            Preset for the frost protection mode.
+          default: ""
+          selector:
+            text:
+        input_preset_window_open:
+          name: 🪟 Window Open Preset
+          description: >
+            `preset` `optional`
+            Preset for the window open mode.
+          default: ""
+          selector:
+            text:
 
     # persons
     person_section:
@@ -2113,6 +2184,16 @@ variables:
   # heating adjustments
   input_adjustments: !input input_adjustments
 
+  # preset mode
+  is_preset_mode: !input input_enable_preset_mode
+  input_preset_eco: !input input_preset_eco
+  input_preset_comfort: !input input_preset_comfort
+  input_preset_off: !input input_preset_off
+  input_preset_party: !input input_preset_party
+  input_preset_away: !input input_preset_away
+  input_preset_frost_protection: !input input_preset_frost_protection
+  input_preset_window_open: !input input_preset_window_open
+
   # temperature tweaks
   is_reset_temperature: !input input_reset_temperature
   is_off_instead_min: !input input_off_instead_of_eco
@@ -2816,6 +2897,18 @@ variables:
     {% else %}
       {{ iif(set_comfort, iif(is_away, temperature_away, temperature_comfort), temperature_eco) }}
     {% endif %}
+  target_preset: >
+    {% if state_window and input_window_open_temperature > 0 %}
+      {{ input_preset_window_open }}
+    {% elif state_party %}
+      {{ iif(input_preset_party != none, input_preset_party, input_preset_comfort) }}
+    {% elif is_frost_protection %}
+      {{ iif(input_preset_frost_protection != none, input_preset_frost_protection, input_preset_eco) }}
+    {% elif set_comfort %}
+      {{ iif(is_away, iif(input_preset_away != none, input_preset_away, input_preset_eco), input_preset_comfort) }}
+    {% else %}
+      {{ input_preset_eco }}
+    {% endif %}
 
   changes: >
     {% set n = namespace(dict=[]) %}
@@ -2828,12 +2921,14 @@ variables:
       {% for valve in input_trvs %}
 
         {% set current_valve_temp = state_attr(valve, 'current_temperature') | float(20) %}
+        {% set current_valve_preset = state_attr(valve, 'preset_mode') %}
         {% set current_valve_target_temp = state_attr(valve, 'temperature') | float(temperature) %}
         {% set current_valve_mode = states(valve) %}
         {% set min_temp = state_attr(valve, 'min_temp') | float(5) %}
         {% set max_temp = state_attr(valve, 'max_temp') | float(30) %}
 
         {% set valve_temp = target_temperature %}
+        {% set valve_preset = target_preset %}
 
         {% set dont_turn_off = 
               valve in valves_without_off_mode or 
@@ -2894,8 +2989,8 @@ variables:
         {% set valve_temp = iif(valve_temp > max_temp, max_temp, valve_temp) %}
         {% set valve_temp = iif(valve_temp < min_temp, min_temp, valve_temp) %}
 
-        {% if current_valve_mode != valve_mode or current_valve_target_temp != valve_temp %}
-          {% set n.dict = n.dict + [(valve, [{'mode': valve_mode , 'temp': valve_temp}])] %}
+        {% if current_valve_mode != valve_mode or current_valve_target_temp != valve_temp or current_valve_preset != valve_preset %}
+          {% set n.dict = n.dict + [(valve, [{'mode': valve_mode , 'temp': valve_temp, 'preset': valve_preset}])] %}
         {% endif %}
 
       {% endfor %}
@@ -3576,6 +3671,7 @@ actions:
                       thermostat: "{{ (changes.keys() | list) [index] }}"
                       mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
                       temp_target: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
+                      preset_target: "{{ (((changes.values() | list) [index]) | first) ['preset'] }}"
                   - action: system_log.write
                     data:
                       message: >
@@ -3584,7 +3680,9 @@ actions:
                         Thermostat: {{ thermostat }} {{" \n "}}
                         Mode: {{ mode }} {{" \n "}}
                         New Target Temp: {{ temp_target }} {{" \n "}}
-                        Current Target Temp: {{ state_attr(thermostat,'temperature') }}
+                        New Target Preset: {{ preset_target }} {{" \n "}}
+                        Current Target Temp: {{ state_attr(thermostat,'temperature') }} {{" \n "}}
+                        Current Target Preset: {{ state_attr(thermostat,'preset_mode') }}
                       level: !input input_log_level
                       logger: blueprints.panhans.heatingcontrol
 
@@ -3598,15 +3696,31 @@ actions:
                           hvac_mode: "{{ mode }}"
                       - delay: !input input_action_call_delay
 
+                  # apply preset or temperature
                   - if:
                       - condition: template
-                        value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
+                        value_template: "{{ is_preset_mode }}"
                     then:
-                      - action: climate.set_temperature
-                        data:
-                          entity_id: "{{ thermostat }}"
-                          temperature: "{{ temp_target | float }}"
-                      - delay: !input input_action_call_delay
+                      - if:
+                          - condition: template
+                            value_template: "{{ state_attr(thermostat, 'preset_mode') != preset_target and mode != 'off' }}"
+                        then:
+                          - action: climate.set_preset_mode
+                            data:
+                              entity_id: "{{ thermostat }}"
+                              preset_mode: "{{ preset_target }}"
+                          - delay: !input input_action_call_delay
+                    else:
+                      - if:
+                          - condition: template
+                            value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
+                        then:
+                          - action: climate.set_temperature
+                            data:
+                              entity_id: "{{ thermostat }}"
+                              temperature: "{{ temp_target | float }}"
+                          - delay: !input input_action_call_delay
+
             
       - if:
           - condition: template
