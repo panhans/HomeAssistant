@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.2.16
+    **Version**: 5.3.0
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -114,14 +114,12 @@ blueprint:
                   device_class:
                     - temperature
               multiple: false
-                
 
     temperature_section:
       name: Temperatures
       icon: mdi:thermometer
       collapsed: true
       input:
-
         input_temperature_comfort_static:
           name: 🛋️ Static Comfort Temperature
           description: >
@@ -195,7 +193,6 @@ blueprint:
       icon: mdi:sun-clock
       collapsed: true
       input:
-        
         input_adjustments:
           name: 🎛️ Heating Schedule Adjustments
           description: >
@@ -243,6 +240,13 @@ blueprint:
             > Toggle calibration 
 
             > on/off
+            
+
+            > 🔘 **mode**
+
+            > Overwrite the operation mode
+
+            > comfort/eco/off/auto (auto means no overwrite)
 
 
             </details>
@@ -364,7 +368,6 @@ blueprint:
           selector:
             boolean:
 
-
         input_min_instead_of_off:
           name: ⬇️ Min Instead Of Off
           description: >
@@ -375,7 +378,6 @@ blueprint:
           default: false
           selector:
             boolean:
-
 
         input_fahrenheit:
           name: 🇫 Fahrenheit
@@ -427,7 +429,7 @@ blueprint:
 
 
             Enable this if your want to adjust the temperature using your thermostat or thermostat card. Make sure aggressive mode and generic calibration is disabled for this feature. (experimental).
-            You also need to set entities for eco and comfort temperature for the moment. 
+            You also need to set entities for eco and comfort temperature for the moment.
           default: false
           selector:
             boolean:
@@ -804,7 +806,7 @@ blueprint:
               step: 1
               mode: slider
               unit_of_measurement: °C / °F
-            
+
         input_window_legacy_restore:
           name: 🏚️ Legacy Restore
           description: >
@@ -815,7 +817,7 @@ blueprint:
           default: false
           selector:
             boolean:
-    
+
     # calibration
     calibration_section:
       name: Calibration
@@ -823,7 +825,6 @@ blueprint:
       description: ""
       collapsed: true
       input:
-
         input_calibration_timeout:
           name: ⏳ Calibration Timeout
           description: >
@@ -866,7 +867,7 @@ blueprint:
 
             Keyword for finding the calibration entity. This word must be part of the entity id. 
             As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations. Just have a look into your device overview, select your thermostat and check the naming of the *entity_ids* for the calibration.
-          default: 'calibration'
+          default: "calibration"
           selector:
             text:
 
@@ -991,14 +992,13 @@ blueprint:
 
             If you'd setup an temperature sensor and your thermostats allow calibration, you can enable this feature. If enabled the aggressive offset will be add 
             to the calibration value and not the target temperature.
-            
+
             *Note*: This feature is marked as experimental since not every calibration method could be tested. If you notice any problems simple open an issue or 
             post a message in the [AHC-Thread](https://community.home-assistant.io/t/advanced-heating-control/469873). 
             Enable this only if native calibration does NOT work when using generic calibration.
           default: false
           selector:
             boolean:
-
 
     # frost protection
     frostprotection_section:
@@ -1049,7 +1049,7 @@ blueprint:
           name: 🎚️ Liming Protection
           description: >
             `liming protection`
-          
+
 
             Most smart thermostats come with that feature out of the box. 
             If your thermostat doesn't support this or you're using the generic thermostat integration this feature is maybe handy for you in order to prevent your valve against limescale. 
@@ -1063,7 +1063,7 @@ blueprint:
           name: 🗓️ Day
           description: >
             `liming protection`
-          
+
 
             Select the day of the week for the execution.
           default: "Mon"
@@ -1261,19 +1261,19 @@ blueprint:
 
 
             🙁 **pessimistic**: The valve opening is initially left relatively open and only closes rapidly when the target temperature is almost reached.
-          default: 'off'
+          default: "off"
           selector:
             select:
               mode: dropdown
               options:
-                - label: 'off'
-                  value: 'off'
-                - label: 'regular'
-                  value: 'regular'
-                - label: 'optimistic'
-                  value: 'optimistic'
-                - label: 'pessimistic'
-                  value: 'pessimistic'
+                - label: "off"
+                  value: "off"
+                - label: "regular"
+                  value: "regular"
+                - label: "optimistic"
+                  value: "optimistic"
+                - label: "pessimistic"
+                  value: "pessimistic"
 
         input_fully_open_difference:
           name: ↔️ Positioning Temperature Difference
@@ -1302,7 +1302,7 @@ blueprint:
             > If the local temperture is below this range the valve is fully open.
 
             </details>
-              
+
           default: 1
           selector:
             number:
@@ -1319,17 +1319,33 @@ blueprint:
 
 
             The step size of for opening/closing the valve.
-          default: '10'
+          default: "10"
           selector:
             select:
               mode: dropdown
               options:
-                - label: '5%'
-                  value: '5'
-                - label: '10%'
-                  value: '10'
-                - label: '20%'
-                  value: '20'
+                - label: "5%"
+                  value: "5"
+                - label: "10%"
+                  value: "10"
+                - label: "20%"
+                  value: "20"
+
+        input_valve_positioning_max_opening:
+          name: 🎚️ Max Opening Valve Position
+          description: >
+            `valve positioning`
+
+
+            The maximal opening of the valve. Some thermostats have a maximum valve position of 80-90%. You can adjust the value here. *Force Max Temperature* still sets the value to 100%.
+          default: 100
+          selector:
+            number:
+              min: 1
+              max: 100
+              step: 1
+              mode: slider
+              unit_of_measurement: "%"
 
         input_valve_positioning_timeout:
           name: ⏱️ Valve Positioning Timeout
@@ -1352,7 +1368,7 @@ blueprint:
 
 
             The key word for selecting the opening entity of your thermostats.
-          default: 'valve_opening_degree'
+          default: "valve_opening_degree"
           selector:
             text:
 
@@ -1362,7 +1378,6 @@ blueprint:
       icon: mdi:cog-box
       collapsed: true
       input:
-
         input_action_call_delay:
           name: ⚙️ Action Call Delay
           description: >
@@ -1386,7 +1401,7 @@ blueprint:
 
             If your AHC automation is triggered directly after a Home Assistant restart, but the required integrations have not yet been loaded or certain sensors 
             have not yet been initialized, you can set an automation delay here.
-            
+
             *Note:* Make sure that you have set up the uptime integration for this purpose.
           default:
             hours: 0
@@ -1471,7 +1486,7 @@ trigger_variables:
   input_hvac_mode: !input input_hvac_mode
   factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
   is_heat_only_if_below_real_temp: !input input_off_if_above_room_temperature
-  
+
   # on/ff
   input_mode_winter: !input input_mode_winter
   input_mode_outside_temperature: !input input_mode_outside_temperature
@@ -1538,7 +1553,7 @@ trigger:
   # thermostats become available
   - trigger: state
     entity_id: !input input_trvs
-    from: 
+    from:
       - unknown
       - unavailable
     for:
@@ -1578,12 +1593,12 @@ trigger:
 
   - trigger: template
     value_template: >
-        {{ input_persons  | expand 
-                          | selectattr('state', 'eq', 'home') 
-                          | list 
-                          | count == 0 
-          
-          and (not is_guest_mode_defined or (is_guest_mode_defined and states(input_mode_guest) not in ['on','active'])) }}
+      {{ input_persons  | expand 
+                        | selectattr('state', 'eq', 'home') 
+                        | list 
+                        | count == 0 
+        
+        and (not is_guest_mode_defined or (is_guest_mode_defined and states(input_mode_guest) not in ['on','active'])) }}
     id: temperature_change_person_off
     for: !input input_people_leaving_home_duration
 
@@ -1681,7 +1696,7 @@ trigger:
     id: temperature_change_person_proximity_on
     value_template: >
       {% set proximity_entities = device_entities(input_proximity) %}
-      
+
       {% set is_arrived = proximity_entities  
           | select('is_state','arrived') 
           | expand 
@@ -2076,7 +2091,7 @@ variables:
   input_mode_outside_temperature: !input input_mode_outside_temperature
   input_mode_outside_temperature_threshold: !input input_mode_outside_temperature_threshold
   input_mode_room_temperature: !input input_mode_room_temperature
-  input_mode_room_temperature_threshold: !input input_mode_room_temperature_threshold  
+  input_mode_room_temperature_threshold: !input input_mode_room_temperature_threshold
 
   # proximity
   input_proximity: !input input_proximity
@@ -2098,12 +2113,12 @@ variables:
   input_calibration_step_size: !input input_calibration_step_size
   input_calibration_key_word: !input input_calibration_key_word
   input_generic_calibration_offset: !input input_generic_calibration_offset
-  
+
   # Aggressive Mode
   input_aggressive_mode_offset: !input input_aggressive_mode_offset
   input_aggressive_mode_range: !input input_aggressive_mode_range
   input_aggressive_mode_calibration: !input input_aggressive_mode_calibration
-  
+
   # away mode
   input_away_offset: !input input_away_offset
   is_scheduler_away_mode: !input input_away_scheduler_mode
@@ -2133,7 +2148,8 @@ variables:
   input_valve_positioning_step_size: !input input_valve_positioning_step_size
   input_valve_positioning_mode: !input input_valve_positioning_mode
   input_valve_positioning_timeout: !input input_valve_positioning_timeout
-  
+  input_valve_positioning_max_opening: !input input_valve_positioning_max_opening
+
   #####################################################################################
   #################################### EVALUATION #####################################
   #####################################################################################
@@ -2337,7 +2353,7 @@ variables:
 
     {{ selected_scheduler }}
 
-  is_scheduler_defined: "{{ active_scheduler != none }}"  
+  is_scheduler_defined: "{{ active_scheduler != none }}"
 
   state_scheduler: "{{ active_scheduler != none and is_state(active_scheduler,'on') }}"
 
@@ -2502,7 +2518,7 @@ variables:
         | map(attribute='entity_id') 
         | list }}
 
-  valves_without_off_mode: > 
+  valves_without_off_mode: >
     {{ valves | reject('in',valves_off_mode) | list }}
 
   # tado
@@ -2647,6 +2663,14 @@ variables:
       {{ true }}
     {% endif %}
 
+  entry_mode: >
+    {% if entry != none and 'mode' in entry.keys() %}
+      {{ entry['mode'] }}
+    {% else %}
+      {{ auto }}
+    {% endif %}
+
+
   #####################################################################################
   ############################### TRIGGER EVALUATION ##################################
   #####################################################################################
@@ -2689,8 +2713,9 @@ variables:
         and not set_max_temperature
         and not is_away }}
 
-  is_adjustment_trigger: "{{ trigger_id_defined and trigger.id == 'temperature_change_heating_adjustment' and
-                              (entry_comfort_temp != none or entry_eco_temp != none) }}"
+  is_adjustment_trigger:
+    "{{ trigger_id_defined and trigger.id == 'temperature_change_heating_adjustment' and
+    (entry_comfort_temp != none or entry_eco_temp != none) }}"
 
   is_reset: >
     {{ (is_reset_temperature and is_change_trigger) or 
@@ -2782,6 +2807,8 @@ variables:
       {{ 'off' }}
     {% elif state_window and input_window_open_temperature | int == 0 and not set_max_temperature %}
       {{ 'off' }}
+    {% elif entry_mode != 'auto' %}
+      {{ entry_mode }}
     {% elif is_off_instead_min and not set_comfort %} 
       {{ 'off' }}
     {% elif is_off_if_nobody_home and is_person_defined and not is_anybody_home_or_proximity and not set_comfort %}
@@ -2927,7 +2954,7 @@ variables:
             | map(attribute='entity_id') 
             | list | first | default(none) %}
 
-        {%  if open_valve_entity != none and current_temp != none and target_temp != none and
+        {% if open_valve_entity != none and current_temp != none and target_temp != none and
             (
               (trigger_id_defined and trigger.id == 'positioning_event') or 
               ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now()
@@ -2950,6 +2977,9 @@ variables:
 
             {% set opening = iif(difference >= input_fully_open_difference, 100, opening) %}
             {% set opening = iif(difference < 0, 0, opening) %}
+
+            {% set opening = opening / 100 * input_valve_positioning_max_opening %}
+
             {% set opening = ((opening + step_size / 2) // step_size * step_size) | int %}
           {% endif %}
 
@@ -3003,11 +3033,10 @@ variables:
   #####################################################################################
   ################################## CALIBRATION ######################################
   #####################################################################################
-  
 
   is_native_calibration: "{{ not input_calibration_generic and entry_calibration and valid_temperature_sensor }}"
   is_native_calibration_trigger: "{{ is_calibration_trigger and is_native_calibration }}"
-  
+
   rounding_mode: >
     {% if is_number(input_calibration_step_size) or input_calibration_step_size == 'full' %}
       {{ 'manual' }}
@@ -3245,7 +3274,7 @@ variables:
       (is_temperature_sensor_defined and not valid_temperature_sensor)
     }}
 
-  # conditions 
+  # conditions
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
   change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
   reset_trigger: "{{ is_reset_trigger and not no_changes }}"
@@ -3297,7 +3326,7 @@ conditions:
         value_template: "{{ positioning_trigger }}"
 
 actions:
-  - variables: 
+  - variables:
       is_delayed: "{{ not (not is_uptime_defined or (now() | as_datetime - states(up_time_sensor) | as_datetime) > timedelta(**input_startup_delay)) }}"
   - action: system_log.write
     data:
@@ -3306,15 +3335,15 @@ actions:
         'automation delayed: ' + is_delayed | string }}
       level: !input input_log_level
       logger: blueprints.panhans.heatingcontrol
-  - wait_template: > 
+  - wait_template: >
       {{ not is_uptime_defined or (now() | as_datetime - states(up_time_sensor) | as_datetime) > timedelta(**input_startup_delay) }}
   - choose:
-     - conditions: "{{ is_delayed }}"
-       sequence:
-        - event: ahc_delay_event
-          event_data:
-            automation: "{{ this.entity_id }}"
-      
+      - conditions: "{{ is_delayed }}"
+        sequence:
+          - event: ahc_delay_event
+            event_data:
+              automation: "{{ this.entity_id }}"
+
     default:
       - if:
           - condition: template
@@ -3389,9 +3418,9 @@ actions:
                     thermostat: "{{ (((calibration_value_set.values() | list) [index]) | first) ['valve'] }}"
                     offset: "{{ (((calibration_value_set.values() | list) [index]) | first) ['value'] }}"
                     select_entity: "{{ device_entities(device_id(thermostat)) |
-                                expand | selectattr('domain','in','select') |
-                                selectattr('attributes.options', 'contains', 'external') |
-                                map(attribute='entity_id') | list | first | default(none) }}"
+                      expand | selectattr('domain','in','select') |
+                      selectattr('attributes.options', 'contains', 'external') |
+                      map(attribute='entity_id') | list | first | default(none) }}"
 
                 - action: system_log.write
                   data:
@@ -3438,8 +3467,8 @@ actions:
 
       # valve opening
       - if:
-        - condition: template
-          value_template: "{{ positioning_trigger }}"
+          - condition: template
+            value_template: "{{ positioning_trigger }}"
         then:
           - repeat:
               count: "{{ positioning | count | int }}"
@@ -3465,7 +3494,7 @@ actions:
                   target:
                     entity_id: "{{ positioning_entity }}"
                 - delay: !input input_action_call_delay
-                
+
       # scenes
       # scene create
       - if:
@@ -3562,60 +3591,60 @@ actions:
                         value: "{{ reset_temp }}"
                       target:
                         entity_id: "{{ reset_entity }}"
-      
+
           - if:
               - condition: and
                 conditions: !input input_custom_condition
               - condition: template
                 value_template: "{{ changes | count | int > 0 }}"
             then:
-            - repeat:
-                count: "{{ changes | count | int }}"
-                sequence:
-                  - variables:
-                      index: "{{ repeat.index-1 }}"
-                      thermostat: "{{ (changes.keys() | list) [index] }}"
-                      mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
-                      temp_target: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
-                  - action: system_log.write
-                    data:
-                      message: >
-                        AHC - Change - {{ automation_name }} {{" \n "}}
-                        Trigger ID: {{ iif(trigger_id_defined, trigger.id, '') }}
-                        Thermostat: {{ thermostat }} {{" \n "}}
-                        Mode: {{ mode }} {{" \n "}}
-                        New Target Temp: {{ temp_target }} {{" \n "}}
-                        Current Target Temp: {{ state_attr(thermostat,'temperature') }}
-                      level: !input input_log_level
-                      logger: blueprints.panhans.heatingcontrol
+              - repeat:
+                  count: "{{ changes | count | int }}"
+                  sequence:
+                    - variables:
+                        index: "{{ repeat.index-1 }}"
+                        thermostat: "{{ (changes.keys() | list) [index] }}"
+                        mode: "{{ (((changes.values() | list) [index]) | first) ['mode'] }}"
+                        temp_target: "{{ (((changes.values() | list) [index]) | first) ['temp'] }}"
+                    - action: system_log.write
+                      data:
+                        message: >
+                          AHC - Change - {{ automation_name }} {{" \n "}}
+                          Trigger ID: {{ iif(trigger_id_defined, trigger.id, '') }}
+                          Thermostat: {{ thermostat }} {{" \n "}}
+                          Mode: {{ mode }} {{" \n "}}
+                          New Target Temp: {{ temp_target }} {{" \n "}}
+                          Current Target Temp: {{ state_attr(thermostat,'temperature') }}
+                        level: !input input_log_level
+                        logger: blueprints.panhans.heatingcontrol
 
-                  - if:
-                      - condition: template
-                        value_template: "{{ states(thermostat) | lower != mode | lower  }}"
-                    then:
-                      - action: climate.set_hvac_mode
-                        data:
-                          entity_id: "{{ thermostat }}"
-                          hvac_mode: "{{ mode }}"
-                      - delay: !input input_action_call_delay
+                    - if:
+                        - condition: template
+                          value_template: "{{ states(thermostat) | lower != mode | lower  }}"
+                      then:
+                        - action: climate.set_hvac_mode
+                          data:
+                            entity_id: "{{ thermostat }}"
+                            hvac_mode: "{{ mode }}"
+                        - delay: !input input_action_call_delay
 
-                  - if:
-                      - condition: template
-                        value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
-                    then:
-                      - action: climate.set_temperature
-                        data:
-                          entity_id: "{{ thermostat }}"
-                          temperature: "{{ temp_target | float }}"
-                      - delay: !input input_action_call_delay
-            
+                    - if:
+                        - condition: template
+                          value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
+                      then:
+                        - action: climate.set_temperature
+                          data:
+                            entity_id: "{{ thermostat }}"
+                            temperature: "{{ temp_target | float }}"
+                        - delay: !input input_action_call_delay
+
       - if:
           - condition: template
             value_template: "{{ input_valve_positioning_mode != 'off' }}"
           - condition: template
             value_template: "{{ changes | count | int > 0 or is_scene_apply_trigger }}"
         then:
-          - delay: 
+          - delay:
               seconds: 10
           - event: ahc_positioning_event
             event_data:
@@ -3624,8 +3653,8 @@ actions:
 
       # custom action
       - if:
-        - condition: template
-          value_template: "{{ input_custom_action != none }}"
+          - condition: template
+            value_template: "{{ input_custom_action != none }}"
         then: !input "input_custom_action"
-              
+
 mode: queued
