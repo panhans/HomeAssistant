@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.3.0
+    **Version**: 5.3.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2667,7 +2667,7 @@ variables:
     {% if entry != none and 'mode' in entry.keys() %}
       {{ entry['mode'] }}
     {% else %}
-      {{ auto }}
+      {{ 'auto' }}
     {% endif %}
 
 
@@ -2784,7 +2784,13 @@ variables:
   #####################################################################################
 
   set_comfort: >
-    {% if state_party or is_force_max_temperature %}
+    {% if is_force_max_temperature %}
+      {{ true }}
+    {% elif entry_mode == 'eco' %}
+      {{ false }}
+    {% elif entry_mode == 'comfort' %}
+      {{ true }}
+    {% elif state_party %}
       {{ true }}
     {% elif is_force_eco_temperature %}
       {{ false }}
@@ -2807,8 +2813,8 @@ variables:
       {{ 'off' }}
     {% elif state_window and input_window_open_temperature | int == 0 and not set_max_temperature %}
       {{ 'off' }}
-    {% elif entry_mode != 'auto' %}
-      {{ entry_mode }}
+    {% elif entry_mode == 'off' %}
+      {{ 'off' }}
     {% elif is_off_instead_min and not set_comfort %} 
       {{ 'off' }}
     {% elif is_off_if_nobody_home and is_person_defined and not is_anybody_home_or_proximity and not set_comfort %}
