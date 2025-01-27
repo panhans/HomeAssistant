@@ -38,7 +38,7 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.1.2
+    💿 **Version**: 3.1.3
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
@@ -148,8 +148,8 @@ blueprint:
           selector:
             duration:
 
-    mobile_notifcation_section:
-      name: Mobile Notification Settings
+    notifcation_section:
+      name: Notification Settings
       icon: mdi:chat
       collapsed: true
       input:
@@ -204,6 +204,17 @@ blueprint:
 
             If turned on you can't swipe away the notification. It only disappears if the observed entity leave the target state combined with the operator.
           default: false
+          selector:
+            boolean:
+
+        input_notification_auto_delete:
+          name: "❌ Auto Close Notifications"
+          description: >
+            `notification`
+
+
+            If enabled the notifications will be deleted automatically after the entity leaves the target state condition.
+          default: true
           selector:
             boolean:
 
@@ -404,6 +415,7 @@ variables:
   input_led_color: !input input_led_color
   input_stop_button_text: !input input_stop_button_text
   input_entity_states: !input input_entity_states
+  input_notification_auto_delete: !input input_notification_auto_delete
 
   # helper
   is_period_trigger: "{{ trigger.id == 'period' }}"
@@ -470,7 +482,7 @@ condition:
   - condition: or
     conditions:
       - condition: template
-        value_template: "{{ not create_notifictaion }}"
+        value_template: "{{ not create_notifictaion and input_notification_auto_delete }}"
       - condition: and
         conditions:
           - condition: and
