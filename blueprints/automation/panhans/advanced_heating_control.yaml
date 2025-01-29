@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.3.1
+    **Version**: 5.3.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2307,17 +2307,14 @@ variables:
                           | list 
                           | count > 0 }}
       {% else %}
-        {% set somebody_is_home = input_persons | expand
-                                            | selectattr('state', 'eq', 'home')
-                                            | selectattr('last_changed', '<=', on_time_delta)
-                                            | list
-                                            | count > 0 %}
+        {% set persons_home = state_attr('zone.home','persons') | select('in', input_persons) | list %}
 
-        {% set somebody_is_leaving = input_persons | expand 
-                                                | rejectattr('state', 'eq', 'home')
-                                                | selectattr('last_changed', '>', off_time_delta) 
+        {% set somebody_is_home = persons_home  | expand
+                                                | selectattr('last_changed', '<=', on_time_delta)
                                                 | list
                                                 | count > 0 %}
+
+        {% set somebody_is_leaving = persons_home | count == 0 and ['zone.home'] | expand | map(attribute='last_changed') | first > off_time_delta %}
 
         {{ somebody_is_home or somebody_is_leaving }}
       {% endif %}
