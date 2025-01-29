@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.3.2
+    **Version**: 5.3.3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3599,7 +3599,7 @@ actions:
               - condition: and
                 conditions: !input input_custom_condition
               - condition: template
-                value_template: "{{ changes | count | int > 0 }}"
+                value_template: "{{ changes | count | int > 0 and (not no_changes or (no_changes and state_window)) }}"
             then:
               - repeat:
                   count: "{{ changes | count | int }}"
