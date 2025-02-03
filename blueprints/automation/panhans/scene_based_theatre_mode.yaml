@@ -1,0 +1,178 @@
+blueprint:
+  name: 🎬 Scene Based Theatre Mode
+  description: >
+
+    **Features**
+  
+
+    - activates scenes depending on media player states
+    
+    - automatic caching and restoring of the states of the entities of the Playing Scene
+
+    - transition time for switching scenes
+
+
+    **Help & FAQ**: [Scene based theatre mode](https://community.home-assistant.io/t/scene-based-theatre-mode)
+
+
+    **Version**: 2.0
+
+  source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/theatre_mode.yaml"
+  domain: automation
+  input:
+          
+    media_player:
+      name: 📻 Media Player
+      description: >
+        `media player`
+      
+      
+        Media Player, which commands the automation.
+      selector:
+        entity:
+          filter:
+            domain: media_player
+
+    scene_playing:
+      name: ▶️ Playing
+      description: >
+        `scene`
+      
+      
+        Scene to be activated when the player is playing.
+      selector:
+        entity:
+          filter:
+            domain: scene
+
+    scene_paused:
+      name: ⏸️ Paused
+      description: >
+        `scene`
+      
+      
+        Scene to be activated when the player is paused.
+      selector:
+        entity:
+          filter:
+            domain: scene
+
+    reaction_time:
+      name: ⏱️ Reaction time
+      description: >
+        `reaction` `for time`
+
+
+        The time period in which the media player must remain in a state.
+      default: 2
+      selector:
+        number:
+          unit_of_measurement: s
+          min: 1
+          max: 10
+          step: 1
+          mode: slider
+
+    transition:
+      name: ↕ Transition
+      description: >
+        `transition`
+      
+      
+        Transition time during the scene change.
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 10
+          step: 1
+          mode: slider
+
+    input_custom_condition:
+      name: ☑️ Custom Condition
+      description: >
+        `optional`
+
+
+        Block (False) / Allow (True) theatre mode.
+      default: "{{ 1 == 1 }}"
+      selector:
+        condition:
+
+trigger:
+
+  - trigger: state
+    entity_id: !input media_player
+    for:
+      seconds: !input reaction_time
+
+variables:
+
+  media_player: !input media_player
+
+  scene_playing: !input scene_playing
+  scene_paused: !input scene_paused
+  scene_entities: "{{ state_attr(scene_playing,'entity_id') }}"
+
+  scene_init_state: "{{ 'scene.' + this.entity_id | replace('automation.','') | replace('.','_') + '_tm' }}"
+
+  from_state: "{{ trigger.from_state.state }}"
+  to_state: "{{ trigger.to_state.state }}"
+
+  is_start: >
+    {{ 
+      to_state == 'playing' and 
+      from_state not in [ "paused" ]
+    }}
+
+  is_end: >
+    {{ 
+      to_state in ["idle",
+                    "off",
+                    "stopped",
+                    "standby",
+                    "unknown",
+                    "unavailable"]
+    }}
+
+  is_paused: "{{ from_state == 'playing' and to_state == 'paused' }}"
+  is_resume: "{{ from_state == 'paused' and to_state == 'playing' }}"
+
+  scene_to_apply: >
+    {% if is_start or is_resume %}
+      {{ scene_playing }}
+    {% elif is_paused %}
+      {{ scene_paused }}
+    {% elif is_end %}
+      {{ scene_init_state }}
+    {% endif %}
+
+conditions:
+  - condition: template
+    value_template: "{{ is_resume or is_paused or is_end or is_start }}"
+  - condition: and
+    conditions: !input input_custom_condition
+    
+action:
+    - if:
+      - condition: template
+        value_template: "{{ is_start }}"
+      then:
+        - action: scene.create
+          data:
+            scene_id: "{{ scene_init_state.split('.')[1] }}"
+            snapshot_entities: "{{ scene_entities }}"
+        - delay:
+            seconds: 2
+
+    - if:
+      - condition: template
+        value_template: "{{ states[scene_to_apply] != none }}"
+      then:
+      - action: scene.turn_on
+        data:
+          transition: !input transition
+        target:
+          entity_id: "{{ scene_to_apply }}"
+
+mode: queued
