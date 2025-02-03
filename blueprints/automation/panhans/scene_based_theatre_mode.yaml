@@ -5,7 +5,7 @@ blueprint:
     **Features**
   
 
-    🎬 activates scenes depending on media player states
+    🎬 activates scenes depending on media player states and content types
     
     🔁 automatic caching and restoring of the states of the entities of the Playing Scene
 
@@ -15,7 +15,7 @@ blueprint:
     **Help & FAQ**: [Scene based theatre mode](https://community.home-assistant.io/t/scene-based-theatre-mode)
 
 
-    **Version**: 2.0
+    **Version**: 2.1
     
 
     If you like my work and support feel free to support me.
@@ -38,6 +38,23 @@ blueprint:
         entity:
           filter:
             domain: media_player
+    
+    content_type:
+      name: 📺 Content Type
+      description: >
+        `content_type`
+
+
+        Type of content streamed to the media player.
+        Can be used if you want to differentiate scenes
+        based on the content streamed to the media player.
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - "all"
+            - "music"
+            - "video"
 
     scene_playing:
       name: ▶️ Playing
@@ -115,6 +132,7 @@ trigger:
 variables:
 
   media_player: !input media_player
+  content_type: !input content_type
 
   scene_playing: !input scene_playing
   scene_paused: !input scene_paused
@@ -123,12 +141,17 @@ variables:
   scene_init_state: "{{ 'scene.' + this.entity_id | replace('automation.','') | replace('.','_') + '_tm' }}"
 
   from_state: "{{ trigger.from_state.state }}"
+  from_content_type: "{{ trigger.from_state.attributes.media_content_type | default('from_init', true) }}"
   to_state: "{{ trigger.to_state.state }}"
+  to_content_type: "{{ trigger.to_state.attributes.media_content_type | default('to_init', true) }}"
+
+  is_relevant_content: "{{ to_content_type == content_type or content_type == 'all' or to_content_type == 'to_init' }}"
 
   is_start: >
     {{ 
-      to_state == 'playing' and 
-      from_state not in [ "paused" ]
+      to_state == 'playing' and
+      from_state not in [ "paused"] and
+      from_content_type != to_content_type
     }}
 
   is_end: >
@@ -156,6 +179,8 @@ variables:
 conditions:
   - condition: template
     value_template: "{{ is_resume or is_paused or is_end or is_start }}"
+  - condition: template
+    value_template: "{{ is_relevant_content }}"
   - condition: and
     conditions: !input input_custom_condition
     
