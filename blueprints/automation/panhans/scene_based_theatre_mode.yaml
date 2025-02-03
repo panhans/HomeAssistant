@@ -1,23 +1,29 @@
 blueprint:
   name: 🎬 Scene Based Theatre Mode
-  description: >
+  description: "
 
     **Features**
   
 
-    - activates scenes depending on media player states
+    🎬 activates scenes depending on media player states
     
-    - automatic caching and restoring of the states of the entities of the Playing Scene
+    🔁 automatic caching and restoring of the states of the entities of the Playing Scene
 
-    - transition time for switching scenes
+    🌇 transition time for switching scenes
 
 
     **Help & FAQ**: [Scene based theatre mode](https://community.home-assistant.io/t/scene-based-theatre-mode)
 
 
     **Version**: 2.0
+    
 
-  source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/theatre_mode.yaml"
+    If you like my work and support feel free to support me.
+
+    [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
+    "
+
+  source_url: "https://github.com/panhans/HomeAssistant/blob/main/blueprints/automation/panhans/scene_based_theatre_mode.yaml"
   domain: automation
   input:
           
