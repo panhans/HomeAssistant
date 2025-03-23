@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0
+    **Version**: 5.5.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3050,13 +3050,7 @@ variables:
   is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
 
   is_changes_trigger: >
-    {% if state_window %}
-      {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
-        {{ true }}
-      {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
-        {{ false }}
-      {% endif %}
-    {% elif trigger.platform == none %}
+    {% if trigger.platform == none %}
       {{ true }}
     {% elif trigger_id_defined and trigger.id == 'temperature_change_valve_target' %}
       {{ false }}
@@ -3198,7 +3192,6 @@ variables:
           {% set dont_turn_off =
               valve in valves_without_off_mode or
               is_not_off_but_min or
-              (state_window and window_open_temperature > 0 and not is_minimal_config) or
               set_max_temperature %}
 
           {% set ref_temp = current_valve_temp %}
