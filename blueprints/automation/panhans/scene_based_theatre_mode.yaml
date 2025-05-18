@@ -15,7 +15,7 @@ blueprint:
     **Help & FAQ**: [Scene based theatre mode](https://community.home-assistant.io/t/scene-based-theatre-mode)
 
 
-    **Version**: 2.1
+    **Version**: 2.2
     
 
     If you like my work and support feel free to support me.
@@ -145,7 +145,7 @@ variables:
   to_state: "{{ trigger.to_state.state }}"
   to_content_type: "{{ trigger.to_state.attributes.media_content_type | default('to_init', true) }}"
 
-  is_relevant_content: "{{ to_content_type == content_type or content_type == 'all' or to_content_type == 'to_init' }}"
+  is_relevant_content: "{{ to_content_type == content_type or to_content_type == 'all' or to_content_type == 'to_init' }}"
 
   is_start: >
     {{ 
