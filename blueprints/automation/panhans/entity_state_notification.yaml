@@ -10,6 +10,10 @@ blueprint:
 
     📱 multiple groups and devices for notifications possible
 
+    💥 custom notification action
+
+    ⏸️ stoppable and pausable periodic notifications
+
 
     ## 🤙 Features
 
@@ -19,7 +23,7 @@ blueprint:
 
     🧷 persistent notification until entity leaves specified state
 
-    🔄 periodical notification with stop functionality
+    🔄 periodic notification with stop functionality
 
     🎬 custom actions
 
@@ -38,13 +42,15 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.1.3
+    💿 **Version**: 3.2.0
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
     "
   source_url: https://github.com/panhans/HomeAssistant/blob/main/blueprints/automation/panhans/entity_state_notification.yaml
   domain: automation
+  homeassistant:
+    min_version: "2025.04.0"
 
   input:
     sensor_section:
@@ -302,9 +308,9 @@ blueprint:
       collapsed: true
       input:
         input_period:
-          name: "🔄 Periodical Notification"
+          name: "🔄 Periodic Notification"
           description: >
-            `periodical` `notification`
+            `periodic` `notification`
 
 
             Sends notification periodically. 0 means off.
@@ -318,11 +324,59 @@ blueprint:
         input_stop_button_text:
           name: "💬 Stop Button Text"
           description: >
-            `periodical` `optional`
+            `periodic` `optional`
 
 
-            Text for stop button in the notification to interrupt the periodical send notifications.
+            Text for stop button in the notification to interrupt the periodic send notifications.
           default: "Stop notifying"
+
+        input_pause_duration:
+          name: "⏸️ Pause Duration"
+          description: >
+            `periodic` `notification`
+
+
+            If you define a duration greater than 0 a pause button will be shown in your periodic notifications.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 0
+          selector:
+            duration:
+
+        input_pause_button_text:
+          name: "💬 Pause Button Text"
+          description: >
+            `periodic` `optional`
+
+
+            Text for pause button in the notifications.
+          default: "Pause"
+
+    custom_notification_action:
+      name: Notification Action
+      icon: mdi:movie-open
+      collapsed: true
+      input:
+        input_custom_notification_action_button_text:
+          name: "💬 Notification Action Button Text"
+          description: >
+            `custom action` `optional`
+
+
+            Text for the action button in the notification.
+          default: "My Custom Action"
+
+        input_custom_notification_action:
+          name: "🎬 Notification Action"
+          description: >
+            `optional`
+
+
+            Notification action that gets executed when you press the notification action button.
+          default: []
+          selector:
+            action: {}
 
     custom_section:
       name: Custom Actions / Conditions
@@ -364,6 +418,7 @@ blueprint:
 
 trigger_variables:
   input_entities: !input input_entities
+  custom_action_tag: "{{ md5('CA_' + this.entity_id) }}"
 
 trigger:
   - id: "state_on"
@@ -405,6 +460,12 @@ trigger:
     event_data:
       automation: "{{ this.entity_id }}"
 
+  - trigger: event
+    id: "custom_notification_action"
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "{{ custom_action_tag }}"
+
 variables:
   # variables
   input_numeric_entity_operator: !input input_numeric_entity_operator
@@ -417,35 +478,63 @@ variables:
   input_stop_button_text: !input input_stop_button_text
   input_entity_states: !input input_entity_states
   input_notification_auto_delete: !input input_notification_auto_delete
+  input_custom_notification_action_button_text: !input input_custom_notification_action_button_text
+  input_custom_notification_action: !input input_custom_notification_action
+  input_pause_duration: !input input_pause_duration
+  input_pause_button_text: !input input_pause_button_text
 
   # helper
   is_period_trigger: "{{ trigger.id == 'period' }}"
+  is_custom_notification_action_trigger: "{{ trigger.id == 'custom_notification_action' }}"
   now_ts: "{{ now() }}"
   is_perodical: "{{ as_datetime(now_ts) != as_datetime(now_ts) + timedelta(**input_period) }}"
+  is_pausable: "{{ (as_datetime(now_ts) != as_datetime(now_ts) + timedelta(**input_pause_duration)) and is_perodical }}"
   entity: >
     {% if is_period_trigger %}
       {{ trigger.event.data.entity }}
+    {% elif is_custom_notification_action_trigger %}
+      {{ "" }}
     {% else %}
       {{ trigger.entity_id }}
     {% endif %}
+  has_custom_notification_action: "{{ input_custom_notification_action != [] }}"
+  entity_name: >
+    {% if entity == "" %}
+      {{ "" }}
+    {% else %}
+      {{ state_attr(entity, 'friendly_name') }}
+    {% endif %}
 
-  entity_name: "{{ state_attr(entity, 'friendly_name') }}"
-
-  action_tag: "STOP_{{ this.entity_id }}_{{ entity }}"
-  tag: "{{ this.entity_id.split('.')[1] + entity.split('.')[1] }}"
+  action_tag: "{{ md5('STOP_' + this.entity_id + '_' + entity) }}"
+  action_tag_pause: "{{ md5('PAUSE_' + this.entity_id + '_' + entity) }}"
+  custom_action_tag: "{{ md5('CA_' + this.entity_id) }}"
+  tag: >
+    {% if is_custom_notification_action_trigger %}
+      {{ "" }}
+    {% else %}
+      {{ this.entity_id.split('.')[1] + entity.split('.')[1] }}
+    {% endif %}
   notification_color_hex: "#{{ '%02x%02x%02x' | format(input_notification_color[0], input_notification_color[1], input_notification_color[2]) }}"
   led_color_hex: "#{{ '%02x%02x%02x' | format(input_led_color[0], input_led_color[1], input_led_color[2]) }}"
   action: >
-    {% if is_perodical %}
-      {{ [{'action': action_tag, 'title': input_stop_button_text}] }}
-    {% else %}
-      {{ [] }}
+    {% set result = [] %}
+    {% if has_custom_notification_action %}
+      {% set result = result + [{'action': custom_action_tag, 'title': input_custom_notification_action_button_text}] %}
     {% endif %}
+    {% if is_perodical %}
+      {% set result = result + [{'action': action_tag, 'title': input_stop_button_text}] %}
+    {% endif %}
+    {% if is_pausable %}
+      {% set result = result + [{'action': action_tag_pause, 'title': input_pause_button_text}] %}
+    {% endif %}
+    {{ result }}
 
   # state evaluation
   new_state: >
     {% if is_period_trigger %}
       {{ states(entity) }}
+    {% elif is_custom_notification_action_trigger %}
+      {{ none }}
     {% else %}
       {{ trigger.to_state.state }}
     {% endif %}
@@ -453,6 +542,8 @@ variables:
   old_state: >
     {% if is_period_trigger %}
       {{ trigger.event.data.last_state }}
+    {% elif is_custom_notification_action_trigger %}
+      {{ none }}
     {% else %}
       {{ trigger.from_state.state }}
     {% endif %}
@@ -479,9 +570,13 @@ variables:
       (trigger.id in ['below'] and input_numeric_entity_operator == 'below')
     }}
 
+  custom_notification_action_trigger: "{{ trigger.id in ['custom_notification_action'] }}"
+
 condition:
   - condition: or
     conditions:
+      - condition: template
+        value_template: "{{ custom_notification_action_trigger }}"
       - condition: template
         value_template: "{{ not create_notifictaion and input_notification_auto_delete }}"
       - condition: and
@@ -492,112 +587,133 @@ condition:
             value_template: "{{ create_notifictaion }}"
 
 action:
-  - if:
-      - condition: template
-        value_template: "{{ create_notifictaion }}"
-    then:
-      # Notify
-      - if:
+  - choose:
+      - conditions:
           - condition: template
-            value_template: !input input_ha_notification
-        then:
-          - action: persistent_notification.create
-            data:
-              title: !input input_title
-              message: !input input_message
-              notification_id: "{{ tag }}"
-
-      - variables:
-          custom_action_on: !input input_custom_action_on
-      - if:
-          - condition: template
-            value_template: "{{ custom_action_on != none }}"
-        then:
+            value_template: "{{ custom_notification_action_trigger }}"
+        sequence:
           - choose: []
-            default: !input input_custom_action_on
-
-      - repeat:
-          count: "{{ notify | count | int }}"
-          sequence:
-            - variables:
-                index: "{{ repeat.index-1 }}"
-                notify_device: "{{ notify[index] }}"
-            - action: "{{ notify_device }}"
-              data:
-                title: !input input_title
-                message: !input input_message
-                data:
-                  ttl: 0
-                  priority: high
-                  notification_icon: !input "input_status_bar_icon"
-                  tag: "{{ tag }}"
-                  persistent: !input input_persistent_notification
-                  sticky: !input input_persistent_notification
-                  channel: !input input_channel
-                  group: !input input_group
-                  color: "{{ notification_color_hex }}"
-                  vibrationPattern: !input input_vibration_pattern
-                  ledColor: "{{ led_color_hex }}"
-                  actions: "{{ action }}"
-
+            default: !input input_custom_notification_action
+    default:
       - if:
           - condition: template
-            value_template: "{{ is_perodical }}"
+            value_template: "{{ create_notifictaion }}"
         then:
-          # period logic
-          - wait_for_trigger:
-              - trigger: event
-                event_type: mobile_app_notification_action
-                event_data:
-                  action: "{{ action_tag }}"
-            timeout: !input input_period
-          - variables:
-              latest_state: "{{ states(entity) }}"
-              latest_trigger_id: >
-                {% if is_period_trigger %}
-                  {{ trigger.event.data.trigger_id }}
-                {% else %}
-                  {{ trigger.id }}
-                {% endif %}
-              latest_state_condition: >
-                {% if latest_trigger_id == 'state_on' %}
-                  {{ latest_state in input_entity_states }}
-                {% elif latest_trigger_id == 'above' %}
-                  {{ latest_state | float > input_numeric_entity_state | float }}
-                {% elif latest_trigger_id == 'below' %}
-                  {{ latest_state | float < input_numeric_entity_state | float }}
-                {% endif %}
+          # Notify
           - if:
               - condition: template
-                value_template: "{{ latest_state_condition }}"
-              - condition: template
-                value_template: "{{ wait.trigger == none }}"
+                value_template: !input input_ha_notification
             then:
-              - event: esn_event
-                event_data:
-                  entity: "{{ entity }}"
-                  automation: "{{ this.entity_id }}"
-                  last_state: "{{ latest_state }}"
-                  trigger_id: "{{ latest_trigger_id }}"
-    else:
-      # Delete Notifications
-      - action: notify.notify
-        data:
-          data:
-            tag: "{{ tag }}"
-            ttl: 0
-            priority: high
-          message: clear_notification
-      - action: persistent_notification.dismiss
-        data:
-          notification_id: "{{ tag }}"
-      - variables:
-          custom_action_off: !input input_custom_action_off
-      - if:
-          - condition: template
-            value_template: "{{ custom_action_off != none }}"
-        then:
-          - choose: []
-            default: !input input_custom_action_off
+              - action: persistent_notification.create
+                data:
+                  title: !input input_title
+                  message: !input input_message
+                  notification_id: "{{ tag }}"
+
+          - variables:
+              custom_action_on: !input input_custom_action_on
+          - if:
+              - condition: template
+                value_template: "{{ custom_action_on != none }}"
+            then:
+              - choose: []
+                default: !input input_custom_action_on
+
+          - repeat:
+              count: "{{ notify | count | int }}"
+              sequence:
+                - variables:
+                    index: "{{ repeat.index-1 }}"
+                    notify_device: "{{ notify[index] }}"
+                - action: "{{ notify_device }}"
+                  data:
+                    title: !input input_title
+                    message: !input input_message
+                    data:
+                      ttl: 0
+                      priority: high
+                      notification_icon: !input "input_status_bar_icon"
+                      tag: "{{ tag }}"
+                      persistent: !input input_persistent_notification
+                      sticky: !input input_persistent_notification
+                      channel: !input input_channel
+                      group: !input input_group
+                      color: "{{ notification_color_hex }}"
+                      vibrationPattern: !input input_vibration_pattern
+                      ledColor: "{{ led_color_hex }}"
+                      actions: "{{ action }}"
+
+          - if:
+              - condition: template
+                value_template: "{{ is_perodical }}"
+            then:
+              # period logic
+              - wait_for_trigger:
+                  - trigger: event
+                    event_type: mobile_app_notification_action
+                    event_data:
+                      action: "{{ action_tag }}"
+                  - trigger: event
+                    event_type: mobile_app_notification_action
+                    event_data:
+                      action: "{{ action_tag_pause }}"
+                timeout: !input input_period
+              - variables:
+                  is_paused: "{{ wait.trigger != none and wait.trigger.event.data.action == action_tag_pause }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ is_paused }}"
+                then:
+                  - delay: !input input_pause_duration
+              - variables:
+                  latest_state: "{{ states(entity) }}"
+                  latest_trigger_id: >
+                    {% if is_period_trigger %}
+                      {{ trigger.event.data.trigger_id }}
+                    {% else %}
+                      {{ trigger.id }}
+                    {% endif %}
+                  latest_state_condition: >
+                    {% if latest_trigger_id == 'state_on' %}
+                      {{ latest_state in input_entity_states }}
+                    {% elif latest_trigger_id == 'above' %}
+                      {{ latest_state | float > input_numeric_entity_state | float }}
+                    {% elif latest_trigger_id == 'below' %}
+                      {{ latest_state | float < input_numeric_entity_state | float }}
+                    {% endif %}
+              - if:
+                  - condition: or
+                    conditions:
+                      - condition: template
+                        value_template: "{{ latest_state_condition and wait.trigger == none }}"
+                      - condition: template
+                        value_template: "{{ latest_state_condition and is_paused }}"
+                then:
+                  - event: esn_event
+                    event_data:
+                      entity: "{{ entity }}"
+                      automation: "{{ this.entity_id }}"
+                      last_state: "{{ latest_state }}"
+                      trigger_id: "{{ latest_trigger_id }}"
+        else:
+          # Delete Notifications
+          - action: notify.notify
+            data:
+              data:
+                tag: "{{ tag }}"
+                ttl: 0
+                priority: high
+              message: clear_notification
+          - action: persistent_notification.dismiss
+            data:
+              notification_id: "{{ tag }}"
+          - variables:
+              custom_action_off: !input input_custom_action_off
+          - if:
+              - condition: template
+                value_template: "{{ custom_action_off != none }}"
+            then:
+              - choose: []
+                default: !input input_custom_action_off
 
 mode: parallel
