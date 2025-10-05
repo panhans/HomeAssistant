@@ -42,7 +42,7 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.2.0
+    💿 **Version**: 3.2.1
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
@@ -418,7 +418,6 @@ blueprint:
 
 trigger_variables:
   input_entities: !input input_entities
-  custom_action_tag: "{{ md5('CA_' + this.entity_id) }}"
 
 trigger:
   - id: "state_on"
@@ -464,7 +463,7 @@ trigger:
     id: "custom_notification_action"
     event_type: mobile_app_notification_action
     event_data:
-      action: "{{ custom_action_tag }}"
+      action: "{{ md5('CA_' + this.entity_id) }}"
 
 variables:
   # variables
