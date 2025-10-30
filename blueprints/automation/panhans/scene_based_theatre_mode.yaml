@@ -48,6 +48,7 @@ blueprint:
         Type of content streamed to the media player.
         Can be used if you want to differentiate scenes
         based on the content streamed to the media player.
+      default: "all"
       selector:
         select:
           mode: dropdown
