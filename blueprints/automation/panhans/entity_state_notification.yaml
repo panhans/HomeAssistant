@@ -42,7 +42,7 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.2.1
+    💿 **Version**: 3.2.2
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
@@ -463,7 +463,7 @@ trigger:
     id: "custom_notification_action"
     event_type: mobile_app_notification_action
     event_data:
-      action: "{{ md5('CA_' + this.entity_id) }}"
+      action: "{{ 'CA_' + this.entity_id }}"
 
 variables:
   # variables
@@ -506,7 +506,7 @@ variables:
 
   action_tag: "{{ md5('STOP_' + this.entity_id + '_' + entity) }}"
   action_tag_pause: "{{ md5('PAUSE_' + this.entity_id + '_' + entity) }}"
-  custom_action_tag: "{{ md5('CA_' + this.entity_id) }}"
+  custom_action_tag: "{{ 'CA_' + this.entity_id }}"
   tag: >
     {% if is_custom_notification_action_trigger %}
       {{ "" }}
@@ -641,6 +641,8 @@ action:
                       vibrationPattern: !input input_vibration_pattern
                       ledColor: "{{ led_color_hex }}"
                       actions: "{{ action }}"
+                      action_data:
+                        custom_data: "{{ 'wasd' }}"
 
           - if:
               - condition: template
