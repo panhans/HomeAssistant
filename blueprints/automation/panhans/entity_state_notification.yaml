@@ -42,7 +42,7 @@ blueprint:
     ⛑️ **Help & FAQ**: [Entity State Notification](https://community.home-assistant.io/t/entity-state-notification)
 
 
-    💿 **Version**: 3.2.2
+    💿 **Version**: 3.2.3
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
@@ -160,6 +160,23 @@ blueprint:
       icon: mdi:chat
       collapsed: true
       input:
+        input_entity_operator:
+          name: "➕ Entity Operator"
+          description: >
+            `tweak`
+
+
+            *OR* means at least one entity has to match any target state in order to trigger a notification.
+
+
+            *AND* means all entities must be in a target state at the same time to trigger the notification otherwise all notifications get cleared.
+          default: OR
+          selector:
+            select:
+              options:
+                - OR
+                - AND
+
         input_notify_devices:
           name: "📱 Device to notify"
           description: >
@@ -481,6 +498,10 @@ variables:
   input_custom_notification_action: !input input_custom_notification_action
   input_pause_duration: !input input_pause_duration
   input_pause_button_text: !input input_pause_button_text
+  
+  input_entities: !input input_entities
+  input_numeric_entities: !input input_numeric_entities
+  input_entity_operator: !input input_entity_operator
 
   # helper
   is_period_trigger: "{{ trigger.id == 'period' }}"
@@ -528,6 +549,33 @@ variables:
     {% endif %}
     {{ result }}
 
+  # entity operator
+  entities: "{{ input_entities + input_numeric_entities }}"
+  operator_condition: >
+    {% set entity_count = entities | count %}
+    {% set entity_match_count = input_entities | expand | selectattr('state', 'in', input_entity_states) | list | count %}
+    {% set eop = iif(input_numeric_entity_operator == 'above', '>', '<') %}
+    {% set nummeric_entity_match_count = input_numeric_entities | expand | selectattr('state', eop, input_numeric_entity_state) | list | count %}
+    {% set entity_match_count_sum = entity_match_count + nummeric_entity_match_count %}
+    {% if input_entity_operator == 'AND' %}
+      {{ entity_count == entity_match_count_sum }}
+    {% elif input_entity_operator == 'OR' %}
+      {{ entity_match_count_sum > 0 }}
+    {% else %}
+      false
+    {% endif %}
+
+  tags_to_delete: >
+    {% if input_entity_operator == 'OR' %}
+      {{ [tag] }}
+    {% else %}
+      {% set tags = namespace(vals=[]) %}
+      {% for e in entities %}
+        {% set tags.vals = tags.vals + [this.entity_id.split('.')[1] + e.split('.')[1]] %}
+      {% endfor %}
+      {{ tags.vals }}
+    {% endif %}
+
   # state evaluation
   new_state: >
     {% if is_period_trigger %}
@@ -564,9 +612,10 @@ variables:
   # trigger evaluation
   create_notifictaion: >
     {{ 
-      trigger.id in ['state_on','period'] or 
+      (trigger.id in ['state_on','period'] or 
       (trigger.id in ['above'] and input_numeric_entity_operator == 'above') or
-      (trigger.id in ['below'] and input_numeric_entity_operator == 'below')
+      (trigger.id in ['below'] and input_numeric_entity_operator == 'below')) and
+      operator_condition
     }}
 
   custom_notification_action_trigger: "{{ trigger.id in ['custom_notification_action'] }}"
@@ -698,16 +747,22 @@ action:
                       trigger_id: "{{ latest_trigger_id }}"
         else:
           # Delete Notifications
-          - action: notify.notify
-            data:
-              data:
-                tag: "{{ tag }}"
-                ttl: 0
-                priority: high
-              message: clear_notification
-          - action: persistent_notification.dismiss
-            data:
-              notification_id: "{{ tag }}"
+          - repeat:
+              count: "{{ tags_to_delete | count | int }}"
+              sequence:
+                - variables:
+                    index: "{{ repeat.index-1 }}"
+                    tag_to_delete: "{{ tags_to_delete[index] }}"
+                - action: notify.notify
+                  data:
+                    data:
+                      tag: "{{ tag_to_delete }}"
+                      ttl: 0
+                      priority: high
+                    message: clear_notification
+                - action: persistent_notification.dismiss
+                  data:
+                    notification_id: "{{ tag_to_delete }}"
           - variables:
               custom_action_off: !input input_custom_action_off
           - if:
