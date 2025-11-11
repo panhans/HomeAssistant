@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.3.4
+    **Version**: 5.3.5
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2719,13 +2719,7 @@ variables:
         is_pysical_change or is_adjustment_trigger }}
 
   is_changes_trigger: >
-    {% if state_window %}
-      {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
-        {{ true }}
-      {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
-        {{ false }}
-      {% endif %}
-    {% elif trigger.platform == none %}
+    {% if trigger.platform == none %}
       {{ true }}
     {% elif trigger_id_defined and trigger.id == 'temperature_change_valve_target' %}
       {{ false }}
@@ -2869,7 +2863,6 @@ variables:
         {% set dont_turn_off = 
               valve in valves_without_off_mode or 
               is_not_off_but_min or 
-              (state_window and input_window_open_temperature > 0) or
               set_max_temperature %}
 
         {% set ref_temp = current_valve_temp %}
