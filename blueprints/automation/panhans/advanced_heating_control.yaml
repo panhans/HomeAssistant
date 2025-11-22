@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.3.4
+    **Version**: 5.4.0
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2521,10 +2521,20 @@ variables:
   # tado
   valves_tado: "{{ valves | select('is_device_attr', 'manufacturer', 'Tado') | list }}"
 
-  # xiaomi / aqara
-  valves_xiaomi_xiaomi: "{{ valves | select('is_device_attr', 'manufacturer', 'Xiaomi') | list }}"
-  valves_xiaomi_aqara: "{{ valves | select('is_device_attr', 'manufacturer', 'Aqara') | list }}"
-  valves_xiaomi: "{{ valves_xiaomi_xiaomi + valves_xiaomi_aqara }}"
+  # valves external thermometer support
+  valves_external: >
+    {% set result = namespace(r=[]) %} 
+    {% for valve in valves %} 
+      {% set select = device_entities(device_id(valve)) 
+                        | expand 
+                        | selectattr('domain','in','select') 
+                        | selectattr('attributes.options', 'contains', 'external') 
+                        | map(attribute='entity_id') | list | first | default(none) %} 
+      {% if select != none %} 
+        {% set result.r = result.r + [valve] %} 
+      {% endif %} 
+    {% endfor %} 
+    {{ result.r }}
 
   # danfoss / popp / hive
   valves_danfoss: "{{ valves | select('is_device_attr', 'manufacturer', 'Danfoss') | list }}"
@@ -2532,7 +2542,7 @@ variables:
   valves_hive: "{{ valves | select('is_device_attr', 'manufacturer', 'Hive') | list }}"
   valves_dph: "{{ valves_danfoss + valves_popp + valves_hive }}"
 
-  valves_calibration_common: "{{ valves | reject('in', valves_tado + valves_dph + valves_xiaomi) | list }}"
+  valves_calibration_common: "{{ valves | reject('in', valves_tado + valves_dph + valves_external) | list }}"
 
   # global
   last_comfort_entity_change: "{{ [input_temperature_comfort_entity] | expand | map(attribute='last_changed') | list | first | default(none) }}"
@@ -3087,12 +3097,12 @@ variables:
 
     {{ dict.from_keys(n.dict) }}
 
-  # XIAOMI / AQARA
-  calibration_xiaomi: >
+  # XIAOMI / AQARA / SONOFF
+  calibration_external: >
     {% set n = namespace(dict=[]) %}
 
     {% if is_native_calibration_trigger %}
-      {% for valve in valves_xiaomi %}
+      {% for valve in valves_external %}
 
         {% set calibration_entities = device_entities(device_id(valve)) |
                                     expand | selectattr('domain','in','number') |
@@ -3261,7 +3271,7 @@ variables:
 
     {{ dict.from_keys(n.dict) }}
 
-  calibration_value_set: "{{ dict(dict(calibration_xiaomi, **calibration_dph),**calibration_common) }}"
+  calibration_value_set: "{{ dict(dict(calibration_external, **calibration_dph),**calibration_common) }}"
 
   ##############################################################################################
   ################################## CONDITIONS / BLOCKER ######################################
@@ -3424,6 +3434,7 @@ actions:
                       expand | selectattr('domain','in','select') |
                       selectattr('attributes.options', 'contains', 'external') |
                       map(attribute='entity_id') | list | first | default(none) }}"
+                    is_external: "{{ select_entity != none and not is_state(select_entity, 'external') }}"
 
                 - action: system_log.write
                   data:
@@ -3436,9 +3447,7 @@ actions:
 
                 - if:
                     - condition: template
-                      value_template: "{{ thermostat in valves_xiaomi }}"
-                    - condition: template
-                      value_template: "{{ select_entity != none and not is_state(select_entity, 'external') }}"
+                      value_template: "{{ is_external }}"
                   then:
                     - action: select.select_option
                       target:
