@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.4.0
+    **Version**: 5.4.1
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -101,7 +101,7 @@ blueprint:
 
             Temperature calibration for your [thermostats](https://www.home-assistant.io/integrations/climate/). The following is supported:
 
-              * Tado, Aqara, Popp, Danfoss, Hive, Tuya
+              * Tado, Aqara, Popp, Danfoss, Hive, Bosch, SONOFF, Tuya
               * generic calibration
 
             Note: This is an additional sensor inside your room usually next to your favourite spot. [Thermostats](https://www.home-assistant.io/integrations/climate/) or its integration (e.g. Z2M or ZHA) except Tado should provide a seperate calibration entity.
@@ -1923,8 +1923,9 @@ trigger:
       {% set has_valves_danfoss = input_trvs | select('is_device_attr', 'manufacturer', 'Danfoss') | list  %}
       {% set has_valves_popp = input_trvs | select('is_device_attr', 'manufacturer', 'Popp') | list %}
       {% set valves_hive = input_trvs | select('is_device_attr', 'manufacturer', 'Hive') | list %}
+      {% set valves_bosch = input_trvs | select('is_device_attr', 'manufacturer', 'Bosch') | list %}
 
-      {% set has_valves = (has_valves_danfoss + has_valves_popp + valves_hive) | count > 0 %}
+      {% set has_valves = (has_valves_danfoss + has_valves_popp + valves_hive + valves_bosch) | count > 0 %}
 
       {{ has_valves and is_temperature_sensor_defined and now().strftime('%M') | int % 10 == 0 }}
 
@@ -2536,11 +2537,12 @@ variables:
     {% endfor %} 
     {{ result.r }}
 
-  # danfoss / popp / hive
+  # danfoss / popp / hive / Bosch
   valves_danfoss: "{{ valves | select('is_device_attr', 'manufacturer', 'Danfoss') | list }}"
   valves_popp: "{{ valves | select('is_device_attr', 'manufacturer', 'Popp') | list }}"
   valves_hive: "{{ valves | select('is_device_attr', 'manufacturer', 'Hive') | list }}"
-  valves_dph: "{{ valves_danfoss + valves_popp + valves_hive }}"
+  valves_bosch: "{{ valves | select('is_device_attr', 'manufacturer', 'Bosch') | list }}"
+  valves_dph: "{{ valves_danfoss + valves_popp + valves_hive + valves_bosch }}"
 
   valves_calibration_common: "{{ valves | reject('in', valves_tado + valves_dph + valves_external) | list }}"
 
