@@ -44,7 +44,7 @@ blueprint:
 
 
 
-    **Version**: 5.4.1
+    **Version**: 5.4.2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3151,7 +3151,7 @@ variables:
 
     {{ dict.from_keys(n.dict) }}
 
-  # DANFOSS, POPP, HIVE
+  # DANFOSS, POPP, HIVE, BOSCH
   calibration_dph: >
     {% set n = namespace(dict=[]) %}
     {% if is_native_calibration_trigger %}
@@ -3163,7 +3163,7 @@ variables:
                                     selectattr('entity_id', 'search', input_calibration_key_word) |
                                     map(attribute='entity_id') | list %}
 
-        {% if calibration_entity != calibration_entities | count > 0 %}
+        {% if calibration_entities | count > 0 %}
 
           {% set calibration_entity = calibration_entities | first %}
 
