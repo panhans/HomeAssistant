@@ -43,6 +43,10 @@ blueprint:
     🤫 calm & 💪 reliable
 
 
+    **Ensure that you have installed the uptime integration:**
+
+    [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
+
 
     **Version**: 5.4.2
 
