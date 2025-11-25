@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.4.2
+    **Version**: 5.4.3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -854,6 +854,8 @@ blueprint:
 
             If the difference between the [thermostat](https://www.home-assistant.io/integrations/climate/) temperature and the external sensor temperature is greater or less than the calibration delta the [thermostat](https://www.home-assistant.io/integrations/climate/) calibration will be triggered.<br/>
             The lower the delta the often calibration gets triggered.
+
+            **HINT:** If your thermostat supports external temperature sensor values it is recommended to set this to a lower value like 0 - 0.2.
           default: 0.5
           selector:
             number:
@@ -3194,7 +3196,7 @@ variables:
             {% endif %}
           {% endif %}
 
-          {% if step <= 1 and max_val | string | count < 4 %}
+          {% if step <= 1 and max_val | float < 1000 %}
             {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
             {% set new_state = ((new_state | float(0) / step) | round(0) * step) | round(round_size) | float %}
           {% else %}
