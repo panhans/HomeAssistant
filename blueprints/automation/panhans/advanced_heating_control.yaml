@@ -1416,6 +1416,46 @@ blueprint:
           selector:
             duration:
 
+        input_retry_enabled:
+          name: ♻️ Retry Thermostat Commands
+          description: >
+            `tweak`
+
+
+            If enabled, thermostat mode/temperature commands will be re-sent multiple times while the state still does not match the target.
+          default: false
+          selector:
+            boolean:
+
+        input_retry_attempts:
+          name: 🔁 Retry Attempts
+          description: >
+            `tweak`
+
+
+            Number of rounds to retry thermostat commands while the state still does not match the target.
+          default: 3
+          selector:
+            number:
+              min: 1
+              max: 10
+              step: 1
+              mode: slider
+
+        input_retry_interval:
+          name: ⏱ Retry Interval
+          description: >
+            `tweak`
+
+
+            Additional delay between retry rounds. Combined with the action call delay this limits the overall retry window.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 10
+          selector:
+            duration:
+
         # custom action
         input_custom_action:
           name: 🎬 Custom Action
@@ -2148,6 +2188,9 @@ variables:
   input_action_call_delay: !input input_action_call_delay
   input_custom_action: !input input_custom_action
   input_startup_delay: !input input_startup_delay
+  is_retry_enabled: !input input_retry_enabled
+  input_retry_attempts: !input input_retry_attempts
+  input_retry_interval: !input input_retry_interval
 
   # valve positioning
   input_fully_open_difference: !input input_fully_open_difference
@@ -3638,25 +3681,34 @@ actions:
                         level: !input input_log_level
                         logger: blueprints.panhans.heatingcontrol
 
-                    - if:
-                        - condition: template
-                          value_template: "{{ states(thermostat) | lower != mode | lower  }}"
-                      then:
-                        - action: climate.set_hvac_mode
-                          data:
-                            entity_id: "{{ thermostat }}"
-                            hvac_mode: "{{ mode }}"
-                        - delay: !input input_action_call_delay
+                    - repeat:
+                        count: "{{ iif(is_retry_enabled, input_retry_attempts | int, 1) }}"
+                        sequence:
+                          - if:
+                              - condition: template
+                                value_template: "{{ states(thermostat) | lower != mode | lower  }}"
+                            then:
+                              - action: climate.set_hvac_mode
+                                data:
+                                  entity_id: "{{ thermostat }}"
+                                  hvac_mode: "{{ mode }}"
+                              - delay: !input input_action_call_delay
 
-                    - if:
-                        - condition: template
-                          value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
-                      then:
-                        - action: climate.set_temperature
-                          data:
-                            entity_id: "{{ thermostat }}"
-                            temperature: "{{ temp_target | float }}"
-                        - delay: !input input_action_call_delay
+                          - if:
+                              - condition: template
+                                value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
+                            then:
+                              - action: climate.set_temperature
+                                data:
+                                  entity_id: "{{ thermostat }}"
+                                  temperature: "{{ temp_target | float }}"
+                              - delay: !input input_action_call_delay
+
+                          - if:
+                              - condition: template
+                                value_template: "{{ is_retry_enabled and repeat.index < (input_retry_attempts | int) }}"
+                            then:
+                              - delay: !input input_retry_interval
 
       - if:
           - condition: template
