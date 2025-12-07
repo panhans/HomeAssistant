@@ -244,7 +244,7 @@ blueprint:
             > Toggle calibration 
 
             > on/off
-            
+
 
             > 🔘 **mode**
 
@@ -810,6 +810,20 @@ blueprint:
               step: 1
               mode: slider
               unit_of_measurement: °C / °F
+
+        input_window_open_temperature_eco_number:
+          name: Window Open Eco Temperature (input_number)
+          description: >
+            `airing` `optional`
+
+            Optional *input_number* helper to control the window open temperature when the window is open.
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_number
+              multiple: false
 
         input_window_legacy_restore:
           name: 🏚️ Legacy Restore
@@ -2088,6 +2102,7 @@ variables:
   input_windows_reaction_time_open: !input input_windows_reaction_time_open
   input_windows_reaction_time_close: !input input_windows_reaction_time_close
   input_window_open_temperature: !input input_window_open_temperature
+  input_window_open_temperature_eco_number: !input input_window_open_temperature_eco_number
   input_party_legacy_restore: !input input_party_legacy_restore
   input_window_legacy_restore: !input input_window_legacy_restore
   is_legacy_restore: "{{ input_party_legacy_restore or input_window_legacy_restore }}"
@@ -2102,6 +2117,20 @@ variables:
 
   # proximity
   input_proximity: !input input_proximity
+
+  window_open_temperature_eco: >
+    {% if input_window_open_temperature_eco_number != none and input_window_open_temperature_eco_number != [] %}
+      {{ states(input_window_open_temperature_eco_number) | float }}
+    {% else %}
+      {{ none }}
+    {% endif %}
+
+  window_open_temperature_effective: >
+    {% if (not (set_comfort | default(false))) and window_open_temperature_eco != none %}
+      {{ window_open_temperature_eco }}
+    {% else %}
+      {{ input_window_open_temperature }}
+    {% endif %}
 
   # people
   input_persons: !input input_persons
@@ -2685,7 +2714,6 @@ variables:
       {{ 'auto' }}
     {% endif %}
 
-
   #####################################################################################
   ############################### TRIGGER EVALUATION ##################################
   #####################################################################################
@@ -2826,7 +2854,7 @@ variables:
   mode: >
     {% if not state_ahc %}
       {{ 'off' }}
-    {% elif state_window and input_window_open_temperature | int == 0 and not set_max_temperature %}
+    {% elif state_window and window_open_temperature_effective | int == 0 and not set_max_temperature %}
       {{ 'off' }}
     {% elif entry_mode == 'off' %}
       {{ 'off' }}
@@ -2856,8 +2884,10 @@ variables:
   temperature_away: "{{ temperature_comfort | float - input_away_offset }}"
   temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, input_temperature_eco_static] | reject('==', none) | first }}"
   target_temperature: >
-    {% if state_window and input_window_open_temperature > 0 %}
-      {{ input_window_open_temperature }}
+    {% if state_window and (not set_comfort and window_open_temperature_eco != none and window_open_temperature_eco > 0) %}
+      {{ window_open_temperature_eco }}
+    {% elif state_window and window_open_temperature_effective > 0 %}
+      {{ window_open_temperature_effective }}
     {% elif state_party %}
       {{ iif(party_temp != none, party_temp, temperature_comfort) }}
     {% elif is_frost_protection %}
@@ -2884,11 +2914,11 @@ variables:
 
         {% set valve_temp = target_temperature %}
 
-        {% set dont_turn_off = 
-              valve in valves_without_off_mode or 
-              is_not_off_but_min or 
-              (state_window and input_window_open_temperature > 0) or
-              set_max_temperature %}
+          {% set dont_turn_off = 
+            valve in valves_without_off_mode or 
+            is_not_off_but_min or 
+            (state_window and (window_open_temperature_effective | float > 0)) or
+            set_max_temperature %}
 
         {% set ref_temp = current_valve_temp %}
         {% if valid_temperature_sensor %}
