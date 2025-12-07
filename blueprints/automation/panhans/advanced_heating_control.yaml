@@ -244,7 +244,7 @@ blueprint:
             > Toggle calibration 
 
             > on/off
-            
+
 
             > 🔘 **mode**
 
@@ -2126,7 +2126,7 @@ variables:
     {% endif %}
 
   window_open_temperature_effective: >
-    {% if (not set_comfort) and window_open_temperature_eco != none %}
+    {% if (not (set_comfort | default(false))) and window_open_temperature_eco != none %}
       {{ window_open_temperature_eco }}
     {% else %}
       {{ input_window_open_temperature }}
@@ -2713,7 +2713,6 @@ variables:
     {% else %}
       {{ 'auto' }}
     {% endif %}
-
 
   #####################################################################################
   ############################### TRIGGER EVALUATION ##################################
