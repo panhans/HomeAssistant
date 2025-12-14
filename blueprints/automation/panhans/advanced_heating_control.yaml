@@ -1257,7 +1257,7 @@ blueprint:
             `valve positioning`
 
 
-             If your thermostat supports valve positioning you can enable this here. Everytime the autmation gets triggered the code checks if there is an adjustment needed.
+             If your thermostat supports valve positioning you can enable this here. Everytime the automation gets triggered the code checks if there is an adjustment needed.
 
 
             📈 **regular**: means linear. The valve will open close proportional to the difference of the target and room temperature.
