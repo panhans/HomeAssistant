@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.4.3
+    **Version**: 5.5.0
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -796,7 +796,7 @@ blueprint:
             duration:
 
         input_window_open_temperature:
-          name: Window Open Temperature
+          name: 🌡️ Window Open Temperature
           description: >
             `airing` 
 
@@ -811,8 +811,8 @@ blueprint:
               mode: slider
               unit_of_measurement: °C / °F
 
-        input_window_open_temperature_eco_number:
-          name: Window Open Eco Temperature (input_number)
+        input_window_open_temperature_number:
+          name: 🌡️ Window Open Temperature Entity
           description: >
             `airing` `optional`
 
@@ -2102,7 +2102,7 @@ variables:
   input_windows_reaction_time_open: !input input_windows_reaction_time_open
   input_windows_reaction_time_close: !input input_windows_reaction_time_close
   input_window_open_temperature: !input input_window_open_temperature
-  input_window_open_temperature_eco_number: !input input_window_open_temperature_eco_number
+  input_window_open_temperature_number: !input input_window_open_temperature_number
   input_party_legacy_restore: !input input_party_legacy_restore
   input_window_legacy_restore: !input input_window_legacy_restore
   is_legacy_restore: "{{ input_party_legacy_restore or input_window_legacy_restore }}"
@@ -2117,20 +2117,6 @@ variables:
 
   # proximity
   input_proximity: !input input_proximity
-
-  window_open_temperature_eco: >
-    {% if input_window_open_temperature_eco_number != none and input_window_open_temperature_eco_number != [] %}
-      {{ states(input_window_open_temperature_eco_number) | float }}
-    {% else %}
-      {{ none }}
-    {% endif %}
-
-  window_open_temperature_effective: >
-    {% if (not (set_comfort | default(false))) and window_open_temperature_eco != none %}
-      {{ window_open_temperature_eco }}
-    {% else %}
-      {{ input_window_open_temperature }}
-    {% endif %}
 
   # people
   input_persons: !input input_persons
@@ -2851,10 +2837,17 @@ variables:
       {% endif %}
     {% endif %}
 
+  window_open_temperature: >
+    {% if input_window_open_temperature_number != none %}
+      {{ states(input_window_open_temperature_number) | float }}
+    {% else %}
+      {{ input_window_open_temperature }}
+    {% endif %}
+
   mode: >
     {% if not state_ahc %}
       {{ 'off' }}
-    {% elif state_window and window_open_temperature_effective | int == 0 and not set_max_temperature %}
+    {% elif state_window and window_open_temperature | float == 0 and not set_max_temperature %}
       {{ 'off' }}
     {% elif entry_mode == 'off' %}
       {{ 'off' }}
@@ -2884,10 +2877,8 @@ variables:
   temperature_away: "{{ temperature_comfort | float - input_away_offset }}"
   temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, input_temperature_eco_static] | reject('==', none) | first }}"
   target_temperature: >
-    {% if state_window and (not set_comfort and window_open_temperature_eco != none and window_open_temperature_eco > 0) %}
-      {{ window_open_temperature_eco }}
-    {% elif state_window and window_open_temperature_effective > 0 %}
-      {{ window_open_temperature_effective }}
+    {% if state_window and window_open_temperature > 0 %}
+      {{ window_open_temperature }}
     {% elif state_party %}
       {{ iif(party_temp != none, party_temp, temperature_comfort) }}
     {% elif is_frost_protection %}
@@ -2914,10 +2905,10 @@ variables:
 
         {% set valve_temp = target_temperature %}
 
-          {% set dont_turn_off = 
+        {% set dont_turn_off = 
             valve in valves_without_off_mode or 
             is_not_off_but_min or 
-            (state_window and (window_open_temperature_effective | float > 0)) or
+            (state_window and window_open_temperature > 0) or
             set_max_temperature %}
 
         {% set ref_temp = current_valve_temp %}
