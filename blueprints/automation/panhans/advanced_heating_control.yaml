@@ -2540,6 +2540,99 @@ variables:
   valves_without_off_mode: >
     {{ valves | reject('in',valves_off_mode) | list }}
 
+  #####################################################################################
+  ################################## CALIBRATION DATA #################################
+  #####################################################################################
+
+  calibration_data: >
+    {% set result = namespace(dict=[]) %} 
+      {% for valve in valves | reject('is_device_attr', 'manufacturer', 'Tado') | list %} 
+
+        {% set calibration_entity = device_entities(device_id(valve)) |
+                                    expand | selectattr('domain','in','number') |
+                                    selectattr('entity_id', 'search', input_calibration_key_word) |
+                                    map(attribute='entity_id') | list | first | default(none) %}
+
+        {% if calibration_entity != none %}
+
+          {% set min = state_attr(calibration_entity,'min') %}
+          {% set max = state_attr(calibration_entity,'max') %}
+          {% set is_offset_entity = min | float * - 1 == max | float %}
+          {% set step = state_attr(calibration_entity, 'step') | float(1) %}
+          {% if rounding_mode == 'manual' %} 
+              {% set step = input_calibration_step_size | float(1) %}
+          {% endif %}
+
+          {% set select = none %}
+
+          {% if is_offset_entity == false %}
+            {% set select = device_entities(device_id(valve)) 
+                            | expand 
+                            | selectattr('domain','in','select') 
+                            | selectattr('attributes.options', 'contains', 'external') 
+                            | map(attribute='entity_id') | list | first | default(none) %}
+          {% endif %}
+
+          {% set temp_external = value_temperature_sensor | float %}
+          {% set temp_internal = state_attr(valve, 'current_temperature') | float %}
+          {% set calibration_value_old = states(calibration_entity) | float(0) %}
+          {% set calibration_value_new = temp_external %}
+
+          {% if is_offset_entity %}
+            {% set calibration_value_new = (-(temp_internal - temp_external) + calibration_value_old) %}
+          {% endif %}
+          
+          {% if is_aggressive_mode_calibration %}           
+            {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - temp_external | float %}
+
+            {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
+              {% set calibration_value_new = calibration_value_new + input_aggressive_mode_offset * factor %}
+            {% elif temp_diff * factor > input_aggressive_mode_range %}
+              {% set calibration_value_new = calibration_value_new - input_aggressive_mode_offset * factor %}
+            {% endif %}
+          {% endif %}
+
+          {% if step <= 1 and max | float < 1000 %}
+            {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
+            {% set calibration_value_new = ((calibration_value_new | float(0) / step) | round(0) * step) | round(round_size) | float %}
+          {% else %}
+            {% set calibration_value_new = calibration_value_new * 100 | int %}
+            {% set calibration_value_old = calibration_value_old | int %}
+          {% endif %}
+
+          {% set calibration_value_new = iif(calibration_value_new > max, max, calibration_value_new) %}
+          {% set calibration_value_new = iif(calibration_value_new < min, min, calibration_value_new) %}
+
+          {% set is_update_by_delta = (float(calibration_value_old) - float(calibration_value_new)) | abs >= float(input_calibration_delta) %}
+          {% set is_update_by_time_trigger = false%}
+
+          {% set manufacturer = device_attr(device_id(valve), 'manufacturer') %}
+
+          {% if is_calibration_trigger and 
+                not is_update_by_delta and 
+                manufacturer in ['Popp','Danfoss','Hive','Bosch'] %}
+
+            {% set last_updated = [calibration_entity] | expand | map(attribute='last_updated') | first %}
+            {% set is_update_by_time_trigger = as_datetime(current_time_stamp) - timedelta(minutes=20) >= last_updated %}
+          
+          {% endif %}
+
+          {% if is_update_by_delta or is_update_by_time_trigger %}
+            {% set n.dict = n.dict + [(valve, [{'calibration_entity': calibration_entity, 
+                                                'calibration_value': calibration_value_new, 
+                                                'select': select, 
+                                                'is_offset_entity': is_offset_entity}])] %}
+          {% endif %}
+        {% endif %}
+      {% endfor %} 
+      {{ dict.from_keys(n.dict) }}
+
+  #####################################################################################
+  ################################ END CALIBRATION DATA ###############################
+  #####################################################################################
+
+  
+
   # tado
   valves_tado: "{{ valves | select('is_device_attr', 'manufacturer', 'Tado') | list }}"
 
