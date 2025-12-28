@@ -452,8 +452,8 @@ blueprint:
 
             You can specify [persons](https://www.home-assistant.io/integrations/person/) to make your heating plan more dynamic. If you do not use [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, heating is activated as soon as someone is at home.<br/>
             With [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, these are only active when someone is at home.
-            
-            
+
+
             **NOTE**: If you're using many zones in your configuration, it's recommended to use device trackers instead of persons.
           default: []
           selector:
@@ -857,7 +857,7 @@ blueprint:
           default: true
           selector:
             boolean:
-              
+
         input_calibration_key_word:
           name: 🗝️ Calibration Entity Key Word
           description: >
@@ -866,13 +866,12 @@ blueprint:
 
             Keyword for finding the calibration entity. This word must be part of the entity id.
             As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations. Just have a look into your [device overview](https://my.home-assistant.io/redirect/devices/), select your thermostat and check the naming of the *entity_ids* - not the entity name - for the calibration.
-            
+
             The logic detects automatically if the selected entity is an offset entity or a entity which holds an external temperature value. Keep in mind to set the offset entity to *0* if you switch to an external temperature entity or set the temperature source to internal if you switch to an offset entity.
           default: "calibration"
           selector:
             text:
-              
-        
+
         input_calibration_timeout:
           name: ⏳ Calibration Timeout
           description: >
@@ -1865,12 +1864,12 @@ trigger:
         {% set room_state = iif(use_room_temp, false, true) %}
 
         {% set state = states(input_mode_outside_temperature) %}
-      
+
         {% if state in ['unknown','unavailable'] %}
           {% set outside_state = input_fallback_outside_temperature_unavailable %}
         {% else%}
           {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-      
+
           {% if is_number(state) %}
             {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
           {% endif %}
@@ -1899,12 +1898,12 @@ trigger:
         {% set room_state = iif(use_room_temp, false, true) %}
 
         {% set state = states(input_mode_outside_temperature) %}
-      
+
         {% if state in ['unknown','unavailable'] %}
           {% set outside_state = input_fallback_outside_temperature_unavailable %}
         {% else%}
           {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-      
+
           {% if is_number(state) %}
             {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
           {% endif %}
@@ -2270,12 +2269,12 @@ variables:
       {% set room_state = iif(use_room_temp, false, true) %}
 
       {% set state = states(input_mode_outside_temperature) %}
-    
+
       {% if state in ['unknown','unavailable'] %}
         {% set outside_state = input_fallback_outside_temperature_unavailable %}
       {% else%}
         {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-    
+
         {% if is_number(state) %}
           {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
         {% endif %}
@@ -2377,16 +2376,18 @@ variables:
                           | count > 0 }}
       {% else %}
         {% set persons_home = state_attr('zone.home','persons') | select('in', input_persons) | list %}
-        {% set persons_home = (persons_home + (input_persons | select('is_state','home') | list)) | unique | list  %}
+        {% set devices_home = input_persons | select('is_state','home') | expand | selectattr('domain', 'eq', 'device_tracker') | list %}
+        {% set persons_defined = input_persons | expand | selectattr('domain', 'eq', 'person') | list | count > 0 %}
 
-        {% set somebody_is_home = persons_home  | expand
+        {% set somebody_is_home = (persons_home + devices_home) | expand
                                                 | selectattr('last_changed', '<=', on_time_delta)
                                                 | list
                                                 | count > 0 %}
 
-        {% set somebody_is_leaving = persons_home | count == 0 and ['zone.home'] | expand | map(attribute='last_changed') | first | default(off_time_delta) > off_time_delta %}
+        {% set somebody_is_leaving_person = persons_defined and persons_home | count == 0 and ['zone.home'] | expand | map(attribute='last_changed') | first | default(off_time_delta) > off_time_delta %}
+        {% set somebody_is_leaving_devices = devices_home | expand | map(attribute='last_changed') | first | default(off_time_delta) > off_time_delta %}
 
-        {{ somebody_is_home or somebody_is_leaving }}
+        {{ somebody_is_home or somebody_is_leaving_person or somebody_is_leaving_devices }}
       {% endif %}
     {% endif %}
 
