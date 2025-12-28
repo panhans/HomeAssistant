@@ -843,6 +843,32 @@ blueprint:
       description: ""
       collapsed: true
       input:
+        input_is_calibration_enabled:
+          name: 🟢 Enable Calibration
+          description: >
+            `calibration`
+
+
+            Enable this if you want to use the calibration feature. If you turn this from on to off, check the thermostat entities and set them to a default value, e.g. a temperature offset.
+          default: true
+          selector:
+            boolean:
+              
+        input_calibration_key_word:
+          name: 🗝️ Calibration Entity Key Word
+          description: >
+            `calibration`
+
+
+            Keyword for finding the calibration entity. This word must be part of the entity id.
+            As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations. Just have a look into your [device overview](https://my.home-assistant.io/redirect/devices/), select your thermostat and check the naming of the *entity_ids* - not the entity name - for the calibration.
+            
+            The logic detects automatically if the selected entity is an offset entity or a entity which holds an external temperature value. Keep in mind to set the offset entity to *0* if you switch to an external temperature entity or set the temperature source to internal if you switch to an offset entity.
+          default: "calibration"
+          selector:
+            text:
+              
+        
         input_calibration_timeout:
           name: ⏳ Calibration Timeout
           description: >
@@ -861,7 +887,7 @@ blueprint:
             duration:
 
         input_calibration_delta:
-          name: ↔️ Calibration Delta
+          name: ↔️ Minimum Temperature Difference
           description: >
             `calibration`
 
@@ -878,18 +904,6 @@ blueprint:
               step: 0.1
               mode: slider
               unit_of_measurement: °C / °F
-
-        input_calibration_key_word:
-          name: 🗝️ Calibration Entity Key Word
-          description: >
-            `calibration`
-
-
-            Keyword for finding the calibration entity. This word must be part of the entity id.
-            As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations. Just have a look into your device overview, select your thermostat and check the naming of the *entity_ids* for the calibration.
-          default: "calibration"
-          selector:
-            text:
 
         input_calibration_step_size:
           name: 🦶 Step Size
@@ -2130,6 +2144,7 @@ variables:
   input_force_eco_temperature: !input input_force_eco_temperature
 
   # calibration
+  is_calibration_enabled: !input input_is_calibration_enabled
   input_calibration_delta: !input input_calibration_delta
   input_calibration_generic: !input input_calibration_generic
   input_calibration_step_size: !input input_calibration_step_size
@@ -3111,7 +3126,7 @@ variables:
   calibration_changes: >
     {% set n = namespace(dict=[]) %}
 
-    {% if is_native_calibration_trigger %}
+    {% if is_native_calibration_trigger and is_calibration_enabled %}
       {% for valve in valves_calibration_common %}
 
         {% set calibration_entity = device_entities(device_id(valve)) |
