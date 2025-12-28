@@ -2820,7 +2820,7 @@ variables:
     {% endif %}
 
   window_open_temperature: >
-    {% if input_window_open_temperature_number != none %}
+    {% if input_window_open_temperature_number != [] %}
       {{ states(input_window_open_temperature_number) | float }}
     {% else %}
       {{ input_window_open_temperature }}
