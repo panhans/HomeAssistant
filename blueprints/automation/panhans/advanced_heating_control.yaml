@@ -1249,7 +1249,7 @@ blueprint:
 
             If the outside temperature sensor or weather entity is unavailable you can define if heating should be activated or not.
           default: false
-          selecor:
+          selector:
             boolean:
 
         input_mode_room_temperature:
