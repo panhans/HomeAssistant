@@ -538,7 +538,7 @@ blueprint:
               multiple: true
 
         input_scheduler_selector:
-          name: ☝🏻 Scheduler Selector
+          name: ☝🏻 Schedule Selector
           description: >
             `schedule` `optional`
 
@@ -2377,6 +2377,7 @@ variables:
                           | count > 0 }}
       {% else %}
         {% set persons_home = state_attr('zone.home','persons') | select('in', input_persons) | list %}
+        {% set persons_home = (persons_home + (input_persons | select('is_state','home') | list)) | unique | list  %}
 
         {% set somebody_is_home = persons_home  | expand
                                                 | selectattr('last_changed', '<=', on_time_delta)
