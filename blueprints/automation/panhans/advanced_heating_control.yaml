@@ -66,7 +66,7 @@ blueprint:
         input_trvs:
           name: 🔥 Thermostats / Climates
           description: >
-            `thermostats` `climates` 
+            `thermostats` `climates`
 
 
             [Thermostats / Climates](https://www.home-assistant.io/integrations/climate/) to be controlled.
@@ -241,7 +241,7 @@ blueprint:
 
             > 🧭 **calibration**
 
-            > Toggle calibration 
+            > Toggle calibration
 
             > on/off
 
@@ -348,7 +348,7 @@ blueprint:
         input_party_legacy_restore:
           name: 🔄 Legacy Restore
           description: >
-            `party` 
+            `party`
 
 
             Enable this if the temperatures after airing (closing windows) or party won't restore properly
@@ -756,7 +756,7 @@ blueprint:
             `airing` `optional`
 
 
-            If open during airing your [thermostats](https://www.home-assistant.io/integrations/climate/) will be set to *off* at least to their minimum temperature 
+            If open during airing your [thermostats](https://www.home-assistant.io/integrations/climate/) will be set to *off* at least to their minimum temperature
             if they don't support hvac mode *OFF* except you set a custom window open temperature.
           default: []
           selector:
@@ -784,7 +784,7 @@ blueprint:
         input_windows_reaction_time_close:
           name: ⌛ Window & Door Reaction Time Close
           description: >
-            `airing`  
+            `airing`
 
 
             Duration for which a window or door must be closed for the [thermostats](https://www.home-assistant.io/integrations/climate/) to open.
@@ -798,7 +798,7 @@ blueprint:
         input_window_open_temperature:
           name: 🌡️ Window Open Temperature
           description: >
-            `airing` 
+            `airing`
 
 
             If 0° your thermostat turns *off* or if not supported it turns to the minimum temperature of your thermostat.
@@ -828,7 +828,7 @@ blueprint:
         input_window_legacy_restore:
           name: 🏚️ Legacy Restore
           description: >
-            `airing` 
+            `airing`
 
 
             Enable this if the temperatures after airing (closing windows) won't restore properly.
@@ -843,6 +843,32 @@ blueprint:
       description: ""
       collapsed: true
       input:
+        input_is_calibration_enabled:
+          name: 🟢 Enable Calibration
+          description: >
+            `calibration`
+
+
+            Enable this if you want to use the calibration feature. If you turn this from on to off, check the thermostat entities and set them to a default value, e.g. a temperature offset.
+          default: true
+          selector:
+            boolean:
+              
+        input_calibration_key_word:
+          name: 🗝️ Calibration Entity Key Word
+          description: >
+            `calibration`
+
+
+            Keyword for finding the calibration entity. This word must be part of the entity id.
+            As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations. Just have a look into your [device overview](https://my.home-assistant.io/redirect/devices/), select your thermostat and check the naming of the *entity_ids* - not the entity name - for the calibration.
+            
+            The logic detects automatically if the selected entity is an offset entity or a entity which holds an external temperature value. Keep in mind to set the offset entity to *0* if you switch to an external temperature entity or set the temperature source to internal if you switch to an offset entity.
+          default: "calibration"
+          selector:
+            text:
+              
+        
         input_calibration_timeout:
           name: ⏳ Calibration Timeout
           description: >
@@ -861,7 +887,7 @@ blueprint:
             duration:
 
         input_calibration_delta:
-          name: ↔️ Calibration Delta
+          name: ↔️ Minimum Temperature Difference
           description: >
             `calibration`
 
@@ -878,18 +904,6 @@ blueprint:
               step: 0.1
               mode: slider
               unit_of_measurement: °C / °F
-
-        input_calibration_key_word:
-          name: 🗝️ Calibration Entity Key Word
-          description: >
-            `calibration`
-
-
-            Keyword for finding the calibration entity. This word must be part of the entity id. 
-            As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations. Just have a look into your device overview, select your thermostat and check the naming of the *entity_ids* for the calibration.
-          default: "calibration"
-          selector:
-            text:
 
         input_calibration_step_size:
           name: 🦶 Step Size
@@ -930,7 +944,7 @@ blueprint:
             `generic` `calibration`
 
 
-            If the temperature difference between the thermostat and the temperature sensor is very high, 
+            If the temperature difference between the thermostat and the temperature sensor is very high,
             the offset, i.e. the correction temperature, can be limited to this value.
 
             <details>
@@ -964,9 +978,9 @@ blueprint:
             `aggressive mode` `tweak`
 
 
-            Activate this option if your [thermostats](https://www.home-assistant.io/integrations/climate/) react slowly or only start to react at a large temperature difference 
+            Activate this option if your [thermostats](https://www.home-assistant.io/integrations/climate/) react slowly or only start to react at a large temperature difference
             between actual and set temperature.
-            Define a range when your real target temperature shall be set. 
+            Define a range when your real target temperature shall be set.
 
             <details>
             <summary><code><strong>CLICK HERE:</strong> More information</code></summary>
@@ -974,7 +988,7 @@ blueprint:
 
             E.g. you target temperature is 20°C and your room temperature is 19.5°C.
             If your range is set to 0.5°C the real target temperature (20°C) will be set when room temperature is between 19.5°C and 20.5°C.
-            If the room temperature is above or lower than range, it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react. 
+            If the room temperature is above or lower than range, it gets some offset in order to force your [thermostat](https://www.home-assistant.io/integrations/climate/) to react.
             (see Aggressive Mode - Offset)
 
             </details>
@@ -1008,13 +1022,13 @@ blueprint:
         input_aggressive_mode_calibration:
           name: 🌡️ Aggressive Calibration
           description: >
-            `aggressive mode` `tweak` `experimental` 
+            `aggressive mode` `tweak` `experimental`
 
-            If you'd setup an temperature sensor and your thermostats allow calibration, you can enable this feature. If enabled the aggressive offset will be add 
+            If you'd setup an temperature sensor and your thermostats allow calibration, you can enable this feature. If enabled the aggressive offset will be add
             to the calibration value and not the target temperature.
 
-            *Note*: This feature is marked as experimental since not every calibration method could be tested. If you notice any problems simple open an issue or 
-            post a message in the [AHC-Thread](https://community.home-assistant.io/t/advanced-heating-control/469873). 
+            *Note*: This feature is marked as experimental since not every calibration method could be tested. If you notice any problems simple open an issue or
+            post a message in the [AHC-Thread](https://community.home-assistant.io/t/advanced-heating-control/469873).
             Enable this only if native calibration does NOT work when using generic calibration.
           default: false
           selector:
@@ -1071,8 +1085,8 @@ blueprint:
             `liming protection`
 
 
-            Most smart thermostats come with that feature out of the box. 
-            If your thermostat doesn't support this or you're using the generic thermostat integration this feature is maybe handy for you in order to prevent your valve against limescale. 
+            Most smart thermostats come with that feature out of the box.
+            If your thermostat doesn't support this or you're using the generic thermostat integration this feature is maybe handy for you in order to prevent your valve against limescale.
             The automation will set the thermostat to its max and open the valve for one minute.
 
           default: off
@@ -1192,7 +1206,7 @@ blueprint:
             `activation` `optional`
 
 
-            You can control the switching on and off of your thermostats via the outside temperature. 
+            You can control the switching on and off of your thermostats via the outside temperature.
             To do this, select a temperature sensor or a weather entity and adjust the threshold below.
 
               * [weather entity](https://www.home-assistant.io/integrations/weather/)
@@ -1215,7 +1229,7 @@ blueprint:
             `activation`
 
 
-            If you'd select a temperature [sensor](https://www.home-assistant.io/integrations/sensor/) or a [weather entity](https://www.home-assistant.io/integrations/weather/) 
+            If you'd select a temperature [sensor](https://www.home-assistant.io/integrations/sensor/) or a [weather entity](https://www.home-assistant.io/integrations/weather/)
             for controlling heating you can adjust the temperature threshold here.
             If the outside temperature falls below the threshold value, heating is activated.
           default: 15
@@ -1427,10 +1441,10 @@ blueprint:
         input_startup_delay:
           name: ⏲ Startup Delay
           description: >
-            `tweak`  
+            `tweak`
 
 
-            If your AHC automation is triggered directly after a Home Assistant restart, but the required integrations have not yet been loaded or certain sensors 
+            If your AHC automation is triggered directly after a Home Assistant restart, but the required integrations have not yet been loaded or certain sensors
             have not yet been initialized, you can set an automation delay here.
 
             *Note:* Make sure that you have set up the uptime integration for this purpose.
@@ -1614,22 +1628,22 @@ trigger:
   # persons
   - trigger: template
     value_template: >
-      {{ input_persons  | expand 
-                        | selectattr('state', 'eq', 'home') 
-                        | list 
-                        | count > 0 
-                        
+      {{ input_persons  | expand
+                        | selectattr('state', 'eq', 'home')
+                        | list
+                        | count > 0
+
         or (is_guest_mode_defined and states(input_mode_guest) in ['on','active'] ) }}
     id: temperature_change_person_on
     for: !input input_people_entering_home_duration
 
   - trigger: template
     value_template: >
-      {{ input_persons  | expand 
-                        | selectattr('state', 'eq', 'home') 
-                        | list 
-                        | count == 0 
-        
+      {{ input_persons  | expand
+                        | selectattr('state', 'eq', 'home')
+                        | list
+                        | count == 0
+
         and (not is_guest_mode_defined or (is_guest_mode_defined and states(input_mode_guest) not in ['on','active'])) }}
     id: temperature_change_person_off
     for: !input input_people_leaving_home_duration
@@ -1729,21 +1743,21 @@ trigger:
     value_template: >
       {% set proximity_entities = device_entities(input_proximity) %}
 
-      {% set is_arrived = proximity_entities  
-          | select('is_state','arrived') 
-          | expand 
+      {% set is_arrived = proximity_entities
+          | select('is_state','arrived')
+          | expand
           | selectattr('attributes.device_class', 'eq', 'enum')
           | list | count > 0 %}
 
-      {% set entities_towards = proximity_entities  
-          | expand 
-          | selectattr('attributes.device_class', 'eq', 'enum') 
-          | map(attribute='entity_id') | select('is_state','towards') 
+      {% set entities_towards = proximity_entities
+          | expand
+          | selectattr('attributes.device_class', 'eq', 'enum')
+          | map(attribute='entity_id') | select('is_state','towards')
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
 
-      {% set distances = proximity_entities  
-        | expand 
+      {% set distances = proximity_entities
+        | expand
         | selectattr('attributes.device_class', 'eq', 'distance')
         | map(attribute='state')
         | reject('eq', 'unknown')
@@ -1752,8 +1766,8 @@ trigger:
         | map('string')
         | list %}
 
-      {% set entities_distances = proximity_entities  
-          | expand 
+      {% set entities_distances = proximity_entities
+          | expand
           | selectattr('attributes.device_class', 'eq', 'distance')
           | selectattr('state', 'in', distances)
           | map(attribute='entity_id')
@@ -1769,21 +1783,21 @@ trigger:
     id: temperature_change_person_proximity_off
     value_template: >
       {% set proximity_entities = device_entities(input_proximity) %}
-      {% set is_arrived = proximity_entities  
-          | select('is_state','arrived') 
-          | expand 
-          | selectattr('attributes.device_class', 'eq', 'enum') 
+      {% set is_arrived = proximity_entities
+          | select('is_state','arrived')
+          | expand
+          | selectattr('attributes.device_class', 'eq', 'enum')
           | list | count > 0 %}
 
-      {% set entities_towards = proximity_entities  
-          | expand 
-          | selectattr('attributes.device_class', 'eq', 'enum') 
-          | map(attribute='entity_id') | select('is_state','towards') 
+      {% set entities_towards = proximity_entities
+          | expand
+          | selectattr('attributes.device_class', 'eq', 'enum')
+          | map(attribute='entity_id') | select('is_state','towards')
           | map('regex_replace','_(?=[^_]*$)(.*)', '')
           | list %}
 
-      {% set distances = proximity_entities  
-        | expand 
+      {% set distances = proximity_entities
+        | expand
         | selectattr('attributes.device_class', 'eq', 'distance')
         | map(attribute='state')
         | reject('eq', 'unknown')
@@ -1792,8 +1806,8 @@ trigger:
         | map('string')
         | list %}
 
-      {% set entities_distances = proximity_entities  
-          | expand 
+      {% set entities_distances = proximity_entities
+          | expand
           | selectattr('attributes.device_class', 'eq', 'distance')
           | selectattr('state', 'in', distances)
           | map(attribute='entity_id')
@@ -1980,7 +1994,7 @@ trigger:
       {% set current_day = timestamp.strftime('%a') %}
       {% set current_time = timestamp.strftime('%H:%M') %}
 
-      {% set plan = input_adjustments | rejectattr('time', 'undefined') 
+      {% set plan = input_adjustments | rejectattr('time', 'undefined')
           | selectattr('time','eq', current_time | string)
           | sort(attribute='time', reverse = true)
           | list  %}
@@ -2052,18 +2066,18 @@ trigger:
       {% if frost_protection_timestamp == now_ts %}
         {{ false }}
       {% else %}
-        
+
         {% set relevant_entities = [input_presence_sensor] + [input_mode_guest] + input_persons %}
         {% set relevant_entities_count = relevant_entities | reject('eq',none) | list | count %}
 
         {% if relevant_entities_count > 0 %}
-          {% set presence_count = [input_presence_sensor] 
+          {% set presence_count = [input_presence_sensor]
               | reject('eq',none)
               | reject('is_state','on')
               | list
               | count %}
 
-          {% set guest_mode_count = [input_mode_guest] 
+          {% set guest_mode_count = [input_mode_guest]
               | reject('eq',none)
               | reject('is_state','on')
               | list
@@ -2153,6 +2167,7 @@ variables:
   input_force_eco_temperature: !input input_force_eco_temperature
 
   # calibration
+  is_calibration_enabled: !input input_is_calibration_enabled
   input_calibration_delta: !input input_calibration_delta
   input_calibration_generic: !input input_calibration_generic
   input_calibration_step_size: !input input_calibration_step_size
@@ -2287,10 +2302,10 @@ variables:
 
   state_proximity_arrived: >
     {% set proximity_entities = device_entities(input_proximity) %}
-    {% set is_arrived = proximity_entities  
-        | select('is_state','arrived') 
-        | expand 
-        | selectattr('attributes.device_class', 'eq', 'enum') 
+    {% set is_arrived = proximity_entities
+        | select('is_state','arrived')
+        | expand
+        | selectattr('attributes.device_class', 'eq', 'enum')
         | list | count > 0 %}
     {{ is_arrived }}
 
@@ -2304,16 +2319,16 @@ variables:
       {% set earliest_timestamp = uptime_duration%}
     {% endif %}
 
-    {% set entities_towards = proximity_entities  
-        | expand 
-        | selectattr('attributes.device_class', 'eq', 'enum') 
+    {% set entities_towards = proximity_entities
+        | expand
+        | selectattr('attributes.device_class', 'eq', 'enum')
         | selectattr('last_changed', '<=', earliest_timestamp)
         | map(attribute='entity_id') | select('is_state','towards')
         | map('regex_replace','_(?=[^_]*$)(.*)', '')
         | list %}
 
-    {% set distances = proximity_entities  
-        | expand 
+    {% set distances = proximity_entities
+        | expand
         | selectattr('attributes.device_class', 'eq', 'distance')
         | map(attribute='state')
         | reject('eq', 'unknown')
@@ -2322,8 +2337,8 @@ variables:
         | map('string')
         | list %}
 
-    {% set entities_distances = proximity_entities  
-        | expand 
+    {% set entities_distances = proximity_entities
+        | expand
         | selectattr('attributes.device_class', 'eq', 'distance')
         | selectattr('state', 'in', distances)
         | map(attribute='entity_id')
@@ -2352,9 +2367,9 @@ variables:
       {% set result = false %}
 
       {% if uptime_on > on_time_delta or uptime_off > off_time_delta %}
-        {{ input_persons  | expand 
-                          | selectattr('state', 'eq', 'home') 
-                          | list 
+        {{ input_persons  | expand
+                          | selectattr('state', 'eq', 'home')
+                          | list
                           | count > 0 }}
       {% else %}
         {% set persons_home = state_attr('zone.home','persons') | select('in', input_persons) | list %}
@@ -2467,14 +2482,14 @@ variables:
     {% set on_time_delta = current_ts - timedelta(**input_windows_reaction_time_open) %}
     {% set off_time_delta = current_ts - timedelta(**input_windows_reaction_time_close) %}
 
-    {% set has_open_windows = input_windows 
+    {% set has_open_windows = input_windows
         | expand
         | selectattr('state', 'in', ['on','open','tilted'])
         | selectattr('last_changed', '<=', on_time_delta)
         | list
         | count > 0 %}
 
-    {% set closed_but_not_in_duration = input_windows 
+    {% set closed_but_not_in_duration = input_windows
         | expand
         | selectattr('state', 'in', ['off','closed'])
         | selectattr('last_changed', '>=', off_time_delta)
@@ -2498,10 +2513,10 @@ variables:
 
       {% if relevant_entities_count > 0 %}
 
-        {% set presence_count = [input_presence_sensor] 
+        {% set presence_count = [input_presence_sensor]
             | reject('eq',none)
             | reject('is_state','on')
-            | expand 
+            | expand
             | selectattr('last_changed', '<=', frost_protection_timestamp)
             | list | count %}
 
@@ -2512,10 +2527,10 @@ variables:
             | selectattr('last_changed', '<=', frost_protection_timestamp)
             | list | count %}
 
-        {% set guest_mode_count = [input_mode_guest] 
+        {% set guest_mode_count = [input_mode_guest]
             | reject('eq',none)
             | reject('is_state','on')
-            | expand 
+            | expand
             | selectattr('last_changed', '<=', frost_protection_timestamp)
             | list | count %}
 
@@ -2553,16 +2568,16 @@ variables:
   # thermostat groups
   valves: >
     {{ input_trvs | expand
-        | selectattr('attributes.hvac_modes','search','(?i)'+input_hvac_mode) 
-        | map(attribute='entity_id') 
+        | selectattr('attributes.hvac_modes','search','(?i)'+input_hvac_mode)
+        | map(attribute='entity_id')
         | list }}
 
   valves_unsupported: >
     {{ input_trvs | reject('in',valves) | list }}
 
   valves_off_mode: >
-    {{ valves | expand | selectattr('attributes.hvac_modes','search','(?i)off') 
-        | map(attribute='entity_id') 
+    {{ valves | expand | selectattr('attributes.hvac_modes','search','(?i)off')
+        | map(attribute='entity_id')
         | list }}
 
   valves_without_off_mode: >
@@ -2571,29 +2586,11 @@ variables:
   # tado
   valves_tado: "{{ valves | select('is_device_attr', 'manufacturer', 'Tado') | list }}"
 
-  # valves external thermometer support
-  valves_external: >
-    {% set result = namespace(r=[]) %} 
-    {% for valve in valves %} 
-      {% set select = device_entities(device_id(valve)) 
-                        | expand 
-                        | selectattr('domain','in','select') 
-                        | selectattr('attributes.options', 'contains', 'external') 
-                        | map(attribute='entity_id') | list | first | default(none) %} 
-      {% if select != none %} 
-        {% set result.r = result.r + [valve] %} 
-      {% endif %} 
-    {% endfor %} 
-    {{ result.r }}
+  valves_calibration_common: "{{ valves | reject('in', valves_tado) | list }}"
 
   # danfoss / popp / hive / Bosch
-  valves_danfoss: "{{ valves | select('is_device_attr', 'manufacturer', 'Danfoss') | list }}"
-  valves_popp: "{{ valves | select('is_device_attr', 'manufacturer', 'Popp') | list }}"
-  valves_hive: "{{ valves | select('is_device_attr', 'manufacturer', 'Hive') | list }}"
-  valves_bosch: "{{ valves | select('is_device_attr', 'manufacturer', 'Bosch') | list }}"
-  valves_dph: "{{ valves_danfoss + valves_popp + valves_hive + valves_bosch }}"
-
-  valves_calibration_common: "{{ valves | reject('in', valves_tado + valves_dph + valves_external) | list }}"
+  keep_alive_manufactures: ["Danfoss", "Popp", "Hive", "Bosch"]
+  has_keep_alive_valves: "{{ valves | map('device_attr','manufacturer') | select('in', keep_alive_manufactures) | list | count > 0 }}"
 
   # global
   last_comfort_entity_change: "{{ [input_temperature_comfort_entity] | expand | map(attribute='last_changed') | list | first | default(none) }}"
@@ -2614,24 +2611,24 @@ variables:
     {% set current_day = current_ts.strftime('%a') %}
     {% set current_time = current_ts.strftime('%H:%M') %}
 
-    {% set plan = input_adjustments | rejectattr('time', 'undefined') 
+    {% set plan = input_adjustments | rejectattr('time', 'undefined')
         | selectattr('time','<=', current_time| string)
         | list  %}
 
-    {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
-                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
+    {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day)
+                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name)
                                | list %}
 
-    {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
+    {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day)
                                         | selectattr('scheduler','in',[Undefined])
                                         | list %}
 
-    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
+    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name)
                                             | selectattr('days','in',[Undefined])
                                             | list %}
 
-    {% set selected_entries_time_only = plan | selectattr('days','in',[Undefined]) 
-                                  | selectattr('scheduler','in',[Undefined]) 
+    {% set selected_entries_time_only = plan | selectattr('days','in',[Undefined])
+                                  | selectattr('scheduler','in',[Undefined])
                                   | list %}
 
     {% set selected_entries = selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only %}
@@ -2653,24 +2650,24 @@ variables:
     {% set current_day = timestamp.strftime('%a') %}
     {% set current_time = timestamp.strftime('%H:%M') %}
 
-    {% set plan = input_adjustments | rejectattr('time', 'undefined') 
+    {% set plan = input_adjustments | rejectattr('time', 'undefined')
         | selectattr('time','<=', current_time| string)
         | list  %}
 
-    {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
-                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
+    {% set selected_entries_days_and_schedule = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day)
+                               | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name)
                                | list %}
 
-    {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day) 
+    {% set selected_entries_days = plan | rejectattr('days','==',Undefined) | selectattr('days','search',current_day)
                                         | selectattr('scheduler','in',[Undefined])
                                         | list %}
 
-    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name) 
+    {% set selected_entries_schedule = plan | rejectattr('scheduler','==',Undefined) | selectattr('scheduler','in',scheduler_name)
                                             | selectattr('days','in',[Undefined])
                                             | list %}
 
-    {% set selected_entries_time_only = plan | selectattr('days','in',[Undefined]) 
-                                  | selectattr('scheduler','in',[Undefined]) 
+    {% set selected_entries_time_only = plan | selectattr('days','in',[Undefined])
+                                  | selectattr('scheduler','in',[Undefined])
                                   | list %}
 
     {% set selected_entries = selected_entries_days_and_schedule + selected_entries_days + selected_entries_schedule + selected_entries_time_only %}
@@ -2692,7 +2689,7 @@ variables:
 
   entry_comfort_temp: >
     {% if entry != none and 'comfort' in entry.keys() and (last_comfort_entity_change == none or as_datetime(entry_time) > as_datetime(last_comfort_entity_change)) %}
-      {% set entry_temp = entry['comfort']%}  
+      {% set entry_temp = entry['comfort']%}
       {% if is_number(entry_temp) %}
         {{ entry_temp }}
       {% elif states[entry_temp] != none %}
@@ -2704,7 +2701,7 @@ variables:
 
   entry_eco_temp: >
     {% if entry != none and 'eco' in entry.keys() and (last_eco_entity_change == none or as_datetime(entry_time) > as_datetime(last_eco_entity_change)) %}
-      {% set entry_temp = entry['eco']%}  
+      {% set entry_temp = entry['eco']%}
       {% if is_number(entry_temp) %}
         {{ entry_temp }}
       {% elif states[entry_temp] != none %}
@@ -2736,7 +2733,7 @@ variables:
 
   # calibration
   is_calibration_trigger: >
-    {% if valves_dph | count > 0 and trigger_id_defined and trigger.id in ['calibration_popp_ping','calibration_popp_change'] %}
+    {% if has_keep_alive_valves and trigger_id_defined and trigger.id in ['calibration_popp_ping','calibration_popp_change'] %}
       {{ true }}
     {% elif is_aggressive_mode_calibration and trigger_id_defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
@@ -2751,11 +2748,11 @@ variables:
   is_aggressive_mode_trigger: "{{ is_aggressive_mode and trigger_id_defined and 'aggressive_mode' in trigger.id }}"
 
   is_change_trigger: >
-    {{ trigger_id_defined and 
-        'temperature_change' in trigger.id and 
-        ('presence' in trigger.id or 
-        'scheduler' in trigger.id or 
-        'proximity' in trigger.id or 
+    {{ trigger_id_defined and
+        'temperature_change' in trigger.id and
+        ('presence' in trigger.id or
+        'scheduler' in trigger.id or
+        'proximity' in trigger.id or
         'person' in trigger.id or
         '_ds' in trigger.id)
         and not trigger.id == 'temperature_change_valve_target' }}
@@ -2763,8 +2760,8 @@ variables:
   set_max_temperature: "{{ is_force_max_temperature or is_liming_protection }}"
 
   is_pysical_change: >
-    {{  trigger_id_defined 
-        and trigger.id == 'temperature_change_valve_target' 
+    {{  trigger_id_defined
+        and trigger.id == 'temperature_change_valve_target'
         and is_physical_change_enabled
         and not state_window
         and not set_max_temperature
@@ -2775,7 +2772,7 @@ variables:
     (entry_comfort_temp != none or entry_eco_temp != none) }}"
 
   is_reset: >
-    {{ (is_reset_temperature and is_change_trigger) or 
+    {{ (is_reset_temperature and is_change_trigger) or
         is_pysical_change or is_adjustment_trigger }}
 
   is_changes_trigger: >
@@ -2866,7 +2863,7 @@ variables:
     {% endif %}
 
   window_open_temperature: >
-    {% if input_window_open_temperature_number != none %}
+    {% if input_window_open_temperature_number != [] %}
       {{ states(input_window_open_temperature_number) | float }}
     {% else %}
       {{ input_window_open_temperature }}
@@ -2879,7 +2876,7 @@ variables:
       {{ 'off' }}
     {% elif entry_mode == 'off' %}
       {{ 'off' }}
-    {% elif is_off_instead_min and not set_comfort %} 
+    {% elif is_off_instead_min and not set_comfort %}
       {{ 'off' }}
     {% elif is_off_if_nobody_home and is_person_defined and not is_anybody_home_or_proximity and not set_comfort %}
       {{ 'off' }}
@@ -2933,9 +2930,9 @@ variables:
 
         {% set valve_temp = target_temperature %}
 
-        {% set dont_turn_off = 
-            valve in valves_without_off_mode or 
-            is_not_off_but_min or 
+        {% set dont_turn_off =
+            valve in valves_without_off_mode or
+            is_not_off_but_min or
             (state_window and window_open_temperature > 0) or
             set_max_temperature %}
 
@@ -3018,15 +3015,15 @@ variables:
 
         {% set target_temp = state_attr(valve, 'temperature') | float(none) %}
 
-        {% set open_valve_entity = device_entities(device_id(valve)) | expand 
-            | selectattr('domain','in','number') 
+        {% set open_valve_entity = device_entities(device_id(valve)) | expand
+            | selectattr('domain','in','number')
             | selectattr('entity_id', 'search', input_valve_opening_keyword)
-            | map(attribute='entity_id') 
+            | map(attribute='entity_id')
             | list | first | default(none) %}
 
         {% if open_valve_entity != none and current_temp != none and target_temp != none and
             (
-              (trigger_id_defined and trigger.id == 'positioning_event') or 
+              (trigger_id_defined and trigger.id == 'positioning_event') or
               ([open_valve_entity] | expand | map(attribute='last_changed') | first) + timedelta(**input_valve_positioning_timeout) <= now()
             )
         %}
@@ -3087,7 +3084,7 @@ variables:
       {% if is_pysical_change %}
         {% set temp_r = state_attr(trigger.to_state.entity_id,'temperature') %}
       {% else %}
-      {% set temp_r = iif(is_reset and entity == input_temperature_eco_entity, 
+      {% set temp_r = iif(is_reset and entity == input_temperature_eco_entity,
           input_temperature_eco_static, input_temperature_comfort_static) %}
       {% endif %}
 
@@ -3124,10 +3121,10 @@ variables:
         {% set offset_old = state_attr(valve, 'offset_celsius') | float(0) %}
         {% set local_temperature = state_attr(valve, 'current_temperature') | float %}
         {% set calibration_sensor_temperature = value_temperature_sensor | float %}
-        
+
         {% set offset_new = (-(local_temperature - calibration_sensor_temperature) + offset_old) %}
 
-        {% if is_aggressive_mode_calibration %}           
+        {% if is_aggressive_mode_calibration %}
           {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - calibration_sensor_temperature %}
 
           {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
@@ -3154,192 +3151,100 @@ variables:
 
     {{ dict.from_keys(n.dict) }}
 
-  # XIAOMI / AQARA / SONOFF
-  calibration_external: >
+  calibration_changes: >
     {% set n = namespace(dict=[]) %}
 
-    {% if is_native_calibration_trigger %}
-      {% for valve in valves_external %}
-
-        {% set calibration_entities = device_entities(device_id(valve)) |
-                                    expand | selectattr('domain','in','number') |
-                                    selectattr('entity_id', 'search', input_calibration_key_word) |
-                                    map(attribute='entity_id') | list %}
-
-        {% if calibration_entities | count > 0 %}
-
-          {% set calibration_entity = calibration_entities | first %}
-          {% set offset_old = states(calibration_entity) | float(0) %}
-          {% set offset_new = value_temperature_sensor | float %}
-          
-          {% set step = state_attr(calibration_entity, 'step') | float(1) %}
-          {% if rounding_mode == 'manual' %} 
-              {% set step = input_calibration_step_size | float(1) %}
-          {% endif %}
-
-          {% set min_val = state_attr(calibration_entity,'min') | float(0) %}
-          {% set max_val = state_attr(calibration_entity,'max') | float(55) %}
-          
-          {% if is_aggressive_mode_calibration %}           
-            {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - value_temperature_sensor | float %}
-
-            {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
-              {% set offset_new = offset_new + input_aggressive_mode_offset * factor %}
-            {% elif temp_diff * factor > input_aggressive_mode_range %}
-              {% set offset_new = offset_new - input_aggressive_mode_offset * factor %}
-            {% endif %}
-          {% endif %}
-
-          {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
-          {% set offset_new = ((offset_new | float(0) / step) | round(0) * step) | round(round_size) | float %}
-
-          {% set offset_new = iif(offset_new > max_val, max_val, offset_new) %}
-          {% set offset_new = iif(offset_new < min_val, min_val, offset_new) %}
-
-          {% if (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) %}
-            {% set n.dict = n.dict + [(calibration_entity, [{'value': offset_new, 'valve': valve}])] %}
-          {% endif %}
-        {% endif %}
-
-      {% endfor %}
-    {% endif %}
-
-    {{ dict.from_keys(n.dict) }}
-
-  # DANFOSS, POPP, HIVE, BOSCH
-  calibration_dph: >
-    {% set n = namespace(dict=[]) %}
-    {% if is_native_calibration_trigger %}
-
-      {% for valve in valves_dph %}
-
-        {% set calibration_entities = device_entities(device_id(valve)) |
-                                    expand | selectattr('domain','in','number') |
-                                    selectattr('entity_id', 'search', input_calibration_key_word) |
-                                    map(attribute='entity_id') | list %}
-
-        {% if calibration_entities | count > 0 %}
-
-          {% set calibration_entity = calibration_entities | first %}
-
-          {% set min_val = state_attr(calibration_entity,'min')%}
-          {% set max_val = state_attr(calibration_entity,'max')%}
-          
-          {% set step = state_attr(calibration_entity, 'step') | float(1) %}
-          {% if rounding_mode == 'manual' %} 
-              {% set step = input_calibration_step_size | float(1) %}
-          {% endif %}
-
-          {% set current_temp = state_attr(valve,'current_temperature') | float(20) %}
-
-          {% set new_state = value_temperature_sensor | float(current_temp) %}
-          {% set old_state = states(calibration_entity) | float %}
-
-          {% if is_aggressive_mode_calibration %}           
-            {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - value_temperature_sensor | float %}
-
-            {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
-              {% set new_state = new_state + input_aggressive_mode_offset * factor %}
-            {% elif temp_diff * factor > input_aggressive_mode_range %}
-              {% set new_state = new_state - input_aggressive_mode_offset * factor %}
-            {% endif %}
-          {% endif %}
-
-          {% if step <= 1 and max_val | float < 1000 %}
-            {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
-            {% set new_state = ((new_state | float(0) / step) | round(0) * step) | round(round_size) | float %}
-          {% else %}
-            {% set new_state = new_state * 100 | int %}
-            {% set old_state = old_state | int %}
-          {% endif %}
-
-          {% set update_calibration = old_state != new_state %}
-
-          {% if is_calibration_trigger and not update_calibration %}
-            {% set last_updated = [calibration_entity] | expand | map(attribute='last_updated') | first %}
-            {% set update_calibration = as_datetime(current_time_stamp) - timedelta(minutes=20) >= last_updated %}
-          {% endif %}
-
-          {% if update_calibration %}
-            {% set n.dict = n.dict + [(calibration_entity, [{'value': new_state, 'valve': valve}])] %}
-          {% endif%}
-
-        {% endif %}
-
-      {% endfor %}
-    {% endif %}
-
-    {{ dict.from_keys(n.dict) }}
-
-  # COMMON CALIBRATION e.g. TUYA
-  calibration_common: >
-    {% set n = namespace(dict=[]) %}
-
-    {% if is_native_calibration_trigger %}
-
+    {% if is_native_calibration_trigger and is_calibration_enabled %}
       {% for valve in valves_calibration_common %}
 
-        {% set calibration_entities = device_entities(device_id(valve)) |
+        {% set calibration_entity = device_entities(device_id(valve)) |
+                                    expand | selectattr('domain','in','number') |
+                                    selectattr('entity_id', 'search', input_calibration_key_word) |
+                                    map(attribute='entity_id') | list | first | default(none) %}
+
+        {% if calibration_entity is not none %}
+
+          {% set calibration_entity_min = state_attr(calibration_entity,'min') %}
+          {% set calibration_entity_max = state_attr(calibration_entity,'max') %}
+          {% set calibration_entity_value_old = states(calibration_entity) %}
+          {% set local_temperature = value_temperature_sensor | float %}
+          {% set calibration_entity_value_new = local_temperature %}
+          {% set is_offset_entity = calibration_entity_min == calibration_entity_max %}
+          {% set calibration_select = none %}
+
+          {% if is_offset_entity %}
+            {% set thermostat_temperature = state_attr(valve, 'current_temperature') | float %}
+            {% set calibration_entity_value_new = (-(thermostat_temperature - local_temperature) + calibration_entity_value_old) %}
+          {% else %}
+            {% set calibration_select = device_entities(device_id(valve))
+                        | expand
+                        | selectattr('domain','in','select')
+                        | selectattr('attributes.options', 'contains', 'external')
+                        | map(attribute='entity_id') | list | first | default(none) %}
+          {% endif %}
+
+          {% set calibration_entities = device_entities(device_id(valve)) |
                                     expand | selectattr('domain','in','number') |
                                     selectattr('entity_id', 'search', input_calibration_key_word) |
                                     map(attribute='entity_id') | list %}
 
-        {% if calibration_entities | count > 0%}
-
-          {% set calibration_entity = calibration_entities | first %}
-          
           {% set step = state_attr(calibration_entity, 'step') | float(1) %}
-          {% if rounding_mode == 'manual' %} 
+          {% if rounding_mode == 'manual' %}
               {% set step = input_calibration_step_size | float(1) %}
           {% endif %}
 
-          {% set min_calibration_value = state_attr(calibration_entity,'min') | float %}
-          {% set max_calibration_value = state_attr(calibration_entity,'max') | float %}
-          {% set thermostat_temperature = state_attr(valve, 'current_temperature') | float %}
-          {% set offset_old = states(calibration_entity) | float(0) %}
-
-          {% set new_calibration_value = (-(thermostat_temperature - value_temperature_sensor) + offset_old) %}
-
-          {% if is_aggressive_mode_calibration %}           
-            {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - value_temperature_sensor %}
+          {% if is_aggressive_mode_calibration %}
+            {% set temp_diff = state_attr(valve,'temperature') | float(target_temperature) - local_temperature %}
 
             {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
-              {% set new_calibration_value = new_calibration_value + input_aggressive_mode_offset * factor %}
+              {% set calibration_entity_value_new = calibration_entity_value_new + input_aggressive_mode_offset * factor %}
             {% elif temp_diff * factor > input_aggressive_mode_range %}
-              {% set new_calibration_value = new_calibration_value - input_aggressive_mode_offset * factor %}
+              {% set calibration_entity_value_new = calibration_entity_value_new - input_aggressive_mode_offset * factor %}
             {% endif %}
           {% endif %}
 
-          {% set new_calibration_value = iif(new_calibration_value > max_calibration_value, max_calibration_value, new_calibration_value) %}
-          {% set new_calibration_value = iif(new_calibration_value < min_calibration_value, min_calibration_value, new_calibration_value) %}
-
-          {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
-
-          {% set offset_new = ((new_calibration_value | float(0) / step) | round(0) * step) | round(round_size) | float %}
-
-          {% if (float(offset_old) - float(offset_new)) | abs >= float(input_calibration_delta) %}
-            {% set n.dict = n.dict + [(calibration_entity, [{'value': offset_new, 'valve': valve}])] %}
+          {% if step <= 1 and calibration_entity_max | float < 1000 %}
+            {% set round_size = iif('.' in (step | string), (step | string).split('.')[1] | length, 0) %}
+            {% set calibration_entity_value_new = ((calibration_entity_value_new | float(0) / step) | round(0) * step) | round(round_size) | float %}
+          {% else %}
+            {% set calibration_entity_value_new = calibration_entity_value_new * 100 | int %}
           {% endif %}
 
+          {% set calibration_entity_value_new = iif(calibration_entity_value_new > calibration_entity_max, calibration_entity_max, calibration_entity_value_new) %}
+          {% set calibration_entity_value_new = iif(calibration_entity_value_new < calibration_entity_min, calibration_entity_min, calibration_entity_value_new) %}
+
+          {% set is_min_difference = (float(calibration_entity_value_old) - float(calibration_entity_value_new)) | abs >= float(input_calibration_delta) %}
+
+          {% set keep_alive = false %}
+
+          {% if is_calibration_trigger and not is_min_difference and device_attr(valve,'manufacturer') in keep_alive_manufactures %}
+            {% set last_updated = [calibration_entity] | expand | map(attribute='last_updated') | first %}
+            {% set keep_alive = as_datetime(current_time_stamp) - timedelta(minutes=20) >= last_updated %}
+          {% endif %}
+
+          {% if is_min_difference or keep_alive %}
+            {% set n.dict = n.dict + [(valve, [{ 'calibration_entity': calibration_entity,
+                                                  'value': calibration_entity_value_new,
+                                                  'select':calibration_select,
+                                                  'value_old':calibration_entity_value_old }])] %}
+          {% endif %}
         {% endif %}
 
       {% endfor %}
     {% endif %}
 
     {{ dict.from_keys(n.dict) }}
-
-  calibration_value_set: "{{ dict(dict(calibration_external, **calibration_dph),**calibration_common) }}"
 
   ##############################################################################################
   ################################## CONDITIONS / BLOCKER ######################################
   ##############################################################################################
 
   no_changes: >
-    {{ 
-      (input_persons | count == 0 and 
-      input_mode_guest == none and 
-      input_schedulers | count == 0 and 
-      input_presence_sensor == none and 
+    {{
+      (input_persons | count == 0 and
+      input_mode_guest == none and
+      input_schedulers | count == 0 and
+      input_presence_sensor == none and
       input_proximity == none) or
       (is_temperature_sensor_defined and not valid_temperature_sensor)
     }}
@@ -3348,7 +3253,7 @@ variables:
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
   change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
   reset_trigger: "{{ is_reset_trigger and not no_changes }}"
-  calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_value_set | count > 0 or calibration_tado | count > 0) }}"
+  calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_changes | count > 0 or calibration_tado | count > 0) }}"
   positioning_trigger: "{{ positioning | count > 0 }}"
 
   # warnings
@@ -3476,21 +3381,18 @@ actions:
             data:
               message: >
                 {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
-                'calibration data set: ' + calibration_value_set | string }}
+                'calibration data set: ' + calibration_changes | string }}
               level: !input input_log_level
               logger: blueprints.panhans.heatingcontrol
           - repeat:
-              count: "{{ calibration_value_set | count | int }}"
+              count: "{{ calibration_changes | count | int }}"
               sequence:
                 - variables:
                     index: "{{ repeat.index-1 }}"
-                    calibration_entity: "{{ (calibration_value_set.keys() | list) [index] }}"
-                    thermostat: "{{ (((calibration_value_set.values() | list) [index]) | first) ['valve'] }}"
-                    offset: "{{ (((calibration_value_set.values() | list) [index]) | first) ['value'] }}"
-                    select_entity: "{{ device_entities(device_id(thermostat)) |
-                      expand | selectattr('domain','in','select') |
-                      selectattr('attributes.options', 'contains', 'external') |
-                      map(attribute='entity_id') | list | first | default(none) }}"
+                    thermostat: "{{ (calibration_changes.keys() | list) [index] }}"
+                    calibration_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['calibration_entity'] }}"
+                    calibration_value: "{{ (((calibration_changes.values() | list) [index]) | first) ['value'] }}"
+                    select_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['select'] }}"
                     is_external: "{{ select_entity != none and not is_state(select_entity, 'external') }}"
 
                 - action: system_log.write
@@ -3498,7 +3400,7 @@ actions:
                     message: >
                       {{ 'AHC - Calibration - ' + automation_name | string  + ' \n ' +
                       'calibration entity: ' + calibration_entity | string  + ' \n ' +
-                      'offset: ' + offset | string }}
+                      'calibration_value: ' + calibration_value | string }}
                     level: !input input_log_level
                     logger: blueprints.panhans.heatingcontrol
 
@@ -3515,7 +3417,7 @@ actions:
 
                 - action: number.set_value
                   data:
-                    value: "{{ float(offset) }}"
+                    value: "{{ float(calibration_value) }}"
                   target:
                     entity_id: "{{ calibration_entity }}"
                 - delay: !input input_action_call_delay
