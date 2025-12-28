@@ -1241,6 +1241,17 @@ blueprint:
               mode: box
               unit_of_measurement: °C / °F
 
+        input_fallback_outside_temperature_unavailable:
+          name: 🌡️ Fallback If Outside Temperature Is Unavailable
+          description: >
+            `activation`
+
+
+            If the outside temperature sensor or weather entity is unavailable you can define if heating should be activated or not.
+          default: false
+          selecor:
+            boolean:
+
         input_mode_room_temperature:
           name: 🔘 Enable Room Temperature Threshold
           description: >
@@ -1525,6 +1536,7 @@ trigger_variables:
   input_mode_winter: !input input_mode_winter
   input_mode_outside_temperature: !input input_mode_outside_temperature
   input_mode_outside_temperature_threshold: !input input_mode_outside_temperature_threshold
+  input_fallback_outside_temperature_unavailable: !input input_fallback_outside_temperature_unavailable
   input_mode_room_temperature_threshold: !input input_mode_room_temperature_threshold
   input_mode_room_temperature: !input input_mode_room_temperature
   input_invert_winter_mode_value: !input input_invert_winter_mode_value
@@ -1849,10 +1861,15 @@ trigger:
         {% set room_state = iif(use_room_temp, false, true) %}
 
         {% set state = states(input_mode_outside_temperature) %}
-        {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-
-        {% if is_number(state) %}
-          {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
+      
+        {% if state in ['unknown','unavailable'] %}
+          {% set outside_state = input_fallback_outside_temperature_unavailable %}
+        {% else%}
+          {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
+      
+          {% if is_number(state) %}
+            {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
+          {% endif %}
         {% endif %}
 
         {% if use_room_temp %}
@@ -1878,10 +1895,15 @@ trigger:
         {% set room_state = iif(use_room_temp, false, true) %}
 
         {% set state = states(input_mode_outside_temperature) %}
-        {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-
-        {% if is_number(state) %}
-          {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
+      
+        {% if state in ['unknown','unavailable'] %}
+          {% set outside_state = input_fallback_outside_temperature_unavailable %}
+        {% else%}
+          {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
+      
+          {% if is_number(state) %}
+            {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
+          {% endif %}
         {% endif %}
 
         {% if use_room_temp %}
@@ -2126,6 +2148,7 @@ variables:
   input_invert_winter_mode_value: !input input_invert_winter_mode_value
   input_mode_outside_temperature: !input input_mode_outside_temperature
   input_mode_outside_temperature_threshold: !input input_mode_outside_temperature_threshold
+  input_fallback_outside_temperature_unavailable: !input input_fallback_outside_temperature_unavailable
   input_mode_room_temperature: !input input_mode_room_temperature
   input_mode_room_temperature_threshold: !input input_mode_room_temperature_threshold
 
@@ -2236,17 +2259,22 @@ variables:
   # on/off
   state_outside_temp: >
     {% if input_mode_outside_temperature == none %}
-      {{ none }}
+        {{ false }}
     {% else %}
       {% set outside_state = false %}
-      {% set use_room_temp = input_mode_room_temperature and valid_temperature_sensor %}
+      {% set use_room_temp = input_mode_room_temperature and is_temperature_sensor_defined %}
       {% set room_state = iif(use_room_temp, false, true) %}
 
       {% set state = states(input_mode_outside_temperature) %}
-      {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
-
-      {% if is_number(state) %}
-        {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
+    
+      {% if state in ['unknown','unavailable'] %}
+        {% set outside_state = input_fallback_outside_temperature_unavailable %}
+      {% else%}
+        {% set state = iif(is_number(state) == true, state, state_attr(input_mode_outside_temperature,'temperature'))%}
+    
+        {% if is_number(state) %}
+          {% set outside_state = (state | float - input_mode_outside_temperature_threshold | float) * factor < 0 %}
+        {% endif %}
       {% endif %}
 
       {% if use_room_temp %}
