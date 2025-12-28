@@ -445,19 +445,23 @@ blueprint:
       collapsed: true
       input:
         input_persons:
-          name: 👥 Persons
+          name: 👥 Persons / Devices
           description: >
-            `person` `optional`
+            `person` `device tracker` `optional`
 
 
             You can specify [persons](https://www.home-assistant.io/integrations/person/) to make your heating plan more dynamic. If you do not use [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, heating is activated as soon as someone is at home.<br/>
             With [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, these are only active when someone is at home.
+            
+            
+            **NOTE**: If you're using many zones in your configuration, it's recommended to use device trackers instead of persons.
           default: []
           selector:
             entity:
               filter:
                 - domain:
                     - person
+                    - device_tracker
               multiple: true
 
         input_people_entering_home_duration:
