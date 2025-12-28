@@ -3348,7 +3348,7 @@ actions:
                     index: "{{ repeat.index-1 }}"
                     thermostat: "{{ (calibration_changes.keys() | list) [index] }}"
                     calibration_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['calibration_entity'] }}"
-                    calibration_value: "{{ (((calibration_changes.values() | list) [index]) | first) ['calibration_entity_value_new'] }}"
+                    calibration_value: "{{ (((calibration_changes.values() | list) [index]) | first) ['value'] }}"
                     select_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['select'] }}"
                     is_external: "{{ select_entity != none and not is_state(select_entity, 'external') }}"
 
