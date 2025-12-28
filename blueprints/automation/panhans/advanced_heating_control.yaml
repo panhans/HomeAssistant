@@ -2259,7 +2259,7 @@ variables:
   # on/off
   state_outside_temp: >
     {% if input_mode_outside_temperature == none %}
-        {{ false }}
+        {{ none }}
     {% else %}
       {% set outside_state = false %}
       {% set use_room_temp = input_mode_room_temperature and is_temperature_sensor_defined %}
