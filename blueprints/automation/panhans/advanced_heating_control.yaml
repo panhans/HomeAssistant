@@ -3170,12 +3170,12 @@ variables:
 
         {% if calibration_entity is not none %}
 
-          {% set calibration_entity_min = state_attr(calibration_entity,'min') %}
-          {% set calibration_entity_max = state_attr(calibration_entity,'max') %}
-          {% set calibration_entity_value_old = states(calibration_entity) %}
+          {% set calibration_entity_min = state_attr(calibration_entity,'min') | float %}
+          {% set calibration_entity_max = state_attr(calibration_entity,'max') | float %}
+          {% set calibration_entity_value_old = states(calibration_entity) | float %}
           {% set local_temperature = value_temperature_sensor | float %}
           {% set calibration_entity_value_new = local_temperature %}
-          {% set is_offset_entity = calibration_entity_min == calibration_entity_max %}
+          {% set is_offset_entity = (calibration_entity_min + calibration_entity_max) == 0 %}
           {% set calibration_select = none %}
 
           {% if is_offset_entity %}
