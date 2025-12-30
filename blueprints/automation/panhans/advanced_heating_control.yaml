@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0
+    **Version**: 5.5.0_a
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3175,7 +3175,7 @@ variables:
           {% set calibration_entity_value_old = states(calibration_entity) | float %}
           {% set local_temperature = value_temperature_sensor | float %}
           {% set calibration_entity_value_new = local_temperature %}
-          {% set is_offset_entity = (calibration_entity_min + calibration_entity_max) == 0 %}
+          {% set is_offset_entity = (calibration_entity_min + calibration_entity_max) == 0 and calibration_entity_max < 30 %}
           {% set calibration_select = none %}
 
           {% if is_offset_entity %}
