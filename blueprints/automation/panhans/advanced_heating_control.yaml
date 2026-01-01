@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0_a
+    **Version**: 5.5.0_a2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2760,6 +2760,7 @@ variables:
         is_pysical_change or is_adjustment_trigger }}
 
   is_window_trigger: "{{ trigger_id_defined and 'temperature_change_window_' in trigger.id }}"
+  is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
 
   is_changes_trigger: >
     {% if state_window %}
@@ -2781,7 +2782,7 @@ variables:
     {% elif is_generic_calibration %}
       {{ true }}
     {% else %}
-      {{ trigger_id_defined and 'temperature_change' in trigger.id}}
+      {{ trigger_id_defined and 'temperature_change' in trigger.id }}
     {% endif %}
 
   is_scene_create_trigger: >
@@ -3243,7 +3244,10 @@ variables:
   ##############################################################################################
 
   minimal_config_bypass: >
-    {{ (is_legacy_restore and is_window_trigger) }}
+    {{
+      (is_legacy_restore and is_window_trigger) or
+      (is_liming_trigger)
+    }}
 
   allow_changes: >
     {% if is_minimal_config %}
@@ -3610,7 +3614,7 @@ actions:
 
                     - if:
                         - condition: template
-                          value_template: "{{ not is_minimal_config or trigger_id_defined and trigger.id == 'temperature_change_liming_protection_off' }}"
+                          value_template: "{{ not is_minimal_config or is_liming_trigger }}"
                         - condition: template
                           value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
                       then:
@@ -3623,7 +3627,8 @@ actions:
                   - condition: template
                     value_template: "{{ trigger_id_defined and trigger.id == 'temperature_change_liming_protection_on' }}"
                 then:
-                  - wait_template: "{{ now().strftime('%H:%M') != input_liming_protection_time[:5] }}"
+                  - delay:
+                      minutes: "{{ input_liming_protection_duration | int }}"
                   - event: ahc_liming_end_event
                     event_data:
                       automation: "{{ this.entity_id }}"
