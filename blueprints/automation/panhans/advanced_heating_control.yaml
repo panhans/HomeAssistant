@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0_a
+    **Version**: 5.5.0_a2
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -2031,33 +2031,11 @@ trigger:
       {% endif %}
     id: temperature_change_liming_protection_on
 
-  - trigger: template
-    value_template: >
-      {% if not input_liming_protection%}
-        {{ false }}
-      {% else %}
-        {% set enable_liming = true %}
-        {% if input_mode_winter != none %}
-          {% set enable_liming = is_state(input_mode_winter,'on') or input_liming_in_winter %}
-        {% endif %}
-
-        {% set current_timestamp = now() %}
-
-        {% set current_timestamp = now() %}
-
-        {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
-
-        {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
-        {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
-
-        {% set today_start = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) %}
-        {% set today_end = as_datetime(current_timestamp).replace(second=0,microsecond=0,hour=start_hour,minute=start_minute) + timedelta(minutes=input_liming_protection_duration | int) %}
-
-        {% set is_liming_time = as_datetime(current_timestamp) >= today_start and as_datetime(current_timestamp) <= today_end %}
-
-        {{ not (enable_liming and is_liming_day and is_liming_time) }}
-      {% endif %}
+  - trigger: event
+    event_type: ahc_liming_end_event
     id: temperature_change_liming_protection_off
+    event_data:
+      automation: "{{ this.entity_id }}"
 
   # frost protection
   - trigger: template
@@ -2548,7 +2526,7 @@ variables:
 
   # liming protection
   is_liming_protection: >
-    {% if not input_liming_protection%}
+    {% if not input_liming_protection %}
       {{ false }}
     {% else %}
       {% set enable_liming = true %}
@@ -2781,6 +2759,9 @@ variables:
     {{ (is_reset_temperature and is_change_trigger) or
         is_pysical_change or is_adjustment_trigger }}
 
+  is_window_trigger: "{{ trigger_id_defined and 'temperature_change_window_' in trigger.id }}"
+  is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
+
   is_changes_trigger: >
     {% if state_window %}
       {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
@@ -2801,7 +2782,7 @@ variables:
     {% elif is_generic_calibration %}
       {{ true }}
     {% else %}
-      {{ trigger_id_defined and 'temperature_change' in trigger.id}}
+      {{ trigger_id_defined and 'temperature_change' in trigger.id }}
     {% endif %}
 
   is_scene_create_trigger: >
@@ -2918,92 +2899,109 @@ variables:
       {{ iif(set_comfort, iif(is_away, temperature_away, temperature_comfort), temperature_eco) }}
     {% endif %}
 
+  is_minimal_config: >
+    {{
+      input_persons | count == 0 and
+      input_mode_guest == none and
+      input_schedulers | count == 0 and
+      input_presence_sensor == none and
+      input_proximity == none
+    }}
+
   changes: >
     {% set n = namespace(dict=[]) %}
 
-    {% set original_mode = mode %}
-
-    {% if not is_changes_trigger %}
-      {{ n.dict }}
-    {% else %}
-      {% for valve in input_trvs %}
-
-        {% set current_valve_temp = state_attr(valve, 'current_temperature') | float(20) %}
-        {% set current_valve_target_temp = state_attr(valve, 'temperature') | float(temperature) %}
-        {% set current_valve_mode = states(valve) %}
-        {% set min_temp = state_attr(valve, 'min_temp') | float(5) %}
-        {% set max_temp = state_attr(valve, 'max_temp') | float(30) %}
-
-        {% set valve_temp = target_temperature %}
-
-        {% set dont_turn_off =
-            valve in valves_without_off_mode or
-            is_not_off_but_min or
-            (state_window and window_open_temperature > 0) or
-            set_max_temperature %}
-
-        {% set ref_temp = current_valve_temp %}
-        {% if valid_temperature_sensor %}
-          {% set ref_temp = value_temperature_sensor | float(current_valve_temp) %}
-        {% endif %}
-
-        {% if is_heat_only_if_below_real_temp and iif(factor == 1, target_temperature <= ref_temp, target_temperature >= ref_temp) %}
-          {% set mode = 'off' %}
-        {% endif %}
-
-        {% set valve_mode = iif(mode == 'off' and dont_turn_off, current_valve_mode, mode) %}
-
-        {% if mode != 'off' %}
-
-          {% if is_aggressive_mode and not is_aggressive_mode_calibration %}
-
-            {% set temp_diff = valve_temp - ref_temp %}
-
-            {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
-              {% set valve_temp = valve_temp - input_aggressive_mode_offset * factor %}
-            {% elif temp_diff * factor > input_aggressive_mode_range %}
-              {% set valve_temp = valve_temp + input_aggressive_mode_offset * factor %}
-            {% endif %}
-
-          {% endif %}
-
-          {% if input_calibration_generic %}
-
-            {% if current_valve_temp != ref_temp %}
-              {% set offset = current_valve_temp - ref_temp %}
-
-              {% set offset = iif(offset > float(input_generic_calibration_offset), input_generic_calibration_offset, offset) %}
-              {% set offset = iif(offset < float(input_generic_calibration_offset) * -1, input_generic_calibration_offset * -1, offset) %}
-
-              {% set temp_with_offset = float(valve_temp) + float(offset) %}
-              {% set step = state_attr(valve, 'target_temp_step') | float(0.5) %}
-
-              {% set temp_with_offset = (temp_with_offset | float(0) / float(step)) | round(0) * float(step) %}
-
-              {% set valve_temp = iif(input_calibration_step_size == 'full', float(temp_with_offset) | round(), temp_with_offset | round(1)) %}
-
-            {% endif %}
-          {% endif %}
-
-        {% endif %}
-
-        {% if mode == 'off' and dont_turn_off %}
-          {% set valve_temp = min_temp %}
-        {% endif %}
-
-        {% set valve_temp = iif(set_max_temperature, max_temp, valve_temp) %}
-        {% set valve_temp = iif(valve_temp > max_temp, max_temp, valve_temp) %}
-        {% set valve_temp = iif(valve_temp < min_temp, min_temp, valve_temp) %}
-
-        {% if current_valve_mode != valve_mode or current_valve_target_temp != valve_temp %}
-          {% set n.dict = n.dict + [(valve, [{'mode': valve_mode , 'temp': valve_temp}])] %}
-        {% endif %}
-
+    {% if trigger_id_defined and trigger.id == 'temperature_change_liming_protection_off' %}
+      {% for info in trigger.event.data.restore_information %}
+        {% set n.dict = n.dict + [(info['entity_id'], [{'mode': info['state'] , 'temp': info['temperature']}])] %}
       {% endfor %}
 
-      {% set mode = original_mode %}
-
       {{ dict.from_keys(n.dict) }}
+    {% else %}
+      {% set original_mode = mode %}
+
+      {% if not is_changes_trigger %}
+        {{ n.dict }}
+      {% else %}
+        {% for valve in input_trvs %}
+
+          {% set current_valve_temp = state_attr(valve, 'current_temperature') | float(20) %}
+          {% set current_valve_target_temp = state_attr(valve, 'temperature') | float(temperature) %}
+          {% set current_valve_mode = states(valve) %}
+          {% set min_temp = state_attr(valve, 'min_temp') | float(5) %}
+          {% set max_temp = state_attr(valve, 'max_temp') | float(30) %}
+
+          {% set valve_temp = target_temperature %}
+
+          {% set dont_turn_off =
+              valve in valves_without_off_mode or
+              is_not_off_but_min or
+              (state_window and window_open_temperature > 0 and not is_minimal_config) or
+              set_max_temperature %}
+
+          {% set ref_temp = current_valve_temp %}
+          {% if valid_temperature_sensor %}
+            {% set ref_temp = value_temperature_sensor | float(current_valve_temp) %}
+          {% endif %}
+
+          {% if is_heat_only_if_below_real_temp and iif(factor == 1, target_temperature <= ref_temp, target_temperature >= ref_temp) %}
+            {% set mode = 'off' %}
+          {% endif %}
+
+          {% set valve_mode = iif(mode == 'off' and dont_turn_off, current_valve_mode, mode) %}
+
+          {% if mode != 'off' %}
+
+            {% if is_aggressive_mode and not is_aggressive_mode_calibration %}
+
+              {% set temp_diff = valve_temp - ref_temp %}
+
+              {% if temp_diff * factor < input_aggressive_mode_range * -1 %}
+                {% set valve_temp = valve_temp - input_aggressive_mode_offset * factor %}
+              {% elif temp_diff * factor > input_aggressive_mode_range %}
+                {% set valve_temp = valve_temp + input_aggressive_mode_offset * factor %}
+              {% endif %}
+
+            {% endif %}
+
+            {% if input_calibration_generic %}
+
+              {% if current_valve_temp != ref_temp %}
+                {% set offset = current_valve_temp - ref_temp %}
+
+                {% set offset = iif(offset > float(input_generic_calibration_offset), input_generic_calibration_offset, offset) %}
+                {% set offset = iif(offset < float(input_generic_calibration_offset) * -1, input_generic_calibration_offset * -1, offset) %}
+
+                {% set temp_with_offset = float(valve_temp) + float(offset) %}
+                {% set step = state_attr(valve, 'target_temp_step') | float(0.5) %}
+
+                {% set temp_with_offset = (temp_with_offset | float(0) / float(step)) | round(0) * float(step) %}
+
+                {% set valve_temp = iif(input_calibration_step_size == 'full', float(temp_with_offset) | round(), temp_with_offset | round(1)) %}
+
+              {% endif %}
+            {% endif %}
+
+          {% endif %}
+
+          {% if mode == 'off' and dont_turn_off %}
+            {% set valve_temp = min_temp %}
+          {% endif %}
+
+          {% set valve_temp = iif(set_max_temperature, max_temp, valve_temp) %}
+          {% set valve_temp = iif(valve_temp > max_temp, max_temp, valve_temp) %}
+          {% set valve_temp = iif(valve_temp < min_temp, min_temp, valve_temp) %}
+
+          {% if current_valve_mode != valve_mode or current_valve_target_temp != valve_temp %}
+            {% set n.dict = n.dict + [(valve, [{'mode': valve_mode , 'temp': valve_temp}])] %}
+          {% endif %}
+
+        {% endfor %}
+
+        {% set mode = original_mode %}
+
+        {{ dict.from_keys(n.dict) }}
+      {% endif %}
     {% endif %}
 
   positioning: >
@@ -3245,20 +3243,29 @@ variables:
   ################################## CONDITIONS / BLOCKER ######################################
   ##############################################################################################
 
-  no_changes: >
+  minimal_config_bypass: >
     {{
-      (input_persons | count == 0 and
-      input_mode_guest == none and
-      input_schedulers | count == 0 and
-      input_presence_sensor == none and
-      input_proximity == none) or
-      (is_temperature_sensor_defined and not valid_temperature_sensor)
+      (is_legacy_restore and is_window_trigger) or
+      (is_liming_trigger)
     }}
+
+  allow_changes: >
+    {% if is_minimal_config %}
+      {{ minimal_config_bypass }}
+    {% elif is_temperature_sensor_defined and not valid_temperature_sensor %}
+      {{ false }}
+    {% elif scene_trigger %}
+      {{ false}}
+    {% else %}
+      {{ true }}
+    {% endif %}
+
+  has_changes: "{{ changes | count > 0 }}"
 
   # conditions
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
-  change_trigger: "{{ is_changes_trigger and not scene_trigger and changes | count > 0 and not no_changes}}"
-  reset_trigger: "{{ is_reset_trigger and not no_changes }}"
+  change_trigger: "{{ has_changes and is_changes_trigger and allow_changes }}"
+  reset_trigger: "{{ is_reset_trigger and allow_changes }}"
   calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_changes | count > 0 or calibration_tado | count > 0) }}"
   positioning_trigger: "{{ positioning | count > 0 }}"
 
@@ -3573,7 +3580,7 @@ actions:
               - condition: and
                 conditions: !input input_custom_condition
               - condition: template
-                value_template: "{{ changes | count | int > 0 and (not no_changes or (no_changes and state_window)) }}"
+                value_template: "{{ has_changes and allow_changes }}"
             then:
               - repeat:
                   count: "{{ changes | count | int }}"
@@ -3607,6 +3614,8 @@ actions:
 
                     - if:
                         - condition: template
+                          value_template: "{{ not is_minimal_config or is_liming_trigger }}"
+                        - condition: template
                           value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
                       then:
                         - action: climate.set_temperature
@@ -3614,6 +3623,16 @@ actions:
                             entity_id: "{{ thermostat }}"
                             temperature: "{{ temp_target | float }}"
                         - delay: !input input_action_call_delay
+              - if:
+                  - condition: template
+                    value_template: "{{ trigger_id_defined and trigger.id == 'temperature_change_liming_protection_on' }}"
+                then:
+                  - delay:
+                      minutes: "{{ input_liming_protection_duration | int }}"
+                  - event: ahc_liming_end_event
+                    event_data:
+                      automation: "{{ this.entity_id }}"
+                      restore_information: "{{ climates_information }}"
 
       - if:
           - condition: template
