@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0_a2
+    **Version**: 5.5.0_a3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3249,6 +3249,11 @@ variables:
       (is_liming_trigger)
     }}
 
+  has_changes: "{{ changes | count > 0 }}"
+
+  # conditions
+  scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
+  
   allow_changes: >
     {% if is_minimal_config %}
       {{ minimal_config_bypass }}
@@ -3259,11 +3264,7 @@ variables:
     {% else %}
       {{ true }}
     {% endif %}
-
-  has_changes: "{{ changes | count > 0 }}"
-
-  # conditions
-  scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
+  
   change_trigger: "{{ has_changes and is_changes_trigger and allow_changes }}"
   reset_trigger: "{{ is_reset_trigger and allow_changes }}"
   calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_changes | count > 0 or calibration_tado | count > 0) }}"
