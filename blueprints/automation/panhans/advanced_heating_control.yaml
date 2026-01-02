@@ -3167,7 +3167,7 @@ variables:
                                     map(attribute='entity_id') | list | first | default(none) %}
 
         {% if calibration_entity is not none %}
-        
+
           {% set fallback_min = iif('external' in calibration_entity, 0, -12)%}
           {% set fallback_max = iif('external' in calibration_entity, 50, 12)%}
 
@@ -3251,18 +3251,16 @@ variables:
 
   # conditions
   scene_trigger: "{{ is_scene_create_trigger or is_scene_apply_trigger or is_scene_destroy_trigger }}"
-  
+
   allow_changes: >
     {% if is_minimal_config %}
       {{ minimal_config_bypass }}
     {% elif is_temperature_sensor_defined and not valid_temperature_sensor %}
       {{ false }}
-    {% elif scene_trigger %}
-      {{ false}}
     {% else %}
       {{ true }}
     {% endif %}
-  
+
   change_trigger: "{{ has_changes and is_changes_trigger and allow_changes }}"
   reset_trigger: "{{ is_reset_trigger and allow_changes }}"
   calibration_trigger: "{{ is_calibration_trigger and not input_calibration_generic and (calibration_changes | count > 0 or calibration_tado | count > 0) }}"
