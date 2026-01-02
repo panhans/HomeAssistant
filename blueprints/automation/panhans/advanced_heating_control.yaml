@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0_a5
+    **Version**: 5.5.0_a6
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -282,6 +282,18 @@ blueprint:
           selector:
             object:
           default: "[]"
+
+        input_sync_adjustments_with_entities:
+          name: 🔄️ Sync Adjustments with Entities
+          description: >
+            `optional`
+
+
+            If *on*, the adjustments will be synced with the comfort and eco temperature entities.
+
+          selector:
+            boolean:
+          default: true
 
     # modes
     mode_section:
@@ -2168,6 +2180,7 @@ variables:
 
   # heating adjustments
   input_adjustments: !input input_adjustments
+  input_sync_adjustments_with_entities: !input input_sync_adjustments_with_entities
 
   # temperature tweaks
   is_reset_temperature: !input input_reset_temperature
@@ -2757,7 +2770,7 @@ variables:
 
   is_reset: >
     {{ (is_reset_temperature and is_change_trigger) or
-        is_pysical_change or is_adjustment_trigger }}
+        is_pysical_change or (is_adjustment_trigger and input_sync_adjustments_with_entities) }}
 
   is_window_trigger: "{{ trigger_id_defined and 'temperature_change_window_' in trigger.id }}"
   is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
