@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0_a6
+    **Version**: 5.5.0_a7
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -1267,6 +1267,22 @@ blueprint:
           selector:
             boolean:
 
+        input_temperature_off:
+          name: 🌱 Idle Temperature
+          description: >
+            `idle temperature`
+
+
+            The temperature that is set when your automation is not active. *0* means *off*.
+          default: 0
+          selector:
+            number:
+              min: 4.0
+              max: 75.0
+              step: 0.5
+              mode: box
+              unit_of_measurement: °C / °F
+
         input_mode_room_temperature:
           name: 🔘 Enable Room Temperature Threshold
           description: >
@@ -1555,6 +1571,7 @@ trigger_variables:
   input_mode_room_temperature_threshold: !input input_mode_room_temperature_threshold
   input_mode_room_temperature: !input input_mode_room_temperature
   input_invert_winter_mode_value: !input input_invert_winter_mode_value
+  input_temperature_off: !input input_temperature_off
 
   # party / force max
   input_mode_party: !input input_mode_party
@@ -2871,7 +2888,7 @@ variables:
 
   mode: >
     {% if not state_ahc %}
-      {{ 'off' }}
+      {{ iif(input_temperature_off == 0, 'off', 'heat') }}
     {% elif state_window and window_open_temperature | float == 0 and not set_max_temperature %}
       {{ 'off' }}
     {% elif entry_mode == 'off' %}
@@ -2902,7 +2919,9 @@ variables:
   temperature_away: "{{ temperature_comfort | float - input_away_offset }}"
   temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, input_temperature_eco_static] | reject('==', none) | first }}"
   target_temperature: >
-    {% if state_window and window_open_temperature > 0 %}
+    {% if not state_ahc and input_temperature_off > 0 %}
+      {{ input_temperature_off }}
+    {% elif state_window and window_open_temperature > 0 %}
       {{ window_open_temperature }}
     {% elif state_party %}
       {{ iif(party_temp != none, party_temp, temperature_comfort) }}
