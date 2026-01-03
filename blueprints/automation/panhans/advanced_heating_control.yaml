@@ -107,14 +107,14 @@ blueprint:
       description: >
 
         ### ☀️ Comfort Mode
-         
+
         The comfort mode kicks in when your schedule is active, somebody is home or your presence sensor detects movement.
 
         ### ⚙️ Minimum Configuration
 
         For the minimum configuration, setting the fallback temperature is sufficient. Just set your desired temperature and you are good to go. You can also make it available on your interface using an Input Number Helper.
-         
-        ### ⚙️ Advanced Configuration 
+
+        ### ⚙️ Advanced Configuration
 
         If you want to change the comfort temperature frequently, you can set a helper for the normal comfort temperature.
         In this configuration, the fallback temperature only serves as a reference for resetting the adjusted comfort temperature.
@@ -200,14 +200,14 @@ blueprint:
       description: >
 
         ### 🍃 Eco Mode
-         
+
         The eco mode kicks in when your schedule is inactive, nobody is home or your presence sensor does not detect any movement.
 
         ### ⚙️ Minimum Configuration
 
         For the minimum configuration, setting the fallback temperature is sufficient. Just set your desired temperature and you are good to go. You can also make it available on your interface using an Input Number Helper.
-         
-        ### ⚙️ Advanced Configuration 
+
+        ### ⚙️ Advanced Configuration
 
         If you want to change the eco temperature frequently, you can set a helper for the normal eco temperature.
         In this configuration, the fallback temperature only serves as a reference for resetting the adjusted eco temperature.
@@ -294,7 +294,7 @@ blueprint:
       description: >
 
         ### ✅ Schedules
-         
+
         With Schedules, you can easily create a weekly plan that allows you to switch between comfort and eco mode.
         If you set people or proximity entities, comfort mode will only be activated when the people are at home or when the conditions you have set are met.
         <br/><br/>
@@ -357,7 +357,7 @@ blueprint:
       description: >
 
         ### 👨‍👩‍👧‍👦 Persons & Devices
-         
+
         Here you can specify the people who live in the room to be heated. Your schedules for setting the comfort temperature will only take effect when these people are at home.
         We recommend using devices rather than people, as these only switch between the home and not_home statuses. People can also occupy other zones defined by you, which may trigger comfort mode under certain circumstances.
 
@@ -579,12 +579,12 @@ blueprint:
       description: >
 
         ### 🎛️ Adjustments
-         
+
         In this section, you can override temperatures or your schedules. The adjustments allow you to create a time-controlled plan. However, this is only intended as a supplement to the simple schedule.
 
         ### ⚙️ Further options
 
-        Otherwise, you will find the option to set timers, input booleans, etc. that can override your temperature or force comfort or eco mode. 
+        Otherwise, you will find the option to set timers, input booleans, etc. that can override your temperature or force comfort or eco mode.
         <br/><br/>
       input:
         input_adjustments:
@@ -831,7 +831,7 @@ blueprint:
       description: >
 
         ### 🏃 Away Mode
-         
+
         You can set an offset that is subtracted from your comfort temperature when you leave the house but comfort mode should be active.
 
         ### ⏲️ Schedule Away Mode
@@ -1194,7 +1194,7 @@ blueprint:
       description: >
 
         ### ❄️ Frost Protection
-         
+
         If the presence sensor does not detect any movement for the set duration or if no one is at home for that period, the temperature is set to the selected minimum temperature.
         <br/><br/>
       input:
@@ -1466,7 +1466,7 @@ blueprint:
       description: >
 
         ### 🤏 Dynamic Valve Positioning
-         
+
         If your thermostat supports valve positioning you can enable this here. Everytime the automation gets triggered the code checks if there is an adjustment needed.
         The greater the difference between the current temperature and the target temperature, the further the valve is opened.
         <br/><br/>
@@ -1804,6 +1804,16 @@ trigger:
     entity_id: !input input_temperature_comfort
     for: !input input_action_call_delay
     id: temperature_change_comfort
+
+  - trigger: state
+    entity_id: !input input_temperature_eco_static_entity
+    for: !input input_action_call_delay
+    id: temperature_change_eco_fallback
+
+  - trigger: state
+    entity_id: !input input_temperature_comfort_static_entity
+    for: !input input_action_call_delay
+    id: temperature_change_comfort_fallback
 
   # persons
   - trigger: template
@@ -3084,7 +3094,7 @@ variables:
 
   temperature_comfort: "{{ [entry_comfort_temp, temperature_comfort_of_entity, fallback_comfort_temperature] | reject('==', none) | first }}"
   temperature_away: "{{ temperature_comfort | float - input_away_offset }}"
-  temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, fallback_comfort_temperature] | reject('==', none) | first }}"
+  temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, fallback_eco_temperature] | reject('==', none) | first }}"
   target_temperature: >
     {% if not state_ahc and input_temperature_off > 0 %}
       {{ input_temperature_off }}
