@@ -1,6 +1,6 @@
 blueprint:
   name: Zone Notification Extended
-  description: "
+  description: >
 
     ✉️ notification when a person enters / leaves a zone
 
@@ -27,7 +27,11 @@ blueprint:
     If you like my work and support feel free to support me.
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
-    "
+    <a href="https://www.paypal.com/donate/?hosted_button_id=ZQ333L4BA3YLU">
+      <img src="https://raw.githubusercontent.com/andreostrovsky/donate-with-paypal/refs/heads/master/blue.svg"
+          width="200" alt="Donate with PayPal">
+    </a>
+    
   source_url: "https://github.com/panhans/homeassistant/blob/main/blueprints/automation/panhans/zone_notification_extended.yaml"
   domain: automation
   homeassistant:
