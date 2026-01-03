@@ -7,6 +7,8 @@ If you have any questions, suggestions, or feature requests, feel free to open a
 
 ### ⚙️ Automations
 
+| Name | Description |
+| --- | --- |
 | [🔥 Advanced Heating Control](blueprints/automation/panhans/advanced_heating_control.yaml)     | A complex heating autiomation |
 | [📲 Entity State Notification](blueprints/automation/panhans/entity_state_notification.yaml)   | Feature rich notification based on several entity states |
 | [🎞️ Scene Based Theatre Mode](blueprints/automation/panhans/scene_based_theatre_mode.yaml)     | A simple solution to fire scenes based on your media player for the ultimate theatre experience |
