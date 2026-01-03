@@ -7,21 +7,19 @@ If you have any questions, suggestions, or feature requests, feel free to open a
 
 ### ⚙️ Automations
 
-| <div style="width:290px">property</div> | Description |
-| --- | --- |
-| [🔥 Advanced Heating Control](blueprints/automation/panhans/advanced_heating_control.yaml)     | A complex heating autiomation |
-| [📲 Entity State Notification](blueprints/automation/panhans/entity_state_notification.yaml)   | Feature rich notification based on several entity states |
-| [🎞️ Scene Based Theatre Mode](blueprints/automation/panhans/scene_based_theatre_mode.yaml)     | A simple solution to fire scenes based on your media player for the ultimate theatre experience |
-| [🌐 Zone Notification Extended](blueprints/automation/panhans/zone_notification_extended.yaml) | Notifactions and actions when persons enter or leave zones |
+[🔥 Advanced Heating Control](blueprints/automation/panhans/advanced_heating_control.yaml) - A complex heating autiomation<br/>
+[📲 Entity State Notification](blueprints/automation/panhans/entity_state_notification.yaml) - Feature rich notification based on several entity states<br/>
+[🎞️ Scene Based Theatre Mode](blueprints/automation/panhans/scene_based_theatre_mode.yaml) - A simple solution to fire scenes based on your media player for the ultimate theatre experience<br/>
+[🌐 Zone Notification Extended](blueprints/automation/panhans/zone_notification_extended.yaml) - Notifications and actions based on zone occupancy
 
 ### 📑 Scripts
 
-[⏭️ Simple Scene Toggle](blueprints/script/scene_toggle.yaml)
+[⏭️ Simple Scene Toggle](blueprints/script/scene_toggle.yaml) - A simple script to toggle scenes
 
 ### 🍰 Snippets
-[AHC Template Sensor](snippets/ahc_template_sensor.yaml)
-[AHC Latest Version Sensor](snippets/ahc_latest_version_sensor.yaml)
-[AHC Local Version Sensor](snippets/ahc_local_version_sensor.yaml)
+[AHC Template Sensor](snippets/ahc_template_sensor.yaml) - A sensor with all information about your AHC automation <br/>
+[AHC Latest Version Sensor](snippets/ahc_latest_version_sensor.yaml) - A sensor for the latest version of AHC<br/>
+[AHC Local Version Sensor](snippets/ahc_local_version_sensor.yaml) - A sensor of your local version of AHC<br/>
    
 If you appreciate my work and support:
 
