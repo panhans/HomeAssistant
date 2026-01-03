@@ -78,10 +78,15 @@ If you have any questions, suggestions, or feature requests, feel free to open a
     </tr>
 </table>
 
+## 🌍 Links
+
+Documentation: [panhans.github.io/HomeAssistant/](https://panhans.github.io/HomeAssistant/)
+<br/><br/>
 If you appreciate my work and support:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
 <a href="https://www.paypal.com/donate/?hosted_button_id=ZQ333L4BA3YLU">
+<br/>
 <img src="https://raw.githubusercontent.com/andreostrovsky/donate-with-paypal/refs/heads/master/blue.svg"
        width="200" alt="Donate with PayPal">
 </a>
