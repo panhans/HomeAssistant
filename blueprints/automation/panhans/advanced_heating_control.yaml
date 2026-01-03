@@ -77,24 +77,6 @@ blueprint:
                     - climate
               multiple: true
 
-        input_hvac_mode:
-          name: 🎛️ Operation / HVAC Mode
-          description: >
-            `hvac`
-
-
-            Select the hvac mode for your [thermostats](https://www.home-assistant.io/integrations/climate/). Be sure your selected thermostats support the hvac mode you've chosen.
-            AHC will log a warning if there is a miss match. For radiator [thermostats]((https://www.home-assistant.io/integrations/climate/)) the default is mostly *heat*.
-            If you own an air conditioner it will support *auto* or *cool*, too.
-          default: "heat"
-          selector:
-            select:
-              options:
-                - heat
-                - cool
-                - auto
-                - heat_cool
-
         input_temperature_sensor:
           name: 🌡️ Room Temperature Sensor
           description: >
@@ -119,18 +101,34 @@ blueprint:
                     - temperature
               multiple: false
 
-    temperature_section:
-      name: Temperatures
-      icon: mdi:thermometer
+    comfort_temperature_section:
+      name: Comfort Mode Settings
+      icon: mdi:weather-sunny
+      description: >
+
+        ### ☀️ Comfort Mode
+         
+        The comfort mode kicks in when your schedule is active, somebody is home or your presence sensor detects movement.
+        
+        ### ⚙️ Minimum Configuration
+
+        For the minimum configuration, setting the fallback temperature is sufficient. Just set your desired temperature and you are good to go. You can also make it available on your interface using an Input Number Helper.
+         
+        ### ⚙️ Advanced Configuration 
+
+        If you want to change the comfort temperature frequently, you can set a helper for the normal comfort temperature.
+        In this configuration, the fallback temperature only serves as a reference for resetting the adjusted comfort temperature.
+        The most common configuration is to set a fixed fallback temperature and a helper for the normal comfort temperature.
+        <br/><br/>
       collapsed: true
       input:
         input_temperature_comfort_static:
-          name: 🛋️ Static Comfort Temperature
+          name: 🌤️ Fallback Comfort Temperature
           description: >
             `comfort temperature`
 
 
-            You can set a static comfort temperature here.
+            Temperature when your heating schedule is active. It's also used as fallback temperature, e.g. temperature resets.
           default: 22
           selector:
             number:
@@ -140,24 +138,26 @@ blueprint:
               mode: box
               unit_of_measurement: °C / °F
 
-        input_temperature_eco_static:
-          name: 🌱 Static Eco Temperature
+        input_temperature_comfort_static_entity:
+          name: 🌤️ Fallback Comfort Temperature Input
           description: >
-            `eco temperature`
+            `comfort temperature` `fallback` `optional`
 
 
-            The temperature that is set when your heating schedule is not active.
-          default: 19
+            To control your fallback comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+
+
+            Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
+          default: []
           selector:
-            number:
-              min: 4.0
-              max: 75.0
-              step: 0.5
-              mode: box
-              unit_of_measurement: °C / °F
+            entity:
+              filter:
+                - domain:
+                    - input_number
+              multiple: false
 
         input_temperature_comfort:
-          name: 🛋️ Comfort Temperature
+          name: ☀️ Comfort Temperature
           description: >
             `comfort temperature` `optional`
 
@@ -174,8 +174,82 @@ blueprint:
                     - input_number
               multiple: false
 
+        input_hvac_mode_comfort:
+          name: 🎛️ Operation / HVAC Mode
+          description: >
+            `comfort temperature` `hvac`
+
+
+            Select the hvac mode for your [thermostats](https://www.home-assistant.io/integrations/climate/). Be sure your selected thermostats support the hvac mode you've chosen.
+            AHC will log a warning if there is a miss match. For radiator [thermostats]((https://www.home-assistant.io/integrations/climate/)) the default is mostly *heat*.
+            If you own an air conditioner it will support *auto* or *cool*, too.
+          default: "heat"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - heat
+                - cool
+                - auto
+                - heat_cool
+
+    eco_temperature_section:
+      name: Eco Mode Settings
+      icon: mdi:leaf
+      collapsed: true
+      description: >
+
+        ### 🍃 Eco Mode
+         
+        The eco mode kicks in when your schedule is inactive, nobody is home or your presence sensor does not detect any movement.
+        
+        ### ⚙️ Minimum Configuration
+
+        For the minimum configuration, setting the fallback temperature is sufficient. Just set your desired temperature and you are good to go. You can also make it available on your interface using an Input Number Helper.
+         
+        ### ⚙️ Advanced Configuration 
+
+        If you want to change the eco temperature frequently, you can set a helper for the normal eco temperature.
+        In this configuration, the fallback temperature only serves as a reference for resetting the adjusted eco temperature.
+        The most common configuration is to set a fixed eco fallback temperature. If you like can also define a helper for ui purpose.
+        <br/><br/>
+      input:
+        input_temperature_eco_static:
+          name: 🌱 Fallback Eco Temperature
+          description: >
+            `eco temperature`
+
+
+            The temperature that is set when your heating schedule is not active.
+          default: 19
+          selector:
+            number:
+              min: 4.0
+              max: 75.0
+              step: 0.5
+              mode: box
+              unit_of_measurement: °C / °F
+
+        input_temperature_eco_static_entity:
+          name: 🌱 Fallback Eco Temperature Input
+          description: >
+            `eco temperature` `fallback` `optional`
+
+
+            To control your fallback eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+
+
+            Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_number
+              multiple: false
+
         input_temperature_eco:
-          name: 🌱 Eco Temperature
+          name: 🍃 Eco Temperature
           description: >
             `eco temperature` `optional`
 
@@ -192,8 +266,28 @@ blueprint:
                     - input_number
               multiple: false
 
+        input_hvac_mode_eco:
+          name: 🎛️ Operation / HVAC Mode
+          description: >
+            `eco temperature` `hvac`
+
+
+            Select the hvac mode for your [thermostats](https://www.home-assistant.io/integrations/climate/). Be sure your selected thermostats support the hvac mode you've chosen.
+            AHC will log a warning if there is a miss match. For radiator [thermostats]((https://www.home-assistant.io/integrations/climate/)) the default is mostly *heat*.
+            If you own an air conditioner it will support *auto* or *cool*, too.
+          default: "heat"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - "heat"
+                - "cool"
+                - "auto"
+                - "heat_cool"
+                - "off"
+
     adjustment_section:
-      name: Adjustments / Heating Plan
+      name: Adjustments & Overrides
       icon: mdi:sun-clock
       collapsed: true
       input:
@@ -295,33 +389,6 @@ blueprint:
             boolean:
           default: true
 
-    # modes
-    mode_section:
-      name: Force Comfort/Eco Mode
-      icon: mdi:fire
-      collapsed: true
-      input:
-        input_mode_party:
-          name: 🎈 Party mode
-          description: >
-            `optional`
-
-
-            If on, all settings are ignored and heating takes place. You can define multiple [timers](https://www.home-assistant.io/integrations/timer/) or boolean entities.
-            If you put a number at the end of the friendly name like *Party Timer 20* this number will be taken as the desired comfort temperature for this [timer](https://www.home-assistant.io/integrations/timer/).
-
-
-            Create your timer [here](https://my.home-assistant.io/redirect/helpers/).
-          default: []
-          selector:
-            entity:
-              filter:
-                - domain:
-                    - input_boolean
-                    - binary_sensor
-                    - timer
-              multiple: true
-
         input_force_max_temperature:
           name: 🥵 Force Max Temperature
           description: >
@@ -357,6 +424,27 @@ blueprint:
                     - binary_sensor
               multiple: false
 
+        input_mode_party:
+          name: 🎈 Party mode
+          description: >
+            `optional`
+
+
+            If on, all settings are ignored and heating takes place. You can define multiple [timers](https://www.home-assistant.io/integrations/timer/) or boolean entities.
+            If you put a number at the end of the friendly name like *Party Timer 20* this number will be taken as the desired comfort temperature for this [timer](https://www.home-assistant.io/integrations/timer/).
+
+
+            Create your timer [here](https://my.home-assistant.io/redirect/helpers/).
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_boolean
+                    - binary_sensor
+                    - timer
+              multiple: true
+
         input_party_legacy_restore:
           name: 🔄 Legacy Restore
           description: >
@@ -373,17 +461,6 @@ blueprint:
       icon: mdi:knob
       collapsed: true
       input:
-        input_off_instead_of_eco:
-          name: 🛑 Off Instead Of Eco
-          description: >
-            `optional` `temperature tweak`
-
-
-            Turn off your [thermostats](https://www.home-assistant.io/integrations/climate/) instead of lower the target temperature to eco temperature.
-          default: false
-          selector:
-            boolean:
-
         input_min_instead_of_off:
           name: ⬇️ Min Instead Of Off
           description: >
@@ -1559,8 +1636,9 @@ trigger_variables:
   # temperatures
   input_temperature_comfort: !input input_temperature_comfort
   input_temperature_eco: !input input_temperature_eco
-  input_hvac_mode: !input input_hvac_mode
-  factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
+  input_hvac_mode_eco: !input input_hvac_mode_eco
+  input_hvac_mode_comfort: !input input_hvac_mode_comfort
+  factor: "{{ iif(input_hvac_mode_eco == 'cool' or input_hvac_mode_comfort == 'cool', -1, 1) | int }}"
   is_heat_only_if_below_real_temp: !input input_off_if_above_room_temperature
 
   # on/ff
@@ -2111,16 +2189,33 @@ variables:
 
   # thermostats / sensors
   input_trvs: !input input_trvs
-  input_hvac_mode: !input input_hvac_mode
+  input_hvac_mode_eco: !input input_hvac_mode_eco
+  input_hvac_mode_comfort: !input input_hvac_mode_comfort
   input_temperature_sensor: !input input_temperature_sensor
 
   # temperatures
   input_temperature_comfort: !input input_temperature_comfort
   input_temperature_comfort_entity: "{{ iif(input_temperature_comfort == [], none, input_temperature_comfort) }}"
   input_temperature_comfort_static: !input input_temperature_comfort_static
+  input_temperature_comfort_static_entity: !input input_temperature_comfort_static_entity
+  fallback_comfort_temperature: >
+    {% if input_temperature_comfort_static_entity != [] %}
+      {{ states(input_temperature_comfort_static_entity) }}
+    {% else %}
+      {{ input_temperature_comfort_static }}
+    {% endif %}
+
   input_temperature_eco: !input input_temperature_eco
   input_temperature_eco_entity: "{{ iif(input_temperature_eco == [], none, input_temperature_eco) }}"
+
   input_temperature_eco_static: !input input_temperature_eco_static
+  input_temperature_eco_static_entity: !input input_temperature_eco_static_entity
+  fallback_eco_temperature: >
+    {% if input_temperature_eco_static_entity != [] %}
+      {{ states(input_temperature_eco_static_entity) }}
+    {% else %}
+      {{ input_temperature_eco_static }}
+    {% endif %}
 
   #frost protection
   input_frost_protection_temp: !input input_frost_protection_temp
@@ -2201,7 +2296,6 @@ variables:
 
   # temperature tweaks
   is_reset_temperature: !input input_reset_temperature
-  is_off_instead_min: !input input_off_instead_of_eco
   is_not_off_but_min: !input input_min_instead_of_off
   is_fahrenheit: !input input_fahrenheit
   is_heat_only_if_below_real_temp: !input input_off_if_above_room_temperature
@@ -2240,7 +2334,6 @@ variables:
   valid_temperature_sensor: >
     {{ value_temperature_sensor not in invalid_states }}
 
-  factor: "{{ iif(input_hvac_mode == 'cool', -1, 1) | int }}"
   current_time_stamp: "{{ now() }}"
   is_metric: "{{ not is_temperature_sensor_defined or (is_temperature_sensor_defined and state_attr(input_temperature_sensor,VAR_UNIT_OF_MEASUREMENT) == '°C') }}"
 
@@ -2268,6 +2361,8 @@ variables:
     {% endif %}
 
   # on/off
+  factor: "{{ iif(input_hvac_mode_eco == 'cool' or input_hvac_mode_comfort == 'cool', -1, 1) | int }}"
+
   state_outside_temp: >
     {% if input_mode_outside_temperature == none %}
         {{ none }}
@@ -2580,6 +2675,35 @@ variables:
     {% endif %}
 
   # thermostat groups
+
+  set_comfort: >
+    {% if is_force_max_temperature %}
+      {{ true }}
+    {% elif entry_mode == 'eco' %}
+      {{ false }}
+    {% elif entry_mode == 'comfort' %}
+      {{ true }}
+    {% elif state_party %}
+      {{ true }}
+    {% elif is_force_eco_temperature %}
+      {{ false }}
+    {% elif is_away %}
+      {{ true }}
+    {% elif not is_scheduler_defined and not is_presence_sensor_defined %}
+      {{ is_anybody_home_or_proximity }}
+    {% else %}
+      {% set comfort_state = state_scheduler or state_presence %}
+
+      {% if is_person_defined or is_proximity_defined %}
+        {{ is_anybody_home_or_proximity and comfort_state }}
+      {% else %}
+        {{ comfort_state }}
+      {% endif %}
+    {% endif %}
+
+  input_hvac_mode: >
+    {{ iif(set_comfort, input_hvac_mode_comfort, input_hvac_mode_eco) }}
+
   valves: >
     {{ input_trvs | expand
         | selectattr('attributes.hvac_modes','search','(?i)'+input_hvac_mode)
@@ -2854,31 +2978,6 @@ variables:
   #################################### CHANGES ########################################
   #####################################################################################
 
-  set_comfort: >
-    {% if is_force_max_temperature %}
-      {{ true }}
-    {% elif entry_mode == 'eco' %}
-      {{ false }}
-    {% elif entry_mode == 'comfort' %}
-      {{ true }}
-    {% elif state_party %}
-      {{ true }}
-    {% elif is_force_eco_temperature %}
-      {{ false }}
-    {% elif is_away %}
-      {{ true }}
-    {% elif not is_scheduler_defined and not is_presence_sensor_defined %}
-      {{ is_anybody_home_or_proximity }}
-    {% else %}
-      {% set comfort_state = state_scheduler or state_presence %}
-
-      {% if is_person_defined or is_proximity_defined %}
-        {{ is_anybody_home_or_proximity and comfort_state }}
-      {% else %}
-        {{ comfort_state }}
-      {% endif %}
-    {% endif %}
-
   window_open_temperature: >
     {% if input_window_open_temperature_number != [] %}
       {{ states(input_window_open_temperature_number) | float }}
@@ -2892,8 +2991,6 @@ variables:
     {% elif state_window and window_open_temperature | float == 0 and not set_max_temperature %}
       {{ 'off' }}
     {% elif entry_mode == 'off' %}
-      {{ 'off' }}
-    {% elif is_off_instead_min and not set_comfort %}
       {{ 'off' }}
     {% elif is_off_if_nobody_home and is_person_defined and not is_anybody_home_or_proximity and not set_comfort %}
       {{ 'off' }}
@@ -2915,9 +3012,9 @@ variables:
       {{ none }}
     {% endif %}
 
-  temperature_comfort: "{{ [entry_comfort_temp, temperature_comfort_of_entity, input_temperature_comfort_static] | reject('==', none) | first }}"
+  temperature_comfort: "{{ [entry_comfort_temp, temperature_comfort_of_entity, fallback_comfort_temperature] | reject('==', none) | first }}"
   temperature_away: "{{ temperature_comfort | float - input_away_offset }}"
-  temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, input_temperature_eco_static] | reject('==', none) | first }}"
+  temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, fallback_comfort_temperature] | reject('==', none) | first }}"
   target_temperature: >
     {% if not state_ahc and input_temperature_off > 0 %}
       {{ input_temperature_off }}
@@ -3121,7 +3218,7 @@ variables:
         {% set temp_r = state_attr(trigger.to_state.entity_id,'temperature') %}
       {% else %}
       {% set temp_r = iif(is_reset and entity == input_temperature_eco_entity,
-          input_temperature_eco_static, input_temperature_comfort_static) %}
+          fallback_eco_temperature, input_temperature_comfort_static) %}
       {% endif %}
 
       {% if entity != none and temp_r != none %}
