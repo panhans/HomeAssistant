@@ -109,7 +109,7 @@ blueprint:
         ### ☀️ Comfort Mode
          
         The comfort mode kicks in when your schedule is active, somebody is home or your presence sensor detects movement.
-        
+
         ### ⚙️ Minimum Configuration
 
         For the minimum configuration, setting the fallback temperature is sufficient. Just set your desired temperature and you are good to go. You can also make it available on your interface using an Input Number Helper.
@@ -202,7 +202,7 @@ blueprint:
         ### 🍃 Eco Mode
          
         The eco mode kicks in when your schedule is inactive, nobody is home or your presence sensor does not detect any movement.
-        
+
         ### ⚙️ Minimum Configuration
 
         For the minimum configuration, setting the fallback temperature is sufficient. Just set your desired temperature and you are good to go. You can also make it available on your interface using an Input Number Helper.
@@ -286,10 +286,306 @@ blueprint:
                 - "heat_cool"
                 - "off"
 
+    # scheduler
+    scheduling_section:
+      name: Scheduling
+      icon: mdi:clock-outline
+      collapsed: true
+      description: >
+
+        ### ✅ Schedules
+         
+        With Schedules, you can easily create a weekly plan that allows you to switch between comfort and eco mode.
+        If you set people or proximity entities, comfort mode will only be activated when the people are at home or when the conditions you have set are met.
+        <br/><br/>
+      input:
+        input_schedulers:
+          name: ⏲️ Schedules
+          description: >
+            `schedules` `optional`
+
+
+            A [schedule](https://www.home-assistant.io/integrations/schedule/) specifies when heating to comfort temperature should take place. You can create it in the helper section of Home Assistant.<br/>
+            If you have also specified [people](https://www.home-assistant.io/integrations/person/), someone must also be at home for heating. This is the same behaviour with a [proximity](https://www.home-assistant.io/integrations/proximity/) entity.<br/>
+            You can create as many [schedules](https://www.home-assistant.io/integrations/schedule/) as you like. Make sure the names are clear.
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - schedule
+              multiple: true
+
+        input_scheduler_selector:
+          name: ☝🏻 Schedule Selector
+          description: >
+            `schedule` `optional`
+
+
+            Define an entity to choose from your schedules. If you use one schedule only you can ignore this. If you use more than one schedule you have multiple possibilities to setup your selection.<br/>
+
+            <details>
+            <summary><code><strong>CLICK HERE:</strong> More information</code></summary>
+            <br/>
+
+
+
+            * toggle [input_boolean](https://www.home-assistant.io/integrations/input_boolean/) or [binary_sensor](https://www.home-assistant.io/integrations/binary_sensor/): If *off* the first defined [schedule](https://www.home-assistant.io/integrations/schedule/) is enabled. If *on* the second [schedule](https://www.home-assistant.io/integrations/schedule/) is active. More than two [schedules](https://www.home-assistant.io/integrations/schedule/) cannot be selected with binary inputs.
+
+            * text [input text](https://www.home-assistant.io/integrations/input_text/), drop down [input text](https://www.home-assistant.io/integrations/input_select/) or [sensor](https://www.home-assistant.io/integrations/sensor/):
+              * The value has to match the friendly name of the selected [schedule](https://www.home-assistant.io/integrations/schedule/) at least partially. Example: If you provide three [schedules](https://www.home-assistant.io/integrations/schedule/) called *work*, *holiday/sick*, *guest* you can select the holiday [schedule](https://www.home-assistant.io/integrations/schedule/) while setting the selection entity to *sick*, *holiday* or *holiday/sick*. This option is case insensitive.
+              * You also can go with numbers: if you want to choose the first [schedule](https://www.home-assistant.io/integrations/schedule/) the selector entity must return the number *1*. For the 2nd number *2* and so on.
+
+            </details>
+          default:
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_boolean
+                    - binary_sensor
+                    - input_text
+                    - input_number
+                    - input_select
+              multiple: false
+
+    # persons
+    person_section:
+      name: Persons & Devices
+      icon: mdi:account-multiple
+      collapsed: true
+      description: >
+
+        ### 👨‍👩‍👧‍👦 Persons & Devices
+         
+        Here you can specify the people who live in the room to be heated. Your schedules for setting the comfort temperature will only take effect when these people are at home.
+        We recommend using devices rather than people, as these only switch between the home and not_home statuses. People can also occupy other zones defined by you, which may trigger comfort mode under certain circumstances.
+
+        <br/><br/>
+        📝 If you are interested in geo fencing, leave this blank and take a look at the proximity section.
+        <br/><br/>
+      input:
+        input_persons:
+          name: 👥 Persons / Devices
+          description: >
+            `person` `device tracker` `optional`
+
+
+            You can specify [persons](https://www.home-assistant.io/integrations/person/) to make your heating plan more dynamic. If you do not use [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, heating is activated as soon as someone is at home.<br/>
+            With [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, these are only active when someone is at home.
+
+
+            **NOTE**: If you're using many zones in your configuration, it's recommended to use device trackers instead of persons.
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - person
+                    - device_tracker
+              multiple: true
+
+        input_people_entering_home_duration:
+          name: 🏠 Enter Home Duration
+          description: >
+            `person`
+
+
+            Duration for which someone must be at home for heating to be activated.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 2
+          selector:
+            duration:
+
+        input_people_leaving_home_duration:
+          name: 💨 Leaving Home Duration
+          description: >
+            `person`
+
+
+            Duration for which someone must be out of the house for heating to be deactivated.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 2
+          selector:
+            duration:
+
+        input_mode_guest:
+          name: 🤝 Guest Mode
+          description: >
+            `person` `optional`
+
+
+
+            If an entity is specified here, it is treated like a [person](https://www.home-assistant.io/integrations/person/). It's usefull when you're leaving your guests alone in your home and you are not using presence detection.
+
+              * entity defined -> [person](https://www.home-assistant.io/integrations/person/) defined
+              * enitity is *on* -> simulates [person](https://www.home-assistant.io/integrations/person/) is home
+              * enitity is *off* -> simulates [person](https://www.home-assistant.io/integrations/person/) is away
+          default:
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_boolean
+                    - binary_sensor
+                    - timer
+              multiple: false
+
+    # proximity
+    proximity_section:
+      name: Proximity / Geo Fencing
+      icon: mdi:leak
+      collapsed: true
+      description: >
+
+        ### 🌍 Proximity / Geo Fencing
+
+        Here you can set up geo fencing. To do this, use the proximity integration of Home Assistant. Create an instance of the integration with the people who also live in the room to be heated.
+        Heating is activated when the proximity entity reports that a person is moving within the specified radius of your home or is at home.
+
+        <br/><br/>
+        📝 If you use this function, it is recommended that you remove the persons and devices from the persons & devices section.
+        <br/><br/>
+      input:
+        input_proximity:
+          name: ↔️ Proximity
+          description: >
+            `proximity` `optional`
+
+
+            You can preheat your rooms with help of home assistant's [proximity integration](https://www.home-assistant.io/integrations/proximity/).<br/>
+            Just select your proxmity zone and take your adjustments to distance and duration.<br/>
+            If you're in range of your distance and towards to your home heating kicks in.<br/>
+
+            **Note**: The proximity entity is handles like a person. Comfort heating takes place when coming or beeing home. Combinations with [schedules](https://www.home-assistant.io/integrations/schedule/) are also possible.
+          default:
+          selector:
+            device:
+              filter:
+                integration: proximity
+              multiple: false
+
+        input_proximity_duration:
+          name: ⏰ Proximity Duration
+          description: >
+            `proximity`
+
+
+            Duration for which someone must be on way home before heating occurs.
+          default:
+            hours: 0
+            minutes: 2
+            seconds: 0
+          selector:
+            duration:
+
+        input_proximity_distance:
+          name: ↔️ Proximity Distance
+          description: >
+            `proximity`
+
+
+            The distance when [proximity](https://www.home-assistant.io/integrations/proximity/) sensor gets impact for this automation. Hint: Unit depends on the setup of your integration.
+          default: 500
+          selector:
+            number:
+              min: 0
+              max: 999999999
+              step: 1
+              mode: box
+
+    # presence
+    presence_section:
+      name: Presence Detection
+      icon: mdi:location-enter
+      collapsed: true
+      description: >
+
+        ### 🔘 Presence Detection
+
+        Here you can set a presence sensor. Remember to debounce it if it does not offer a function for this.
+
+        You can also set a schedule that specifies when the presence sensor should be active, for example, to guarantee eco mode despite movement at night.
+        <br/><br/>
+      input:
+        input_presence_sensor:
+          name: 🚶 Presence Sensor / On/Off-Entity
+          description: >
+            `presence detection` `optional`
+
+
+            If you specify a presence sensor, heating will take place if it detects presence.<br/>
+            If you have specified [persons](https://www.home-assistant.io/integrations/person/), at least one must also be at home. You also can select an [input boolean](https://www.home-assistant.io/integrations/input_boolean/) entity to realise a simple On/Off-Logic.
+          default:
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - binary_sensor
+                    - input_boolean
+              multiple: false
+
+        input_scheduler_presence:
+          name: ⏲️ Presence Sensor Scheduler
+          description: >
+            `presence detection` `optional`
+
+
+            The presence [schedule](https://www.home-assistant.io/integrations/schedule/) specifies exactly when the presence sensor should be used during the day.
+          default:
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - schedule
+              multiple: false
+
+        input_presence_reaction_on_time:
+          name: ⏳ Presence Reaction On Time
+          description: >
+            `presence detection`
+
+
+            Specify the duration for which the presence sensor must detect any presence so that the comfort temperature is set.
+          default:
+            hours: 0
+            minutes: 5
+            seconds: 0
+          selector:
+            duration:
+
+        input_presence_reaction_off_time:
+          name: ⌛ Presence Reaction Off Time
+          description: >
+            `presence detection`
+
+
+            Specify the duration for which the presence sensor must not detect any presence so that the eco temperature is set.
+          default:
+            hours: 0
+            minutes: 5
+            seconds: 0
+          selector:
+            duration:
+
     adjustment_section:
       name: Adjustments & Overrides
       icon: mdi:sun-clock
       collapsed: true
+      description: >
+
+        ### 🎛️ Adjustments
+         
+        In this section, you can override temperatures or your schedules. The adjustments allow you to create a time-controlled plan. However, this is only intended as a supplement to the simple schedule.
+
+        ### ⚙️ Further options
+
+        Otherwise, you will find the option to set timers, input booleans, etc. that can override your temperature or force comfort or eco mode. 
+        <br/><br/>
       input:
         input_adjustments:
           name: 🎛️ Heating Schedule Adjustments
@@ -527,268 +823,32 @@ blueprint:
           selector:
             boolean:
 
-    # persons
-    person_section:
-      name: Persons
-      icon: mdi:account-multiple
-      collapsed: true
-      input:
-        input_persons:
-          name: 👥 Persons / Devices
-          description: >
-            `person` `device tracker` `optional`
-
-
-            You can specify [persons](https://www.home-assistant.io/integrations/person/) to make your heating plan more dynamic. If you do not use [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, heating is activated as soon as someone is at home.<br/>
-            With [schedulers](https://www.home-assistant.io/integrations/schedule/) or presence sensors, these are only active when someone is at home.
-
-
-            **NOTE**: If you're using many zones in your configuration, it's recommended to use device trackers instead of persons.
-          default: []
-          selector:
-            entity:
-              filter:
-                - domain:
-                    - person
-                    - device_tracker
-              multiple: true
-
-        input_people_entering_home_duration:
-          name: 🏠 Enter Home Duration
-          description: >
-            `person`
-
-
-            Duration for which someone must be at home for heating to be activated.
-          default:
-            hours: 0
-            minutes: 0
-            seconds: 2
-          selector:
-            duration:
-
-        input_people_leaving_home_duration:
-          name: 💨 Leaving Home Duration
-          description: >
-            `person`
-
-
-            Duration for which someone must be out of the house for heating to be deactivated.
-          default:
-            hours: 0
-            minutes: 0
-            seconds: 2
-          selector:
-            duration:
-
-        input_mode_guest:
-          name: 🤝 Guest Mode
-          description: >
-            `person` `optional`
-
-
-
-            If an entity is specified here, it is treated like a [person](https://www.home-assistant.io/integrations/person/). It's usefull when you're leaving your guests alone in your home and you are not using presence detection.
-
-              * entity defined -> [person](https://www.home-assistant.io/integrations/person/) defined
-              * enitity is *on* -> simulates [person](https://www.home-assistant.io/integrations/person/) is home
-              * enitity is *off* -> simulates [person](https://www.home-assistant.io/integrations/person/) is away
-          default:
-          selector:
-            entity:
-              filter:
-                - domain:
-                    - input_boolean
-                    - binary_sensor
-                    - timer
-              multiple: false
-
-    # scheduler
-    scheduling_section:
-      name: Scheduling
-      icon: mdi:clock-outline
-      collapsed: true
-      input:
-        input_schedulers:
-          name: ⏲️ Schedules
-          description: >
-            `schedules` `optional`
-
-
-            A [schedule](https://www.home-assistant.io/integrations/schedule/) specifies when heating to comfort temperature should take place. You can create it in the helper section of Home Assistant.<br/>
-            If you have also specified [people](https://www.home-assistant.io/integrations/person/), someone must also be at home for heating. This is the same behaviour with a [proximity](https://www.home-assistant.io/integrations/proximity/) entity.<br/>
-            You can create as many [schedules](https://www.home-assistant.io/integrations/schedule/) as you like. Make sure the names are clear.
-          default: []
-          selector:
-            entity:
-              filter:
-                - domain:
-                    - schedule
-              multiple: true
-
-        input_scheduler_selector:
-          name: ☝🏻 Schedule Selector
-          description: >
-            `schedule` `optional`
-
-
-            Define an entity to choose from your schedules. If you use one schedule only you can ignore this. If you use more than one schedule you have multiple possibilities to setup your selection.<br/>
-
-            <details>
-            <summary><code><strong>CLICK HERE:</strong> More information</code></summary>
-            <br/>
-
-
-
-            * toggle [input_boolean](https://www.home-assistant.io/integrations/input_boolean/) or [binary_sensor](https://www.home-assistant.io/integrations/binary_sensor/): If *off* the first defined [schedule](https://www.home-assistant.io/integrations/schedule/) is enabled. If *on* the second [schedule](https://www.home-assistant.io/integrations/schedule/) is active. More than two [schedules](https://www.home-assistant.io/integrations/schedule/) cannot be selected with binary inputs.
-
-            * text [input text](https://www.home-assistant.io/integrations/input_text/), drop down [input text](https://www.home-assistant.io/integrations/input_select/) or [sensor](https://www.home-assistant.io/integrations/sensor/):
-              * The value has to match the friendly name of the selected [schedule](https://www.home-assistant.io/integrations/schedule/) at least partially. Example: If you provide three [schedules](https://www.home-assistant.io/integrations/schedule/) called *work*, *holiday/sick*, *guest* you can select the holiday [schedule](https://www.home-assistant.io/integrations/schedule/) while setting the selection entity to *sick*, *holiday* or *holiday/sick*. This option is case insensitive.
-              * You also can go with numbers: if you want to choose the first [schedule](https://www.home-assistant.io/integrations/schedule/) the selector entity must return the number *1*. For the 2nd number *2* and so on.
-
-            </details>
-          default:
-          selector:
-            entity:
-              filter:
-                - domain:
-                    - input_boolean
-                    - binary_sensor
-                    - input_text
-                    - input_number
-                    - input_select
-              multiple: false
-
-    # presence
-    presence_section:
-      name: Presence Detection
-      icon: mdi:location-enter
-      collapsed: true
-      input:
-        input_presence_sensor:
-          name: 🚶 Presence Sensor / On/Off-Entity
-          description: >
-            `presence detection` `optional`
-
-
-            If you specify a presence sensor, heating will take place if it detects presence.<br/>
-            If you have specified [persons](https://www.home-assistant.io/integrations/person/), at least one must also be at home. You also can select an [input boolean](https://www.home-assistant.io/integrations/input_boolean/) entity to realise a simple On/Off-Logic.
-          default:
-          selector:
-            entity:
-              filter:
-                - domain:
-                    - binary_sensor
-                    - input_boolean
-              multiple: false
-
-        input_scheduler_presence:
-          name: ⏲️ Presence Sensor Scheduler
-          description: >
-            `presence detection` `optional`
-
-
-            The presence [schedule](https://www.home-assistant.io/integrations/schedule/) specifies exactly when the presence sensor should be used during the day.
-          default:
-          selector:
-            entity:
-              filter:
-                - domain:
-                    - schedule
-              multiple: false
-
-        input_presence_reaction_on_time:
-          name: ⏳ Presence Reaction On Time
-          description: >
-            `presence detection`
-
-
-            Specify the duration for which the presence sensor must detect any presence so that the comfort temperature is set.
-          default:
-            hours: 0
-            minutes: 5
-            seconds: 0
-          selector:
-            duration:
-
-        input_presence_reaction_off_time:
-          name: ⌛ Presence Reaction Off Time
-          description: >
-            `presence detection`
-
-
-            Specify the duration for which the presence sensor must not detect any presence so that the eco temperature is set.
-          default:
-            hours: 0
-            minutes: 5
-            seconds: 0
-          selector:
-            duration:
-
-    # proximity
-    proximity_section:
-      name: Proximity
-      icon: mdi:leak
-      collapsed: true
-      input:
-        input_proximity:
-          name: ↔️ Proximity
-          description: >
-            `proximity` `optional`
-
-
-            You can preheat your rooms with help of home assistant's [proximity integration](https://www.home-assistant.io/integrations/proximity/).<br/>
-            Just select your proxmity zone and take your adjustments to distance and duration.<br/>
-            If you're in range of your distance and towards to your home heating kicks in.<br/>
-
-            **Note**: The proximity entity is handles like a person. Comfort heating takes place when coming or beeing home. Combinations with [schedules](https://www.home-assistant.io/integrations/schedule/) are also possible.
-          default:
-          selector:
-            device:
-              filter:
-                integration: proximity
-              multiple: false
-
-        input_proximity_duration:
-          name: ⏰ Proximity Duration
-          description: >
-            `proximity`
-
-
-            Duration for which someone must be on way home before heating occurs.
-          default:
-            hours: 0
-            minutes: 2
-            seconds: 0
-          selector:
-            duration:
-
-        input_proximity_distance:
-          name: ↔️ Proximity Distance
-          description: >
-            `proximity`
-
-
-            The distance when [proximity](https://www.home-assistant.io/integrations/proximity/) sensor gets impact for this automation. Hint: Unit depends on the setup of your integration.
-          default: 500
-          selector:
-            number:
-              min: 0
-              max: 999999999
-              step: 1
-              mode: box
-
     # away mode
     away_section:
       name: Away Mode
       icon: mdi:walk
       collapsed: true
+      description: >
+
+        ### 🏃 Away Mode
+         
+        You can set an offset that is subtracted from your comfort temperature when you leave the house but comfort mode should be active.
+
+        ### ⏲️ Schedule Away Mode
+
+        If your active schedule is on, you have set people or proximity, but the house has been left, the set value is subtracted from the comfort temperature and set instead of eco mode.
+
+        ### 🚶 Presence Away Mode
+
+        The same happens if someone is at home but the presence sensor does not detect any movement. Eco mode is then triggered if no one is at home or the presence schedule is off.
+        You can also ignore the persons. Then Away Mode is activated when the presence schedule is on but no one has been detected.
+        <br/><br/>
       input:
         # AWAY OFFSET
         input_away_offset:
           name: 🏃 Away Temperature Offset
           description: >
-            `scheduler` `persons` `presence` `away mode`
+            `schedule` `persons` `presence` `away mode`
 
 
             First: This feature only works for [schedule](https://www.home-assistant.io/integrations/schedule/) and/or presence based heating combined with [persons](https://www.home-assistant.io/integrations/person/). You can define an offset for your comfort temperature that will be subtracted (heating) from or added (cooling) to your comfort temperature.
@@ -805,9 +865,9 @@ blueprint:
               unit_of_measurement: °C / °F
 
         input_away_scheduler_mode:
-          name: ⏲️ Scheduler Away Mode
+          name: ⏲️ Schedule Away Mode
           description: >
-            `scheduler` `away mode`
+            `schedule` `away mode`
 
 
             Enable/Disable the Away Offset for [schedules](https://www.home-assistant.io/integrations/schedule/) based heating/cooling.
@@ -1131,6 +1191,12 @@ blueprint:
       name: Frost Protection
       icon: mdi:snowflake
       collapsed: true
+      description: >
+
+        ### ❄️ Frost Protection
+         
+        If the presence sensor does not detect any movement for the set duration or if no one is at home for that period, the temperature is set to the selected minimum temperature.
+        <br/><br/>
       input:
         input_frost_protection_temp:
           name: ❄️ Frost Protection Temperature
@@ -1394,17 +1460,21 @@ blueprint:
 
     # valve positioning
     valve_positioning_section:
-      name: "Dynamic Valve Positioning"
+      name: "Dynamic Valve Positioning / PID"
       icon: mdi:valve
       collapsed: true
+      description: >
+
+        ### 🤏 Dynamic Valve Positioning
+         
+        If your thermostat supports valve positioning you can enable this here. Everytime the automation gets triggered the code checks if there is an adjustment needed.
+        The greater the difference between the current temperature and the target temperature, the further the valve is opened.
+        <br/><br/>
       input:
         input_valve_positioning_mode:
           name: 🦶 Valve Positioning Mode
           description: >
             `valve positioning`
-
-
-             If your thermostat supports valve positioning you can enable this here. Everytime the automation gets triggered the code checks if there is an adjustment needed.
 
 
             📈 **regular**: means linear. The valve will open close proportional to the difference of the target and room temperature.
