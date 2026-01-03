@@ -7,10 +7,10 @@ If you have any questions, suggestions, or feature requests, feel free to open a
 
 ### ⚙️ Automations
 
-[🔥 Advanced Heating Control](blueprints/automation/panhans/advanced_heating_control.yaml)
-[📲 Entity State Notification](blueprints/automation/panhans/entity_state_notification.yaml)
-[🎞️ Scene Based Theatre Mode](blueprints/automation/panhans/scene_based_theatre_mode.yaml)
-[🌐 Zone Notification Extended](blueprints/automation/panhans/zone_notification_extended.yaml)
+| [🔥 Advanced Heating Control](blueprints/automation/panhans/advanced_heating_control.yaml)     | A complex heating autiomation |
+| [📲 Entity State Notification](blueprints/automation/panhans/entity_state_notification.yaml)   | Feature rich notification based on several entity states |
+| [🎞️ Scene Based Theatre Mode](blueprints/automation/panhans/scene_based_theatre_mode.yaml)     | A simple solution to fire scenes based on your media player for the ultimate theatre experience |
+| [🌐 Zone Notification Extended](blueprints/automation/panhans/zone_notification_extended.yaml) | Notifactions and actions when persons enter or leave zones |
 
 ### 📑 Scripts
 
