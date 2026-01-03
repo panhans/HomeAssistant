@@ -1,6 +1,0 @@
-input_boolean:
-  template: base
-  variables:
-    active_color: orange
-  tap_action:
-    action: toggle

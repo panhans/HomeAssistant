@@ -56,6 +56,10 @@ blueprint:
 
 
     [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q3QEH52)
+    <a href="https://www.paypal.com/donate/?hosted_button_id=ZQ333L4BA3YLU">
+      <img src='https://raw.githubusercontent.com/andreostrovsky/donate-with-paypal/refs/heads/master/blue.svg'
+           width="200" alt="Donate with PayPal">
+    </a>
   source_url: https://github.com/panhans/HomeAssistant/blob/main/blueprints/automation/panhans/advanced_heating_control.yaml
   domain: automation
   input:

@@ -1,9 +1,0 @@
-scene:
-  template: button_single
-  icon: "[[[ return states[variables.scene].attributes.icon; ]]]"
-  tap_action:
-    action: call-service
-    service: scene.turn_on
-    haptic: medium
-    service_data:
-      entity_id: "[[[ return variables.scene; ]]]"
