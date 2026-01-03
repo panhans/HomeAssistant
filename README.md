@@ -7,7 +7,7 @@ If you have any questions, suggestions, or feature requests, feel free to open a
 
 ### ⚙️ Automations
 
-| Name | Description |
+| <div style="width:290px">property</div> | Description |
 | --- | --- |
 | [🔥 Advanced Heating Control](blueprints/automation/panhans/advanced_heating_control.yaml)     | A complex heating autiomation |
 | [📲 Entity State Notification](blueprints/automation/panhans/entity_state_notification.yaml)   | Feature rich notification based on several entity states |
