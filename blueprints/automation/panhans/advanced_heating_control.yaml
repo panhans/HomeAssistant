@@ -1733,6 +1733,8 @@ trigger_variables:
 
   # calibration
   input_calibration_timeout: !input input_calibration_timeout
+  is_calibration_enabled: !input input_is_calibration_enabled
+  input_calibration_key_word: !input input_calibration_key_word
 
   # windows
   input_windows: !input input_windows
@@ -2168,16 +2170,36 @@ trigger:
       seconds: 2
 
   - trigger: template
-    id: calibration_popp_ping
+    id: calibration_keep_alive
     value_template: >
-      {% set has_valves_danfoss = input_trvs | select('is_device_attr', 'manufacturer', 'Danfoss') | list  %}
-      {% set has_valves_popp = input_trvs | select('is_device_attr', 'manufacturer', 'Popp') | list %}
-      {% set valves_hive = input_trvs | select('is_device_attr', 'manufacturer', 'Hive') | list %}
-      {% set valves_bosch = input_trvs | select('is_device_attr', 'manufacturer', 'Bosch') | list %}
 
-      {% set has_valves = (has_valves_danfoss + has_valves_popp + valves_hive + valves_bosch) | count > 0 %}
+      {% if not is_calibration_enabled %}
+        {{ false }}
+      {% else %}
 
-      {{ has_valves and is_temperature_sensor_defined and now().strftime('%M') | int % 10 == 0 }}
+        {% set has_external_sensor_configured = namespace(r=false) %}
+
+        {% for valve in input_trvs %}
+
+          {% set calibration_entity = device_entities(device_id(valve)) |
+                                      expand | selectattr('domain','in','number') |
+                                      selectattr('entity_id', 'search', input_calibration_key_word) |
+                                      map(attribute='entity_id') | list | first | default(none) %}
+
+          {% if calibration_entity is not none %}
+            {% set fallback_min = iif('external' in calibration_entity, 0, -12)%}
+            {% set fallback_max = iif('external' in calibration_entity, 50, 12)%}
+
+            {% set calibration_entity_min = state_attr(calibration_entity,'min') | float(fallback_min) %}
+            {% set calibration_entity_max = state_attr(calibration_entity,'max') | float(fallback_max) %}
+            {% set is_offset_entity = (calibration_entity_min + calibration_entity_max) == 0 and calibration_entity_max < 30 %}
+
+            {% set has_external_sensor_configured.r = iif(not is_offset_entity, true, has_external_sensor_configured.r) %}
+          {% endif %}
+        {% endfor%}
+
+        {{ has_external_sensor_configured.r and is_temperature_sensor_defined and now().strftime('%M') | int % 10 == 0 }}
+      {% endif %}
 
   # heating adjustments
   - trigger: template
@@ -2810,10 +2832,6 @@ variables:
 
   valves_calibration_common: "{{ valves | reject('in', valves_tado) | list }}"
 
-  # danfoss / popp / hive / Bosch
-  keep_alive_manufactures: ["Danfoss", "Popp", "Hive", "Bosch"]
-  has_keep_alive_valves: "{{ valves | map('device_attr','manufacturer') | select('in', keep_alive_manufactures) | list | count > 0 }}"
-
   # global
   last_comfort_entity_change: "{{ [input_temperature_comfort_entity] | expand | map(attribute='last_changed') | list | first | default(none) }}"
   last_eco_entity_change: "{{ [input_temperature_eco_entity] | expand | map(attribute='last_changed') | list | first | default(none) }}"
@@ -2955,7 +2973,7 @@ variables:
 
   # calibration
   is_calibration_trigger: >
-    {% if has_keep_alive_valves and trigger_id_defined and trigger.id in ['calibration_popp_ping','calibration_popp_change'] %}
+    {% if trigger_id_defined and trigger.id in ['calibration_keep_alive','calibration_popp_change'] %}
       {{ true }}
     {% elif is_aggressive_mode_calibration and trigger_id_defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
@@ -3432,7 +3450,7 @@ variables:
 
           {% set keep_alive = false %}
 
-          {% if is_calibration_trigger and not is_min_difference and device_attr(valve,'manufacturer') in keep_alive_manufactures %}
+          {% if is_calibration_trigger and not is_min_difference and not is_offset_entity %}
             {% set last_updated = [calibration_entity] | expand | map(attribute='last_updated') | first %}
             {% set keep_alive = as_datetime(current_time_stamp) - timedelta(minutes=20) >= last_updated %}
           {% endif %}
