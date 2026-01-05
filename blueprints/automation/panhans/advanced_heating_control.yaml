@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0_a9
+    **Version**: 5.5.0
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -815,14 +815,32 @@ blueprint:
           selector:
             boolean:
 
-        input_physical_change:
-          name: 🧪 Physical Temperature Change / Sync (experimental)
+        input_ui_change:
+          name: 📲 UI Temperature Change / Sync
           description: >
-            `optional` `temperature tweak`
+            `optional` `temperature tweak` `experimental`
 
 
-            Enable this if your want to adjust the temperature using your thermostat or thermostat card. Make sure aggressive mode and generic calibration is disabled for this feature. (experimental).
-            You also need to set entities for eco and comfort temperature for the moment.
+            Enable this if your want to adjust the temperature using your thermostat card. The temperature will be synced with all of your thermostats and the active temperature entity (eco/comfort).
+            Make sure aggressive mode and generic calibration is disabled for this feature.
+
+
+            📝: You also need to set entities for eco and comfort temperature for the moment.
+          default: false
+          selector:
+            boolean:
+
+        input_physical_change:
+          name: 🛞 Physical Temperature Change / Sync
+          description: >
+            `optional` `temperature tweak` `experimental`
+
+
+            Enable this if your want to adjust the temperature using your thermostat. The temperature will be synced with all of your thermostats and the active temperature entity (eco/comfort).
+            Make sure aggressive mode and generic calibration is disabled for this feature.
+
+
+            📝: You also need to set entities for eco and comfort temperature for the moment.
           default: false
           selector:
             boolean:
@@ -2406,6 +2424,7 @@ variables:
   is_fahrenheit: !input input_fahrenheit
   is_heat_only_if_below_real_temp: !input input_off_if_above_room_temperature
   is_physical_change_enabled: !input input_physical_change
+  is_ui_change_enabled: !input input_ui_change
   is_off_if_nobody_home: !input input_off_if_nobody_home
 
   # custom tweaks
@@ -2999,13 +3018,25 @@ variables:
 
   set_max_temperature: "{{ is_force_max_temperature or is_liming_protection }}"
 
-  is_pysical_change: >
-    {{  trigger_id_defined
-        and trigger.id == 'temperature_change_valve_target'
-        and is_physical_change_enabled
-        and not state_window
-        and not set_max_temperature
-        and not is_away }}
+  is_ui_change: >
+    {{ is_ui_change_enabled and
+       trigger_id_defined and
+       trigger.id == 'temperature_change_valve_target' and
+       trigger.to_state.context.user_id is not none }}
+
+  is_physical_change: >
+    {{ is_physical_change_enabled and
+       trigger_id_defined and
+       trigger.id == 'temperature_change_valve_target' and
+       trigger.to_state.context.user_id is none and
+       trigger.to_state.context.parent_id is none }}
+
+  change_temperature: >
+    {% if trigger.id == 'temperature_change_valve_target' %}
+       {{ trigger.to_state.attributes.temperature | float }}
+    {% else %}
+      {{ none }}
+    {% endif %}
 
   is_adjustment_trigger:
     "{{ trigger_id_defined and trigger.id == 'temperature_change_heating_adjustment' and
@@ -3013,7 +3044,7 @@ variables:
 
   is_reset: >
     {{ (is_reset_temperature and is_change_trigger) or
-        is_pysical_change or (is_adjustment_trigger and input_sync_adjustments_with_entities) }}
+        is_physical_change or is_ui_change or (is_adjustment_trigger and input_sync_adjustments_with_entities) }}
 
   is_window_trigger: "{{ trigger_id_defined and 'temperature_change_window_' in trigger.id }}"
   is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
@@ -3309,18 +3340,14 @@ variables:
       {% endif %}
     {% else %}
       {% set entity = none %}
-      {% if is_reset and set_comfort %}
-        {% set entity = iif(is_pysical_change, input_temperature_comfort_entity, input_temperature_eco_entity) %}
-      {% elif is_reset and not set_comfort %}
-        {% set entity = iif(is_pysical_change, input_temperature_eco_entity, input_temperature_comfort_entity) %}
-      {% endif %}
-
       {% set temp_r = none %}
-      {% if is_pysical_change %}
-        {% set temp_r = state_attr(trigger.to_state.entity_id,'temperature') %}
+
+      {% if is_physical_change or is_ui_change %}
+        {% set entity = iif(set_comfort, input_temperature_comfort_entity, input_temperature_eco_entity) %}
+        {% set temp_r = change_temperature %}
       {% else %}
-      {% set temp_r = iif(is_reset and entity == input_temperature_eco_entity,
-          fallback_eco_temperature, input_temperature_comfort_static) %}
+        {% set entity = iif(set_comfort, input_temperature_eco_entity, input_temperature_comfort_entity) %}
+        {% set temp_r = iif(entity == input_temperature_eco_entity, fallback_eco_temperature, fallback_comfort_temperature) %}
       {% endif %}
 
       {% if entity != none and temp_r != none %}
