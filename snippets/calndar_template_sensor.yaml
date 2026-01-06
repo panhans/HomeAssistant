@@ -1,0 +1,24 @@
+template:
+- trigger:
+    - platform: time_pattern
+      minutes: /10
+  action:
+  - service: calendar.get_events
+    data:
+      start_date_time: "{{ now().replace(hour=0,minute=0,second=0,microsecond=0) }}"
+      end_date_time: "{{ now().replace(hour=23,minute=59,second=59,microsecond=999999) }}"
+    target:
+      entity_id: 
+        - calendar.family # edit this for your calendar entites
+        - calendar.holidays
+    response_variable: calendar_events
+  binary_sensor:
+  - name: Holiday
+    icon: mdi:palm-tree
+    unique_id: holiday
+    # here you can add a catch phrase as regex also if the holiday calendar has an event the state of the sensor will be on
+    state: >
+      {{  
+        ( calendar_events['calendar.family'].events | regex_search('holiday', ignorecase=True) ) or 
+        ( calendar_events['calendar.holidays'].events | count > 0 ) 
+      }}
