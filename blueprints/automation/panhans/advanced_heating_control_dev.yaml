@@ -1,5 +1,5 @@
 blueprint:
-  name: 🔥 Advanced Heating Control V5 DEV
+  name: 🔥 Advanced Heating Control V5
   author: panhans
   homeassistant:
     min_version: "2024.10.0"
@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.0_dev
+    **Version**: 5.5.0
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -60,7 +60,7 @@ blueprint:
       <img src='https://raw.githubusercontent.com/andreostrovsky/donate-with-paypal/refs/heads/master/blue.svg'
            width="200" alt="Donate with PayPal">
     </a>
-  source_url: https://github.com/panhans/HomeAssistant/blob/main/blueprints/automation/panhans/advanced_heating_control_dev.yaml
+  source_url: https://github.com/panhans/HomeAssistant/blob/main/blueprints/automation/panhans/advanced_heating_control.yaml
   domain: automation
   input:
     thermostat_section:
@@ -3631,6 +3631,8 @@ actions:
           hvac_mode: "{{ mode }}"
           temperature_comfort: "{{ temperature_comfort }}"
           temperature_eco: "{{ temperature_eco }}"
+          fallback_eco_temperature: "{{ fallback_eco_temperature }}"
+          fallback_comfort_temperature: "{{ fallback_comfort_temperature }}"
           target_temperature: "{{ target_temperature }}"
           set_max_temperature: "{{ set_max_temperature }}"
           last_trigger_id: "{{ iif(trigger_id_defined, trigger.id, '') }}"
