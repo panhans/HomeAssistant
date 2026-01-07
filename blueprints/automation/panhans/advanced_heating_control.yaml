@@ -3631,6 +3631,8 @@ actions:
           hvac_mode: "{{ mode }}"
           temperature_comfort: "{{ temperature_comfort }}"
           temperature_eco: "{{ temperature_eco }}"
+          fallback_eco_temperature: "{{ fallback_eco_temperature }}"
+          fallback_comfort_temperature: "{{ fallback_comfort_temperature }}"
           target_temperature: "{{ target_temperature }}"
           set_max_temperature: "{{ set_max_temperature }}"
           last_trigger_id: "{{ iif(trigger_id_defined, trigger.id, '') }}"
