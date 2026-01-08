@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.2
+    **Version**: 5.5.3
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3255,6 +3255,7 @@ variables:
           {% set valve_temp = iif(set_max_temperature, max_temp, valve_temp) %}
           {% set valve_temp = iif(valve_temp > max_temp, max_temp, valve_temp) %}
           {% set valve_temp = iif(valve_temp < min_temp, min_temp, valve_temp) %}
+          {% set valve_temp = valve_temp | round(1) %}
 
           {% if current_valve_mode != valve_mode or current_valve_target_temp != valve_temp %}
             {% set n.dict = n.dict + [(valve, [{'mode': valve_mode , 'temp': valve_temp}])] %}
