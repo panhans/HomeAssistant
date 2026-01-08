@@ -1039,6 +1039,8 @@ blueprint:
             As a rule, the entities with the word *offset*, *calibration* or *external* are marked by the integrations. Just have a look into your [device overview](https://my.home-assistant.io/redirect/devices/), select your thermostat and check the naming of the *entity_ids* - not the entity name - for the calibration.
 
             The logic detects automatically if the selected entity is an offset entity or a entity which holds an external temperature value. Keep in mind to set the offset entity to *0* if you switch to an external temperature entity or set the temperature source to internal if you switch to an offset entity.
+
+            📝: If you using offset calibration, make sure the entity id contains the keyword `offset`.
           default: "calibration"
           selector:
             text:
@@ -2210,7 +2212,7 @@ trigger:
 
             {% set calibration_entity_min = state_attr(calibration_entity,'min') | float(fallback_min) %}
             {% set calibration_entity_max = state_attr(calibration_entity,'max') | float(fallback_max) %}
-            {% set is_offset_entity = (calibration_entity_min + calibration_entity_max) == 0 and calibration_entity_max < 30 %}
+            {% set is_offset_entity = 'offset' in calibration_entity %}
 
             {% set has_external_sensor_configured.r = iif(not is_offset_entity, true, has_external_sensor_configured.r) %}
           {% endif %}
@@ -3434,7 +3436,7 @@ variables:
           {% set calibration_entity_value_old = states(calibration_entity) | float(0) %}
           {% set local_temperature = value_temperature_sensor | float %}
           {% set calibration_entity_value_new = local_temperature %}
-          {% set is_offset_entity = (calibration_entity_min | int + calibration_entity_max | int) == 0 and calibration_entity_max < 30 %}
+          {% set is_offset_entity = 'offset' in calibration_entity %}
           {% set calibration_select = none %}
 
           {% if is_offset_entity %}
@@ -3446,6 +3448,14 @@ variables:
                         | selectattr('domain','in','select')
                         | selectattr('attributes.options', 'contains', 'external')
                         | map(attribute='entity_id') | list | first | default(none) %}
+
+            {% if calibration_select is none%}
+              {% set calibration_select = device_entities(device_id(valve))
+                                      | expand
+                                      | selectattr('domain','in','switch')
+                                      | selectattr('entity_id', 'search', 'external_temperature_sensor')
+                                      | map(attribute='entity_id') | list | first | default(none) %}
+            {% endif %}
           {% endif %}
 
           {% set step = state_attr(calibration_entity, 'step') | float(1) %}
@@ -3663,7 +3673,13 @@ actions:
                     calibration_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['calibration_entity'] }}"
                     calibration_value: "{{ (((calibration_changes.values() | list) [index]) | first) ['value'] }}"
                     select_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['select'] }}"
-                    is_external: "{{ select_entity != none and not is_state(select_entity, 'external') }}"
+                    is_external: "{{ select_entity != none and (not is_state(select_entity, 'external') or not is_state(select_entity, 'on')) }}"
+                    is_switch: >
+                      {% if select_entity == none %}
+                        {{ false }}
+                      {% else %}
+                        {{ states[select_entity].domain == 'switch' }}
+                      {% endif %}
 
                 - action: system_log.write
                   data:
@@ -3678,11 +3694,19 @@ actions:
                     - condition: template
                       value_template: "{{ is_external }}"
                   then:
-                    - action: select.select_option
-                      target:
-                        entity_id: "{{ select_entity }}"
-                      data:
-                        option: external
+                    - if:
+                        - condition: template
+                          value_template: "{{ is_switch }}"
+                      then:
+                        - action: switch.turn_on
+                          target:
+                            entity_id: "{{ select_entity }}"
+                      else:
+                        - action: select.select_option
+                          target:
+                            entity_id: "{{ select_entity }}"
+                          data:
+                            option: external
                     - delay: !input input_action_call_delay
 
                 - action: number.set_value
