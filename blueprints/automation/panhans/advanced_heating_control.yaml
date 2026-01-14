@@ -1619,6 +1619,40 @@ blueprint:
           selector:
             text:
 
+    # retry
+    retry_section:
+      name: Retry Settings
+      icon: mdi:refresh
+      collapsed: true
+      input:
+        input_retry_attempts:
+          name: 🔢 Retry Attempts
+          description: >
+            `retry`
+
+
+            The maximum number of attempts.
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 10
+              step: 1
+
+        input_retry_delay:
+          name: ⏱️ Retry Delay
+          description: >
+            `retry`
+
+
+            The delay between retry attempts.
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 30
+          selector:
+            duration:
+
     # tweaks
     tweak_section:
       name: Custom Settings
@@ -1799,6 +1833,12 @@ trigger:
   - trigger: event
     event_type: ahc_positioning_event
     id: positioning_event
+    event_data:
+      automation: "{{ this.entity_id }}"
+
+  - trigger: event
+    event_type: ahc_retry_event
+    id: retry_temperature_change
     event_data:
       automation: "{{ this.entity_id }}"
 
@@ -2441,6 +2481,10 @@ variables:
   input_valve_positioning_mode: !input input_valve_positioning_mode
   input_valve_positioning_timeout: !input input_valve_positioning_timeout
   input_valve_positioning_max_opening: !input input_valve_positioning_max_opening
+
+  # retry
+  input_retry_attempts: !input input_retry_attempts
+  input_retry_delay: !input input_retry_delay
 
   #####################################################################################
   #################################### EVALUATION #####################################
@@ -3109,9 +3153,19 @@ variables:
   scene_to_create: >
     {{ iif(is_scene_create_trigger and "window_on" in trigger.id, scene_window_id, scene_party_id) }}
 
+  is_retry_trigger: >
+    {{ trigger_id_defined and trigger.id == 'retry_temperature_change' }}
+
   #####################################################################################
   #################################### CHANGES ########################################
   #####################################################################################
+
+  retry_attempt: >
+    {% if is_retry_trigger %}
+      {{ trigger.event.data.retry_attempt }}
+    {% else %}
+      {{ 0 }}
+    {% endif %}
 
   window_open_temperature: >
     {% if input_window_open_temperature_number != [] %}
@@ -3916,6 +3970,32 @@ actions:
                     event_data:
                       automation: "{{ this.entity_id }}"
                       restore_information: "{{ climates_information }}"
+                else:
+                  - if:
+                    - condition: template
+                      value_template: "{{ input_retry_attempts > 0 and retry_attempt < input_retry_attempts }}"
+                    then:
+                      - delay: !input input_retry_delay
+                        alias: "Delay before retrying"
+                      - if:
+                        - condition: template
+                          alias: "Only fire retry event if values not set"
+                          value_template: > 
+                            {% set is_set = namespace(r=true) %}
+                            {% for valve in valves %}
+                              {% if valve in changes %}
+                                {% set info = changes[valve] %}
+                                {% if info[0].temp != state_attr(valve,'temperature') or info[0].mode != states(valve) %}
+                                  {% set is_set.r = false %}
+                                {% endif %}
+                              {% endif %}
+                            {% endfor %}
+                            {{ not is_set.r }}
+                        then:
+                          - event: ahc_retry_event
+                            event_data:
+                              automation: "{{ this.entity_id }}"
+                              retry_attempt: "{{ retry_attempt | int + 1 }}"
 
       - if:
           - condition: template
@@ -3937,3 +4017,4 @@ actions:
         then: !input "input_custom_action"
 
 mode: queued
+max: 10
