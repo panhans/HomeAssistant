@@ -1619,6 +1619,56 @@ blueprint:
           selector:
             text:
 
+    # hysteresis
+    hysteresis_section:
+      name: "Hysteresis"
+      icon: mdi:thermometer
+      collapsed: true
+      description: >
+
+        ### Hysteresis
+        The hysteresis is the difference between the target temperature and the room temperature at which the valve is opened or closed.
+        <br/><br/>
+      input:
+        input_hysteresis_distance:
+          name: 🦶 Hysteresis Offset
+          description: >
+            `valve positioning`
+
+
+            📈 **regular**: means linear. The valve will open close proportional to the difference of the target and room temperature.
+
+
+            😊 **optimistic**: The valve opening is reduced earlier, as it is assumed that the radiator still has enough residual heat to heat the room.
+
+
+            🙁 **pessimistic**: The valve opening is initially left relatively open and only closes rapidly when the target temperature is almost reached.
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 10
+              step: 0.5
+              mode: slider
+              unit_of_measurement: °C/F
+
+        input_hysteresis_over_calibration:
+          name: 🦶 Hysteresis Over Calibration
+          description: >
+            `valve positioning`
+
+
+            📈 **regular**: means linear. The valve will open close proportional to the difference of the target and room temperature.
+
+
+            😊 **optimistic**: The valve opening is reduced earlier, as it is assumed that the radiator still has enough residual heat to heat the room.
+
+
+            🙁 **pessimistic**: The valve opening is initially left relatively open and only closes rapidly when the target temperature is almost reached.
+          default: off
+          selector:
+            boolean:
+
     # tweaks
     tweak_section:
       name: Custom Settings
@@ -2159,20 +2209,20 @@ trigger:
 
   # aggressive mode / heating above/below temp
   - trigger: state
-    id: calibration_aggressive_mode_above_temp_thermostat_current_temp_change
+    id: calibration_aggressive_mode_hysteresis_above_temp_thermostat_current_temp_change
     entity_id: !input input_trvs
     attribute: current_temperature
     for: !input input_calibration_timeout
 
   - trigger: state
-    id: calibration_aggressive_mode_thermostat_temp_change
+    id: calibration_aggressive_mode_hysteresis_thermostat_temp_change
     entity_id: !input input_trvs
     attribute: temperature
     for:
       seconds: 30
 
   - trigger: state
-    id: aggressive_mode_above_temp_sensor_change
+    id: aggressive_mode_hysteresis_above_temp_sensor_change
     entity_id: !input input_temperature_sensor
     for:
       seconds: 30
@@ -2441,6 +2491,12 @@ variables:
   input_valve_positioning_mode: !input input_valve_positioning_mode
   input_valve_positioning_timeout: !input input_valve_positioning_timeout
   input_valve_positioning_max_opening: !input input_valve_positioning_max_opening
+
+  # hysteresis
+  input_hysteresis_distance: !input input_hysteresis_distance
+  input_hysteresis_over_calibration: !input input_hysteresis_over_calibration
+  hysteresis_offset: 2
+  is_hysteresis_enabled: "{{ input_hysteresis_offset != 0 }}"
 
   #####################################################################################
   #################################### EVALUATION #####################################
@@ -2998,6 +3054,8 @@ variables:
       {{ true }}
     {% elif is_aggressive_mode_calibration and trigger_id_defined and 'aggressive_mode' in trigger.id %}
       {{ true }}
+    {% elif is_hysteresis_enabled and input_hysteresis_over_calibration and trigger_id_defined and 'hysteresis' in trigger.id %}
+      {{ true }}
     {% else %}
       {{ trigger_id_defined and 'calibration' in trigger.id and not trigger.id == 'calibration_aggressive_mode_thermostat_temp_change' }}
     {% endif %}
@@ -3058,6 +3116,8 @@ variables:
       {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
         {{ false }}
       {% endif %}
+    {% elif trigger_id_defined and not input_hysteresis_over_calibration and is_hysteresis_enabled and 'hysteresis' in trigger.id %}
+      {{ true }}
     {% elif trigger.platform == none %}
       {{ true }}
     {% elif trigger_id_defined and trigger.id == 'temperature_change_valve_target' %}
@@ -3206,6 +3266,10 @@ variables:
           {% set ref_temp = current_valve_temp %}
           {% if valid_temperature_sensor %}
             {% set ref_temp = value_temperature_sensor | float(current_valve_temp) %}
+          {% endif %}
+
+          {% if is_hysteresis_enabled and not input_hysteresis_over_calibration and valve_temp + input_hysteresis_distance | float > ref_temp %}
+            {% set valve_temp = valve_temp - hysteresis_offset %}
           {% endif %}
 
           {% if is_heat_only_if_below_real_temp and iif(factor == 1, target_temperature <= ref_temp, target_temperature >= ref_temp) %}
@@ -3436,6 +3500,11 @@ variables:
           {% set calibration_entity_max = state_attr(calibration_entity,'max') | float(fallback_max) %}
           {% set calibration_entity_value_old = states(calibration_entity) | float(0) %}
           {% set local_temperature = value_temperature_sensor | float %}
+
+          {% if is_hysteresis_enabled and input_hysteresis_over_calibration and target_temperature + input_hysteresis_distance | float > local_temperature %}
+            {% set local_temperature = local_temperature + hysteresis_offset %}
+          {% endif %}
+
           {% set calibration_entity_value_new = local_temperature %}
           {% set is_offset_entity = ('offset' in calibration_entity or 'calibration' in calibration_entity) and not ('external' in calibration_entity) %}
 
