@@ -1622,7 +1622,7 @@ blueprint:
     # hysteresis
     hysteresis_section:
       name: "Hysteresis"
-      icon: mdi:thermometer
+      icon: mdi:arrow-expand
       collapsed: true
       description: >
 
