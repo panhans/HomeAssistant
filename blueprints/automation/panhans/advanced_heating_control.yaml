@@ -439,6 +439,87 @@ blueprint:
                     - timer
               multiple: false
 
+    # calendar
+    calendar_section:
+      name: Calendar
+      icon: mdi:calendar
+      collapsed: true
+      description: >
+
+        ### 🌍 Proximity / Geo Fencing
+
+        Here you can set up geo fencing. To do this, use the proximity integration of Home Assistant. Create an instance of the integration with the people who also live in the room to be heated.
+        Heating is activated when the proximity entity reports that a person is moving within the specified radius of your home or is at home.
+
+        <br/><br/>
+        📝 If you use this function, it is recommended that you remove the persons and devices from the persons & devices section.
+        <br/><br/>
+      input:
+        input_calendar:
+          name: 🗓️ Calendar
+          description: >
+            `proximity` `optional`
+
+
+            You can preheat your rooms with help of home assistant's [proximity integration](https://www.home-assistant.io/integrations/proximity/).<br/>
+            Just select your proxmity zone and take your adjustments to distance and duration.<br/>
+            If you're in range of your distance and towards to your home heating kicks in.<br/>
+
+            **Note**: The proximity entity is handles like a person. Comfort heating takes place when coming or beeing home. Combinations with [schedules](https://www.home-assistant.io/integrations/schedule/) are also possible.
+          default: none
+          selector:
+            entity:
+              filter:
+                domain: calendar
+              multiple: false
+
+        input_calendar_event:
+          name: 📆 Event Name
+          description: >
+            `proximity`
+
+
+            Duration for which someone must be on way home before heating occurs.
+          default: ""
+          selector:
+            text:
+
+        input_calendar_room:
+          name: 🛋️ Room Name
+          description: >
+            `proximity`
+
+
+            The distance when [proximity](https://www.home-assistant.io/integrations/proximity/) sensor gets impact for this automation. Hint: Unit depends on the setup of your integration.
+          default: ""
+          selector:
+            text:
+              
+        input_calendar_scan_interval:
+          name: 🕒 Scan Interval
+          description: >
+            `proximity`
+
+
+            The interval at which the calendar is scanned for events.
+          default: 10
+          selector:
+            number:
+              min: 2
+              max: 60
+              step: 1
+
+        input_sync_calendar_with_entities:
+          name: 🔄 Sync Calendar with Entities
+          description: >
+            `proximity`
+
+
+            Whether to sync the calendar with the entities.
+          default: true
+          selector:
+            boolean:
+
     # proximity
     proximity_section:
       name: Proximity / Geo Fencing
@@ -1761,6 +1842,13 @@ trigger_variables:
   input_scheduler_presence: !input input_scheduler_presence
   is_scheduler_presence_defined: "{{ input_scheduler_presence != none }}"
 
+  #calendar
+  input_calendar: !input input_calendar
+  input_calendar_event: !input input_calendar_event
+  input_calendar_room: !input input_calendar_room
+  input_calendar_scan_interval: !input input_calendar_scan_interval
+  is_calendar_defined: "{{ input_calendar != none }}"
+
   # temperatures
   input_temperature_comfort: !input input_temperature_comfort
   input_temperature_eco: !input input_temperature_eco
@@ -1842,6 +1930,12 @@ trigger:
     event_data:
       automation: "{{ this.entity_id }}"
 
+  - trigger: event
+    event_type: ahc_calendar_event
+    id: ahc_calendar_event_temperature_change
+    event_data:
+      automation: "{{ this.entity_id }}"
+
   # thermostats become available
   - trigger: state
     entity_id: !input input_trvs
@@ -1903,6 +1997,14 @@ trigger:
         and (not is_guest_mode_defined or (is_guest_mode_defined and states(input_mode_guest) not in ['on','active'])) }}
     id: temperature_change_person_off
     for: !input input_people_leaving_home_duration
+
+  # calendar
+  - trigger: template
+    id: calendar_scan
+    value_template: >
+      {{ is_calendar_defined and
+          states(input_calendar) == 'on' and
+          now().strftime('%M') | int % input_calendar_scan_interval == 0 }}
 
   # scheduler
   - trigger: template
@@ -2481,6 +2583,13 @@ variables:
   input_valve_positioning_mode: !input input_valve_positioning_mode
   input_valve_positioning_timeout: !input input_valve_positioning_timeout
   input_valve_positioning_max_opening: !input input_valve_positioning_max_opening
+
+  # calendar
+  input_calendar: !input input_calendar
+  input_calendar_event: !input input_calendar_event
+  input_calendar_room: !input input_calendar_room
+  input_sync_calendar_with_entities: !input input_sync_calendar_with_entities
+  is_calendar_defined: "{{ input_calendar != none }}"
 
   # retry
   input_retry_attempts: !input input_retry_attempts
@@ -3088,9 +3197,15 @@ variables:
     "{{ trigger_id_defined and trigger.id == 'temperature_change_heating_adjustment' and
     (entry_comfort_temp != none or entry_eco_temp != none) }}"
 
+  is_ahc_calendar_trigger: "{{ (calendar_eco_temp != none or calendar_comfort_temp != none) and 
+                                trigger_id_defined and 
+                                'ahc_calendar_event_temperature_change' in trigger.id }}"
+
   is_reset: >
     {{ (is_reset_temperature and is_change_trigger) or
-        is_physical_change or is_ui_change or (is_adjustment_trigger and input_sync_adjustments_with_entities) }}
+        is_physical_change or is_ui_change or 
+        (is_adjustment_trigger and input_sync_adjustments_with_entities) or
+        (is_ahc_calendar_trigger and input_sync_calendar_with_entities ) }}
 
   is_window_trigger: "{{ trigger_id_defined and 'temperature_change_window_' in trigger.id }}"
   is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
@@ -3127,6 +3242,11 @@ variables:
   is_scene_destroy_trigger: >
     {{ (is_change_trigger or trigger.id == 'temperature_change_heating_adjustment') and (state_window or state_party) }}
 
+  is_retry_trigger: >
+    {{ trigger_id_defined and trigger.id == 'retry_temperature_change' }}
+
+  is_calendar_scan_trigger: "{{ trigger_id_defined and 'calendar_scan' in trigger.id }}"
+
   # scene management
   scene_entities: "{{ valves }}"
   scene_window_id: "{{ 'scene.' + this.entity_id | replace('automation.','') | replace('.','_') + '_window' }}"
@@ -3153,9 +3273,28 @@ variables:
   scene_to_create: >
     {{ iif(is_scene_create_trigger and "window_on" in trigger.id, scene_window_id, scene_party_id) }}
 
-  is_retry_trigger: >
-    {{ trigger_id_defined and trigger.id == 'retry_temperature_change' }}
+  calendar_start_time: >
+    {% if is_ahc_calendar_trigger %}
+      {{ trigger.event.data.start }}
+    {% else %}
+      {{ none }}
+    {% endif %}
 
+  calendar_comfort_temp: >
+    {% if is_ahc_calendar_trigger and
+      (last_comfort_entity_change == none or as_datetime(last_comfort_entity_change) < as_datetime(calendar_start_time)) %}
+      {{ trigger.event.data.comfort }}
+    {% else %}
+      {{ none }}
+    {% endif %}
+
+  calendar_eco_temp: >
+    {% if is_ahc_calendar_trigger and
+        (last_comfort_entity_change == none or as_datetime(last_comfort_entity_change) < as_datetime(calendar_start_time)) %}
+      {{ trigger.event.data.eco }}
+    {% else %}
+      {{ none }}
+    {% endif %}
   #####################################################################################
   #################################### CHANGES ########################################
   #####################################################################################
@@ -3201,9 +3340,9 @@ variables:
       {{ none }}
     {% endif %}
 
-  temperature_comfort: "{{ [entry_comfort_temp, temperature_comfort_of_entity, fallback_comfort_temperature] | reject('==', none) | first }}"
+  temperature_comfort: "{{ [calendar_comfort_temp, entry_comfort_temp, temperature_comfort_of_entity, fallback_comfort_temperature] | reject('==', none) | first }}"
   temperature_away: "{{ temperature_comfort | float - input_away_offset }}"
-  temperature_eco: "{{ [entry_eco_temp, temperature_eco_of_entity, fallback_eco_temperature] | reject('==', none) | first }}"
+  temperature_eco: "{{ [calendar_eco_temp, entry_eco_temp, temperature_eco_of_entity, fallback_eco_temperature] | reject('==', none) | first }}"
   target_temperature: >
     {% if not state_ahc and input_temperature_off > 0 %}
       {{ input_temperature_off }}
@@ -3395,6 +3534,13 @@ variables:
       {% if entry_eco_temp != none and input_temperature_eco_entity != none %}
         {% set result = result + [{'entity': input_temperature_eco_entity, 'temp': entry_eco_temp}] %}
       {% endif %}
+    {% elif is_ahc_calendar_trigger %}
+      {% if calendar_comfort_temp != none and input_temperature_comfort_entity != none %}
+        {% set result = result + [{'entity': input_temperature_comfort_entity, 'temp': calendar_comfort_temp}] %}
+      {% endif %}
+      {% if calendar_eco_temp != none and input_temperature_eco_entity != none %}
+        {% set result = result + [{'entity': input_temperature_eco_entity, 'temp': calendar_eco_temp}] %}
+      {% endif %}
     {% else %}
       {% set entity = none %}
       {% set temp_r = none %}
@@ -3581,6 +3727,8 @@ variables:
       {{ minimal_config_bypass }}
     {% elif is_temperature_sensor_defined and not valid_temperature_sensor %}
       {{ false }}
+    {% elif is_ahc_calendar_trigger and calendar_comfort_temp == none and calendar_eco_temp == none %}
+      {{ false }}
     {% else %}
       {{ true }}
     {% endif %}
@@ -3633,6 +3781,8 @@ conditions:
         value_template: "{{ reset_trigger }}"
       - condition: template
         value_template: "{{ positioning_trigger }}"
+      - condition: template
+        value_template: "{{ is_calendar_scan_trigger }}"
 
 actions:
   - variables:
@@ -3705,6 +3855,66 @@ actions:
           calibration_trigger: "{{ is_generic_calibration_trigger or calibration_trigger }}"
           change_trigger: "{{ change_trigger }}"
           warnings: "{{ warnings | count > 0 }}"
+
+      # Calendar Processing
+      - if:
+          - condition: template
+            value_template: "{{ is_calendar_scan_trigger }}"
+        then:
+          - action: calendar.get_events
+            target:
+              entity_id: !input input_calendar
+            data:
+              start_date_time: "{{ now() - timedelta(days=1) }}"
+              end_date_time: "{{ now() + timedelta(days=1) }}"
+            response_variable: calendar_events
+          - variables:
+              calendar_ahc_event: >
+                {% set calendar_events_ahc = calendar_events[input_calendar].events
+                              | selectattr('summary', 'eq', input_calendar_event)
+                              | selectattr('location', 'eq', input_calendar_room)
+                              | list %}
+                {% set result = namespace(r=none) %}
+                {% for event in calendar_events_ahc %}
+                  {% if as_datetime(event['start']) <= now() and as_datetime(event['end']) >= now() %}
+                    {% set result.r = event %}
+                  {% endif %}
+                {% endfor %}
+                {{ result.r }}
+          - if:
+              - condition: template
+                value_template: "{{ calendar_ahc_event != none }}"
+            then:
+              - variables:
+                  calendar_description: "{{ calendar_ahc_event['description'] }}"
+                  calendar_comfort_temp: >
+                    {% set pattern = 'comfort:\s*(\d+(?:\.\d+)?)' %}
+
+                    {% if calendar_description | regex_search(pattern, ignorecase=True) %}
+                      {{ calendar_description | regex_findall_index(pattern, ignorecase=True) }}
+                    {% else %}
+                      {{ none }}
+                    {% endif %}
+                  calendar_eco_temp: >
+                    {% set pattern = 'eco:\s*(\d+(?:\.\d+)?)' %}
+
+                    {% if calendar_description | regex_search(pattern, ignorecase=True) %}
+                      {{ calendar_description | regex_findall_index(pattern, ignorecase=True) }}
+                    {% else %}
+                      {{ none }}
+                    {% endif %}
+              - if:
+                  - condition: template
+                    value_template: "{{ calendar_comfort_temp != none or calendar_eco_temp != none }}"
+                then:
+                  - event: ahc_calendar_event
+                    event_data:
+                      automation: "{{ this.entity_id }}"
+                      comfort: "{{ calendar_comfort_temp }}"
+                      eco: "{{ calendar_eco_temp }}"
+                      start: "{{ calendar_ahc_event['start'] }}"
+                      end: "{{ calendar_ahc_event['end'] }}"
+                  - delay: !input input_action_call_delay
 
       # calibration
       - if:
@@ -3972,25 +4182,25 @@ actions:
                       restore_information: "{{ climates_information }}"
                 else:
                   - if:
-                    - condition: template
-                      value_template: "{{ input_retry_attempts > 0 and retry_attempt < input_retry_attempts }}"
+                      - condition: template
+                        value_template: "{{ input_retry_attempts > 0 and retry_attempt < input_retry_attempts }}"
                     then:
                       - delay: !input input_retry_delay
                         alias: "Delay before retrying"
                       - if:
-                        - condition: template
-                          alias: "Only fire retry event if values not set"
-                          value_template: > 
-                            {% set is_set = namespace(r=true) %}
-                            {% for valve in valves %}
-                              {% if valve in changes %}
-                                {% set info = changes[valve] %}
-                                {% if info[0].temp != state_attr(valve,'temperature') or info[0].mode != states(valve) %}
-                                  {% set is_set.r = false %}
+                          - condition: template
+                            alias: "Only fire retry event if values not set"
+                            value_template: >
+                              {% set is_set = namespace(r=true) %}
+                              {% for valve in valves %}
+                                {% if valve in changes %}
+                                  {% set info = changes[valve] %}
+                                  {% if info[0].temp != state_attr(valve,'temperature') or info[0].mode != states(valve) %}
+                                    {% set is_set.r = false %}
+                                  {% endif %}
                                 {% endif %}
-                              {% endif %}
-                            {% endfor %}
-                            {{ not is_set.r }}
+                              {% endfor %}
+                              {{ not is_set.r }}
                         then:
                           - event: ahc_retry_event
                             event_data:
