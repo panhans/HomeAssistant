@@ -1300,6 +1300,9 @@ blueprint:
                   value: Sat
                 - label: Sunday
                   value: Sun
+              custom_value: false
+              multiple: true
+              sort: false
 
         input_liming_protection_time:
           name: 🕖 Time
@@ -2250,7 +2253,7 @@ trigger:
 
         {% set current_timestamp = now() %}
 
-        {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
+        {% set is_liming_day = as_datetime(current_timestamp).strftime('%a') in input_liming_protection_day %}
 
         {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
         {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
@@ -2788,7 +2791,7 @@ variables:
 
       {% set current_timestamp = now() %}
 
-      {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
+      {% set is_liming_day = as_datetime(current_timestamp).strftime('%a') in input_liming_protection_day %}
 
       {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
       {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
