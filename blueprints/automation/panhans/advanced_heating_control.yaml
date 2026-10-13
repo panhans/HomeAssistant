@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.8
+    **Version**: 5.5.9
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3692,7 +3692,7 @@ actions:
                     calibration_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['calibration_entity'] }}"
                     calibration_value: "{{ (((calibration_changes.values() | list) [index]) | first) ['value'] }}"
                     select_entity: "{{ (((calibration_changes.values() | list) [index]) | first) ['select'] }}"
-                    is_external: "{{ select_entity != none and (not is_state(select_entity, 'external') or not is_state(select_entity, 'on')) }}"
+                    is_external: "{{ select_entity != none and states(select_entity) not in ['external', 'remote_temperature', 'on'] }}"
                     is_switch: >
                       {% if select_entity == none %}
                         {{ false }}
@@ -3839,8 +3839,7 @@ actions:
           - action: scene.delete
             target:
               entity_id: "{{ scene_to_apply_tmp }}"
-          - condition: template
-            value_template: "{{ false }}"
+          - stop: "Scene applied"
         else:
           # reset
           - if:
