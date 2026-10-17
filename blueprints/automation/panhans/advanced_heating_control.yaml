@@ -3030,6 +3030,10 @@ variables:
     {{ is_physical_change_enabled and
        trigger_id_defined and
        trigger.id == 'temperature_change_valve_target' and
+       trigger.from_state is not none and
+       trigger.to_state is not none and
+       trigger.from_state.state not in invalid_states and
+       trigger.to_state.state not in invalid_states and
        trigger.to_state.context.user_id is none and
        trigger.to_state.context.parent_id is none }}
 
