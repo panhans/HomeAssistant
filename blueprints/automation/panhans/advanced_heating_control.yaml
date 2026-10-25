@@ -3213,7 +3213,9 @@ variables:
     {% endif %}
 
   mode: >
-    {% if not state_ahc %}
+    {% if set_max_temperature %}
+      {{ input_hvac_mode }}
+    {% elif not state_ahc %}
       {{ iif(input_temperature_off == 0, 'off', 'heat') }}
     {% elif state_window and window_open_temperature | float == 0 and not set_max_temperature %}
       {{ 'off' }}
