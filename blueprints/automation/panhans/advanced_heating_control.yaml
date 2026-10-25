@@ -3049,7 +3049,7 @@ variables:
 
   change_temperature: >
     {% if trigger.id == 'temperature_change_valve_target' %}
-       {{ trigger.to_state.attributes.temperature | float }}
+       {{ trigger.to_state.attributes.temperature | float(none) }}
     {% else %}
       {{ none }}
     {% endif %}
