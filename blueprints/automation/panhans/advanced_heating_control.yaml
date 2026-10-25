@@ -148,7 +148,7 @@ blueprint:
             `comfort temperature` `fallback` `optional`
 
 
-            To control your fallback comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your fallback comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -158,6 +158,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_temperature_comfort:
@@ -166,7 +171,7 @@ blueprint:
             `comfort temperature` `optional`
 
 
-            To control your comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -176,6 +181,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_hvac_mode_comfort:
@@ -240,7 +250,7 @@ blueprint:
             `eco temperature` `fallback` `optional`
 
 
-            To control your fallback eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your fallback eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -250,6 +260,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_temperature_eco:
@@ -258,7 +273,7 @@ blueprint:
             `eco temperature` `optional`
 
 
-            To control your eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -268,6 +283,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_hvac_mode_eco:
@@ -437,6 +457,7 @@ blueprint:
                     - input_boolean
                     - binary_sensor
                     - timer
+                    - switch
               multiple: false
 
     # proximity
@@ -531,6 +552,7 @@ blueprint:
                 - domain:
                     - binary_sensor
                     - input_boolean
+                    - switch
               multiple: false
 
         input_scheduler_presence:
@@ -706,6 +728,7 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
+                    - switch
               multiple: false
 
         input_force_eco_temperature:
@@ -722,6 +745,7 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
+                    - switch
               multiple: false
 
         input_mode_party:
@@ -743,7 +767,31 @@ blueprint:
                     - input_boolean
                     - binary_sensor
                     - timer
+                    - switch
               multiple: true
+
+        input_temperature_party:
+          name: 🎈 Party Temperature
+          description: >
+            `party` `optional`
+
+
+            The temperature that is set while the party mode is on. Specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*,
+            *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity.
+            A number at the end of the friendly name of the active party entity (*Party Mode 25*) takes precedence.
+            Without both, the comfort temperature is used.
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
+              multiple: false
 
         input_party_legacy_restore:
           name: 🔄 Legacy Restore
@@ -1001,13 +1049,18 @@ blueprint:
           description: >
             `airing` `optional`
 
-            Optional *input_number* helper to control the window open temperature when the window is open.
+            Optional *input_number*, *number* or temperature *sensor* entity that provides the window open temperature when the window is open.
           default: []
           selector:
             entity:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_window_legacy_restore:
@@ -1369,6 +1422,7 @@ blueprint:
 
               * [input boolean](https://www.home-assistant.io/integrations/input_boolean/)
               * [binary sensor](https://www.home-assistant.io/integrations/binary_sensor/)
+              * [switch](https://www.home-assistant.io/integrations/switch/)
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -1379,6 +1433,7 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
+                    - switch
               multiple: false
 
         input_invert_winter_mode_value:
@@ -1853,6 +1908,11 @@ trigger:
     entity_id: !input input_temperature_comfort_static_entity
     for: !input input_action_call_delay
     id: temperature_change_comfort_fallback
+
+  - trigger: state
+    entity_id: !input input_temperature_party
+    for: !input input_action_call_delay
+    id: temperature_change_party_temperature
 
   # persons
   - trigger: template
@@ -2407,6 +2467,7 @@ variables:
 
   # force comfort
   input_mode_party: !input input_mode_party
+  input_temperature_party: !input input_temperature_party
   input_force_max_temperature: !input input_force_max_temperature
   input_force_eco_temperature: !input input_force_eco_temperature
 
@@ -2710,6 +2771,8 @@ variables:
       {% set pos_temp = name.split(' ') | last %}
       {% if is_number(pos_temp) %}
         {% set pos_party_temp = pos_temp | float %}
+      {% elif input_temperature_party != [] and is_number(states(input_temperature_party)) %}
+        {% set pos_party_temp = states(input_temperature_party) | float %}
       {% endif %}
     {% endif %}
     {{ pos_party_temp }}
@@ -3143,7 +3206,7 @@ variables:
   #####################################################################################
 
   window_open_temperature: >
-    {% if input_window_open_temperature_number != [] %}
+    {% if input_window_open_temperature_number != [] and is_number(states(input_window_open_temperature_number)) %}
       {{ states(input_window_open_temperature_number) | float }}
     {% else %}
       {{ input_window_open_temperature }}
@@ -3166,14 +3229,14 @@ variables:
 
   temperature_comfort_of_entity: >
     {% if(input_temperature_comfort_entity != none) %}
-      {{ states(input_temperature_comfort_entity) | float }}
+      {{ states(input_temperature_comfort_entity) | float(none) }}
     {% else %}
       {{ none }}
     {% endif %}
 
   temperature_eco_of_entity: >
     {% if(input_temperature_eco_entity != none) %}
-      {{ states(input_temperature_eco_entity) | float }}
+      {{ states(input_temperature_eco_entity) | float(none) }}
     {% else %}
       {{ none }}
     {% endif %}
@@ -3403,7 +3466,7 @@ variables:
       {% endif %}
     {% endif %}
 
-    {{ result }}
+    {{ result | selectattr('entity', 'search', '^(input_number|number)[.]') | list }}
 
   is_reset_trigger: "{{ is_reset and reset_data | count > 0 }}"
 
@@ -3900,7 +3963,7 @@ actions:
                           {% set temp_r = iif(temp_r > t_max, t_max, temp_r) %}
                           {% set temp_r = iif(temp_r < t_min, t_min, temp_r) %}
                           {{ temp_r }}
-                    - action: input_number.set_value
+                    - action: "{{ reset_entity.split('.')[0] }}.set_value"
                       data:
                         value: "{{ reset_temp }}"
                       target:
