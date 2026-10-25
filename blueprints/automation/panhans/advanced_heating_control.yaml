@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.9
+    **Version**: 5.5.10
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -810,6 +810,16 @@ blueprint:
           description: >
 
             Turns your [climate](https://www.home-assistant.io/integrations/climate/) entity *off* if persons are set and nobody is home.
+
+          default: false
+          selector:
+            boolean:
+
+        input_off_if_nobody_home_and_window_open_temp:
+          name: 🪟​🚶‍➡️ Off If Nobody Home But Window Open Temperature Is Set
+          description: >
+
+            Forces your [climate](https://www.home-assistant.io/integrations/climate/) entity *off*, if you set a window open temperature and nobody is home.
 
           default: false
           selector:
@@ -2428,6 +2438,7 @@ variables:
   is_physical_change_enabled: !input input_physical_change
   is_ui_change_enabled: !input input_ui_change
   is_off_if_nobody_home: !input input_off_if_nobody_home
+  is_off_if_nobody_home_and_window_open_temp: !input input_off_if_nobody_home_and_window_open_temp
 
   # custom tweaks
   input_action_call_delay: !input input_action_call_delay
@@ -3051,9 +3062,20 @@ variables:
   is_window_trigger: "{{ trigger_id_defined and 'temperature_change_window_' in trigger.id }}"
   is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
 
+  is_bllaaaa: >
+    {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
+        {{ true }}
+    {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
+      {{ false }}
+    {% elif input_window_open_temperature | float(0) > 0 and (is_off_if_nobody_home_and_window_open_temp and not is_anybody_home_or_proximity)  %}
+      {{ true }}
+    {% endif %}
+
   is_changes_trigger: >
     {% if state_window %}
       {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
+        {{ true }}
+      {% elif input_window_open_temperature | float(0) > 0 and is_off_if_nobody_home and is_off_if_nobody_home_and_window_open_temp %}
         {{ true }}
       {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
         {{ false }}
@@ -3127,7 +3149,9 @@ variables:
       {{ 'off' }}
     {% elif entry_mode == 'off' %}
       {{ 'off' }}
-    {% elif is_off_if_nobody_home and (is_person_defined or is_proximity_defined) and not is_anybody_home_or_proximity and not set_comfort %}
+    {% elif is_off_if_nobody_home and not is_anybody_home_or_proximity and not set_comfort %}
+      {{ 'off' }}
+    {% elif state_window and window_open_temperature | float > 0 and is_off_if_nobody_home_and_window_open_temp and not is_anybody_home_or_proximity %}
       {{ 'off' }}
     {% else %}
       {{ input_hvac_mode }}
@@ -3201,7 +3225,7 @@ variables:
           {% set dont_turn_off =
               valve in valves_without_off_mode or
               is_not_off_but_min or
-              (state_window and window_open_temperature > 0 and not is_minimal_config) or
+              (state_window and window_open_temperature > 0 and (is_off_if_nobody_home_and_window_open_temp and is_anybody_home_or_proximity) and not is_minimal_config) or
               set_max_temperature %}
 
           {% set ref_temp = current_valve_temp %}
@@ -3300,11 +3324,11 @@ variables:
 
           {% set opening_min = state_attr(open_valve_entity,'min') | int(0) %}
           {% set opening_max = state_attr(open_valve_entity,'max') | int(100) %}
-          
+
           {% if opening_min < 0 %}
             {% set opening_max = opening_max + abs(opening_min) %}
           {% endif %}
-          
+
           {% set opening_abs = opening_max %}
           {% set difference = target_temp - current_temp %}
           {% set step_size = input_valve_positioning_step_size | int %}
