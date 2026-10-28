@@ -1816,6 +1816,8 @@ trigger:
   - trigger: state
     entity_id: !input input_trvs
     attribute: temperature
+    not_to:
+      - null
     for:
       seconds: 5
     id: temperature_change_valve_target
@@ -3395,7 +3397,7 @@ variables:
     {% set n = namespace(dict=[]) %}
 
     {% if is_native_calibration_trigger %}
-      {% for valve in valves_tado %}
+      {% for valve in valves_tado if state_attr(valve, 'current_temperature') is number %}
 
         {% set offset_old = state_attr(valve, 'offset_celsius') | float(0) %}
         {% set local_temperature = state_attr(valve, 'current_temperature') | float %}
@@ -3434,7 +3436,7 @@ variables:
     {% set n = namespace(dict=[]) %}
 
     {% if is_native_calibration_trigger and is_calibration_enabled %}
-      {% for valve in valves_calibration_common %}
+      {% for valve in valves_calibration_common if state_attr(valve, 'current_temperature') is number %}
 
         {% set calibration_entity = device_entities(device_id(valve)) |
                                     expand | selectattr('domain','in','number') |
@@ -3729,6 +3731,7 @@ actions:
                     - delay: !input input_action_call_delay
 
                 - action: number.set_value
+                  continue_on_error: true
                   data:
                     value: "{{ float(calibration_value) }}"
                   target:
