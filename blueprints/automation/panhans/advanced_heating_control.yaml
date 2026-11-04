@@ -3101,6 +3101,7 @@ variables:
     {{ is_ui_change_enabled and
        trigger_id_defined and
        trigger.id == 'temperature_change_valve_target' and
+       trigger.to_state is not none and
        trigger.to_state.context.user_id is not none }}
 
   is_physical_change: >
@@ -3115,7 +3116,7 @@ variables:
        trigger.to_state.context.parent_id is none }}
 
   change_temperature: >
-    {% if trigger.id == 'temperature_change_valve_target' %}
+    {% if trigger.id == 'temperature_change_valve_target' and trigger.to_state is not none %}
        {{ trigger.to_state.attributes.get('temperature') | float(none) }}
     {% else %}
       {{ none }}
