@@ -559,7 +559,7 @@ variables:
     {% set entity_count = entities | count %}
     {% set entity_match_count = input_entities | expand | selectattr('state', 'in', input_entity_states) | list | count %}
     {% set eop = iif(input_numeric_entity_operator == 'above', '>', '<') %}
-    {% set nummeric_entity_match_count = input_numeric_entities | expand | selectattr('state', eop, input_numeric_entity_state) | list | count %}
+    {% set nummeric_entity_match_count = input_numeric_entities | expand | selectattr('state', 'is_number') | map(attribute='state') | map('float') | select(eop, input_numeric_entity_state | float) | list | count %}
     {% set entity_match_count_sum = entity_match_count + nummeric_entity_match_count %}
     {% if input_entity_operator == 'AND' %}
       {{ entity_count == entity_match_count_sum }}
