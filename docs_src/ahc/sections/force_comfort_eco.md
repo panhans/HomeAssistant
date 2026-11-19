@@ -15,10 +15,16 @@ When the windows are opened, the thermostats are still turned off or down.
 | binary_sensor   | binary_sensor.party |
 | input_boolean   | input_boolean.party |
 | timer           | timer.party         |
+| switch          | switch.party        |
 
 !!! info "NOTE"
 
     If you name your entity like *Party Mode 25* the target temperature is set to 25° if the entity is enabled / running.
+
+## 🎈 Party Temperature
+
+The temperature that is set while the party mode is on. You can specify an `input_number`, a `number` or a temperature `sensor` entity, for example the comfort temperature of a heating controller.
+The order is: a number at the end of the friendly name of the active party entity, then this entity, then the comfort temperature.
 
 ## 🥵 Force Max Temperature
 

@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.9
+    **Version**: 5.5.10
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -148,7 +148,7 @@ blueprint:
             `comfort temperature` `fallback` `optional`
 
 
-            To control your fallback comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your fallback comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -158,6 +158,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_temperature_comfort:
@@ -166,7 +171,7 @@ blueprint:
             `comfort temperature` `optional`
 
 
-            To control your comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your comfort temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -176,6 +181,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_hvac_mode_comfort:
@@ -240,7 +250,7 @@ blueprint:
             `eco temperature` `fallback` `optional`
 
 
-            To control your fallback eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your fallback eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -250,6 +260,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_temperature_eco:
@@ -258,7 +273,7 @@ blueprint:
             `eco temperature` `optional`
 
 
-            To control your eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)* entity here.
+            To control your eco temperature via automations or the UI, you can specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*, *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity here.
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -268,6 +283,11 @@ blueprint:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_hvac_mode_eco:
@@ -437,6 +457,7 @@ blueprint:
                     - input_boolean
                     - binary_sensor
                     - timer
+                    - switch
               multiple: false
 
     # proximity
@@ -531,6 +552,7 @@ blueprint:
                 - domain:
                     - binary_sensor
                     - input_boolean
+                    - switch
               multiple: false
 
         input_scheduler_presence:
@@ -706,6 +728,7 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
+                    - switch
               multiple: false
 
         input_force_eco_temperature:
@@ -722,6 +745,7 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
+                    - switch
               multiple: false
 
         input_mode_party:
@@ -743,7 +767,31 @@ blueprint:
                     - input_boolean
                     - binary_sensor
                     - timer
+                    - switch
               multiple: true
+
+        input_temperature_party:
+          name: 🎈 Party Temperature
+          description: >
+            `party` `optional`
+
+
+            The temperature that is set while the party mode is on. Specify an *[input_number](https://www.home-assistant.io/integrations/input_number/)*,
+            *[number](https://www.home-assistant.io/integrations/number/)* or temperature *[sensor](https://www.home-assistant.io/integrations/sensor/)* entity.
+            A number at the end of the friendly name of the active party entity (*Party Mode 25*) takes precedence.
+            Without both, the comfort temperature is used.
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain:
+                    - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
+              multiple: false
 
         input_party_legacy_restore:
           name: 🔄 Legacy Restore
@@ -810,6 +858,16 @@ blueprint:
           description: >
 
             Turns your [climate](https://www.home-assistant.io/integrations/climate/) entity *off* if persons are set and nobody is home.
+
+          default: false
+          selector:
+            boolean:
+
+        input_off_if_nobody_home_and_window_open_temp:
+          name: 🪟​🚶‍➡️ Off If Nobody Home But Window Open Temperature Is Set
+          description: >
+
+            Forces your [climate](https://www.home-assistant.io/integrations/climate/) entity *off*, if you set a window open temperature and nobody is home.
 
           default: false
           selector:
@@ -991,13 +1049,18 @@ blueprint:
           description: >
             `airing` `optional`
 
-            Optional *input_number* helper to control the window open temperature when the window is open.
+            Optional *input_number*, *number* or temperature *sensor* entity that provides the window open temperature when the window is open.
           default: []
           selector:
             entity:
               filter:
                 - domain:
                     - input_number
+                    - number
+                - domain:
+                    - sensor
+                  device_class:
+                    - temperature
               multiple: false
 
         input_window_legacy_restore:
@@ -1300,6 +1363,9 @@ blueprint:
                   value: Sat
                 - label: Sunday
                   value: Sun
+              custom_value: false
+              multiple: true
+              sort: false
 
         input_liming_protection_time:
           name: 🕖 Time
@@ -1356,6 +1422,7 @@ blueprint:
 
               * [input boolean](https://www.home-assistant.io/integrations/input_boolean/)
               * [binary sensor](https://www.home-assistant.io/integrations/binary_sensor/)
+              * [switch](https://www.home-assistant.io/integrations/switch/)
 
 
             Create your helper [here](https://my.home-assistant.io/redirect/helpers/).
@@ -1366,6 +1433,7 @@ blueprint:
                 - domain:
                     - input_boolean
                     - binary_sensor
+                    - switch
               multiple: false
 
         input_invert_winter_mode_value:
@@ -1841,6 +1909,11 @@ trigger:
     for: !input input_action_call_delay
     id: temperature_change_comfort_fallback
 
+  - trigger: state
+    entity_id: !input input_temperature_party
+    for: !input input_action_call_delay
+    id: temperature_change_party_temperature
+
   # persons
   - trigger: template
     value_template: >
@@ -2250,7 +2323,7 @@ trigger:
 
         {% set current_timestamp = now() %}
 
-        {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
+        {% set is_liming_day = as_datetime(current_timestamp).strftime('%a') in input_liming_protection_day %}
 
         {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
         {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
@@ -2394,6 +2467,7 @@ variables:
 
   # force comfort
   input_mode_party: !input input_mode_party
+  input_temperature_party: !input input_temperature_party
   input_force_max_temperature: !input input_force_max_temperature
   input_force_eco_temperature: !input input_force_eco_temperature
 
@@ -2428,6 +2502,7 @@ variables:
   is_physical_change_enabled: !input input_physical_change
   is_ui_change_enabled: !input input_ui_change
   is_off_if_nobody_home: !input input_off_if_nobody_home
+  is_off_if_nobody_home_and_window_open_temp: !input input_off_if_nobody_home_and_window_open_temp
 
   # custom tweaks
   input_action_call_delay: !input input_action_call_delay
@@ -2696,6 +2771,8 @@ variables:
       {% set pos_temp = name.split(' ') | last %}
       {% if is_number(pos_temp) %}
         {% set pos_party_temp = pos_temp | float %}
+      {% elif input_temperature_party != [] and is_number(states(input_temperature_party)) %}
+        {% set pos_party_temp = states(input_temperature_party) | float %}
       {% endif %}
     {% endif %}
     {{ pos_party_temp }}
@@ -2788,7 +2865,7 @@ variables:
 
       {% set current_timestamp = now() %}
 
-      {% set is_liming_day = input_liming_protection_day == as_datetime(current_timestamp).strftime('%a') %}
+      {% set is_liming_day = as_datetime(current_timestamp).strftime('%a') in input_liming_protection_day %}
 
       {% set start_hour = input_liming_protection_time.split(':')[0] | int %}
       {% set start_minute = input_liming_protection_time.split(':')[1] | int %}
@@ -3030,12 +3107,16 @@ variables:
     {{ is_physical_change_enabled and
        trigger_id_defined and
        trigger.id == 'temperature_change_valve_target' and
+       trigger.from_state is not none and
+       trigger.to_state is not none and
+       trigger.from_state.state not in invalid_states and
+       trigger.to_state.state not in invalid_states and
        trigger.to_state.context.user_id is none and
        trigger.to_state.context.parent_id is none }}
 
   change_temperature: >
     {% if trigger.id == 'temperature_change_valve_target' %}
-       {{ trigger.to_state.attributes.temperature | float }}
+       {{ trigger.to_state.attributes.get('temperature') | float(none) }}
     {% else %}
       {{ none }}
     {% endif %}
@@ -3051,9 +3132,20 @@ variables:
   is_window_trigger: "{{ trigger_id_defined and 'temperature_change_window_' in trigger.id }}"
   is_liming_trigger: "{{ trigger_id_defined and 'temperature_change_liming_protection' in trigger.id }}"
 
+  is_bllaaaa: >
+    {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
+        {{ true }}
+    {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
+      {{ false }}
+    {% elif input_window_open_temperature | float(0) > 0 and (is_off_if_nobody_home_and_window_open_temp and not is_anybody_home_or_proximity)  %}
+      {{ true }}
+    {% endif %}
+
   is_changes_trigger: >
     {% if state_window %}
       {% if trigger_id_defined and 'temperature_change_window_on' in trigger.id %}
+        {{ true }}
+      {% elif input_window_open_temperature | float(0) > 0 and is_off_if_nobody_home and is_off_if_nobody_home_and_window_open_temp %}
         {{ true }}
       {% elif trigger_id_defined and 'temperature_change_window_off' not in trigger.id %}
         {{ false }}
@@ -3114,20 +3206,24 @@ variables:
   #####################################################################################
 
   window_open_temperature: >
-    {% if input_window_open_temperature_number != [] %}
+    {% if input_window_open_temperature_number != [] and is_number(states(input_window_open_temperature_number)) %}
       {{ states(input_window_open_temperature_number) | float }}
     {% else %}
       {{ input_window_open_temperature }}
     {% endif %}
 
   mode: >
-    {% if not state_ahc %}
+    {% if set_max_temperature %}
+      {{ input_hvac_mode }}
+    {% elif not state_ahc %}
       {{ iif(input_temperature_off == 0, 'off', 'heat') }}
     {% elif state_window and window_open_temperature | float == 0 and not set_max_temperature %}
       {{ 'off' }}
     {% elif entry_mode == 'off' %}
       {{ 'off' }}
-    {% elif is_off_if_nobody_home and (is_person_defined or is_proximity_defined) and not is_anybody_home_or_proximity and not set_comfort %}
+    {% elif is_off_if_nobody_home and not is_anybody_home_or_proximity and not set_comfort %}
+      {{ 'off' }}
+    {% elif state_window and window_open_temperature | float > 0 and is_off_if_nobody_home_and_window_open_temp and not is_anybody_home_or_proximity %}
       {{ 'off' }}
     {% else %}
       {{ input_hvac_mode }}
@@ -3135,14 +3231,14 @@ variables:
 
   temperature_comfort_of_entity: >
     {% if(input_temperature_comfort_entity != none) %}
-      {{ states(input_temperature_comfort_entity) | float }}
+      {{ states(input_temperature_comfort_entity) | float(none) }}
     {% else %}
       {{ none }}
     {% endif %}
 
   temperature_eco_of_entity: >
     {% if(input_temperature_eco_entity != none) %}
-      {{ states(input_temperature_eco_entity) | float }}
+      {{ states(input_temperature_eco_entity) | float(none) }}
     {% else %}
       {{ none }}
     {% endif %}
@@ -3201,7 +3297,7 @@ variables:
           {% set dont_turn_off =
               valve in valves_without_off_mode or
               is_not_off_but_min or
-              (state_window and window_open_temperature > 0 and not is_minimal_config) or
+              (state_window and window_open_temperature > 0 and (is_off_if_nobody_home_and_window_open_temp and is_anybody_home_or_proximity) and not is_minimal_config) or
               set_max_temperature %}
 
           {% set ref_temp = current_valve_temp %}
@@ -3300,11 +3396,11 @@ variables:
 
           {% set opening_min = state_attr(open_valve_entity,'min') | int(0) %}
           {% set opening_max = state_attr(open_valve_entity,'max') | int(100) %}
-          
+
           {% if opening_min < 0 %}
             {% set opening_max = opening_max + abs(opening_min) %}
           {% endif %}
-          
+
           {% set opening_abs = opening_max %}
           {% set difference = target_temp - current_temp %}
           {% set step_size = input_valve_positioning_step_size | int %}
@@ -3372,7 +3468,7 @@ variables:
       {% endif %}
     {% endif %}
 
-    {{ result }}
+    {{ result | selectattr('entity', 'search', '^(input_number|number)[.]') | list }}
 
   is_reset_trigger: "{{ is_reset and reset_data | count > 0 }}"
 
@@ -3869,7 +3965,7 @@ actions:
                           {% set temp_r = iif(temp_r > t_max, t_max, temp_r) %}
                           {% set temp_r = iif(temp_r < t_min, t_min, temp_r) %}
                           {{ temp_r }}
-                    - action: input_number.set_value
+                    - action: "{{ reset_entity.split('.')[0] }}.set_value"
                       data:
                         value: "{{ reset_temp }}"
                       target:
