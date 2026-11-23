@@ -48,7 +48,7 @@ blueprint:
     [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=uptime)
 
 
-    **Version**: 5.5.3_DEV
+    **Version**: 5.5.4_DEV
 
     **Help & FAQ**: [Advanced Heating Control](https://community.home-assistant.io/t/advanced-heating-control/469873)
 
@@ -3889,6 +3889,7 @@ actions:
                           value_template: "{{ states(thermostat) | lower != mode | lower  }}"
                       then:
                         - action: climate.set_hvac_mode
+                          continue_on_error: true
                           data:
                             entity_id: "{{ thermostat }}"
                             hvac_mode: "{{ mode }}"
@@ -3901,6 +3902,7 @@ actions:
                           value_template: "{{ state_attr(thermostat, 'temperature') != temp_target and mode != 'off' }}"
                       then:
                         - action: climate.set_temperature
+                          continue_on_error: true
                           data:
                             entity_id: "{{ thermostat }}"
                             temperature: "{{ temp_target | float }}"
