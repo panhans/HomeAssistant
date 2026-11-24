@@ -345,12 +345,12 @@ variables:
 
   notify_device: !input notify_device
   notify_group: !input notify_group
-  notify_service: |
-    {% if(notify_group is defined and notify_group != '' ) %}
-      notify.{{ notify_group }}
-    {% elif (notify_device != none and notify_device != '' ) %}
-      notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}
-    {% endif %}
+  notify_service: >-
+    {%- if notify_group is defined and notify_group != '' -%}
+    notify.{{ notify_group | slugify }}
+    {%- elif notify_device != none and notify_device != '' -%}
+    notify.mobile_app_{{ device_attr(notify_device, "name") | slugify }}
+    {%- endif -%}
 
   is_arriving_notification_enabled: !input is_arriving_notification_enabled
   is_leaving_notification_enabled: !input is_leaving_notification_enabled
@@ -415,20 +415,34 @@ action:
     then:
       - variables:
           zone: "{{ zone_from }}"
-      - service: "{{ notify_service }}"
-        data:
-          title: !input title_leaving
-          message: !input message_leaving
-          data:
-            ttl: 0
-            priority: high
-            notification_icon: !input "status_bar_icon"
-            channel: !input "channel"
-            group: !input "group"
-            tag: "{{ tag }}"
-            color: "{{ notification_color_hex }}"
-            vibrationPattern: !input "vibration_pattern"
-            ledColor: "{{led_color_hex}}"
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ notify_service in states.notify | map(attribute='entity_id') | list }}"
+            sequence:
+              - action: notify.send_message
+                continue_on_error: true
+                target:
+                  entity_id: "{{ notify_service }}"
+                data:
+                  title: !input title_leaving
+                  message: !input message_leaving
+        default:
+          - service: "{{ notify_service }}"
+            continue_on_error: true
+            data:
+              title: !input title_leaving
+              message: !input message_leaving
+              data:
+                ttl: 0
+                priority: high
+                notification_icon: !input "status_bar_icon"
+                channel: !input "channel"
+                group: !input "group"
+                tag: "{{ tag }}"
+                color: "{{ notification_color_hex }}"
+                vibrationPattern: !input "vibration_pattern"
+                ledColor: "{{led_color_hex}}"
 
   - if:
       - condition: template
@@ -450,87 +464,143 @@ action:
             - condition: template
               value_template: "{{ critical_notification }}"
             then:
-            - service: "{{ notify_service }}"
-              data:
-                title: !input title_arriving
-                message: !input message_arriving
-                data:
-                  ttl: 0
-                  priority: high
-                  notification_icon: !input "status_bar_icon"
-                  channel: !input "channel"
-                  group: !input "group"
-                  tag: "{{ tag }}"
-                  color: "{{ notification_color_hex }}"
-                  vibrationPattern: !input "vibration_pattern"
-                  ledColor: "{{led_color_hex}}"
-                  push:
-                    sound:
-                      name: "default"
-                      critical: 1
-                      volume: 1.0
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ notify_service in states.notify | map(attribute='entity_id') | list }}"
+                  sequence:
+                    - action: notify.send_message
+                      continue_on_error: true
+                      target:
+                        entity_id: "{{ notify_service }}"
+                      data:
+                        title: !input title_arriving
+                        message: !input message_arriving
+              default:
+                - service: "{{ notify_service }}"
+                  continue_on_error: true
+                  data:
+                    title: !input title_arriving
+                    message: !input message_arriving
+                    data:
+                      ttl: 0
+                      priority: high
+                      notification_icon: !input "status_bar_icon"
+                      channel: !input "channel"
+                      group: !input "group"
+                      tag: "{{ tag }}"
+                      color: "{{ notification_color_hex }}"
+                      vibrationPattern: !input "vibration_pattern"
+                      ledColor: "{{led_color_hex}}"
+                      push:
+                        sound:
+                          name: "default"
+                          critical: 1
+                          volume: 1.0
             else:
-            - service: "{{ notify_service }}"
-              data:
-                title: !input title_arriving
-                message: !input message_arriving
-                data:
-                  ttl: 0
-                  priority: high
-                  notification_icon: !input "status_bar_icon"
-                  channel: !input "channel"
-                  group: !input "group"
-                  tag: "{{ tag }}"
-                  color: "{{ notification_color_hex }}"
-                  vibrationPattern: !input "vibration_pattern"
-                  ledColor: "{{led_color_hex}}"
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ notify_service in states.notify | map(attribute='entity_id') | list }}"
+                  sequence:
+                    - action: notify.send_message
+                      continue_on_error: true
+                      target:
+                        entity_id: "{{ notify_service }}"
+                      data:
+                        title: !input title_arriving
+                        message: !input message_arriving
+              default:
+                - service: "{{ notify_service }}"
+                  continue_on_error: true
+                  data:
+                    title: !input title_arriving
+                    message: !input message_arriving
+                    data:
+                      ttl: 0
+                      priority: high
+                      notification_icon: !input "status_bar_icon"
+                      channel: !input "channel"
+                      group: !input "group"
+                      tag: "{{ tag }}"
+                      color: "{{ notification_color_hex }}"
+                      vibrationPattern: !input "vibration_pattern"
+                      ledColor: "{{led_color_hex}}"
         else:
           - if:
               - condition: template
                 value_template: "{{ critical_notification }}"
             then:
-              - service: "{{ notify_service }}"
-                data:
-                  title: !input title_arriving
-                  message: !input message_arriving
-                  data:
-                    ttl: 0
-                    priority: high
-                    notification_icon: !input "status_bar_icon"
-                    channel: !input "channel"
-                    group: !input "group"
-                    tag: "{{ tag }}"
-                    color: "{{ notification_color_hex }}"
-                    vibrationPattern: !input "vibration_pattern"
-                    ledColor: "{{led_color_hex}}"
-                    push:
-                      sound:
-                        name: "default"
-                        critical: 1
-                        volume: 1.0
-                    actions:
-                      - action: URI
-                        title: !input custom_button_arriving_text
-                        uri: !input custom_button_arriving_url
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ notify_service in states.notify | map(attribute='entity_id') | list }}"
+                    sequence:
+                      - action: notify.send_message
+                        continue_on_error: true
+                        target:
+                          entity_id: "{{ notify_service }}"
+                        data:
+                          title: !input title_arriving
+                          message: !input message_arriving
+                default:
+                  - service: "{{ notify_service }}"
+                    continue_on_error: true
+                    data:
+                      title: !input title_arriving
+                      message: !input message_arriving
+                      data:
+                        ttl: 0
+                        priority: high
+                        notification_icon: !input "status_bar_icon"
+                        channel: !input "channel"
+                        group: !input "group"
+                        tag: "{{ tag }}"
+                        color: "{{ notification_color_hex }}"
+                        vibrationPattern: !input "vibration_pattern"
+                        ledColor: "{{led_color_hex}}"
+                        push:
+                          sound:
+                            name: "default"
+                            critical: 1
+                            volume: 1.0
+                        actions:
+                          - action: URI
+                            title: !input custom_button_arriving_text
+                            uri: !input custom_button_arriving_url
             else:
-              - service: "{{ notify_service }}"
-                data:
-                  title: !input title_arriving
-                  message: !input message_arriving
-                  data:
-                    ttl: 0
-                    priority: high
-                    notification_icon: !input "status_bar_icon"
-                    channel: !input "channel"
-                    group: !input "group"
-                    tag: "{{ tag }}"
-                    color: "{{ notification_color_hex }}"
-                    vibrationPattern: !input "vibration_pattern"
-                    ledColor: "{{led_color_hex}}"
-                    actions:
-                      - action: URI
-                        title: !input custom_button_arriving_text
-                        uri: !input custom_button_arriving_url
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ notify_service in states.notify | map(attribute='entity_id') | list }}"
+                    sequence:
+                      - action: notify.send_message
+                        continue_on_error: true
+                        target:
+                          entity_id: "{{ notify_service }}"
+                        data:
+                          title: !input title_arriving
+                          message: !input message_arriving
+                default:
+                  - service: "{{ notify_service }}"
+                    continue_on_error: true
+                    data:
+                      title: !input title_arriving
+                      message: !input message_arriving
+                      data:
+                        ttl: 0
+                        priority: high
+                        notification_icon: !input "status_bar_icon"
+                        channel: !input "channel"
+                        group: !input "group"
+                        tag: "{{ tag }}"
+                        color: "{{ notification_color_hex }}"
+                        vibrationPattern: !input "vibration_pattern"
+                        ledColor: "{{led_color_hex}}"
+                        actions:
+                          - action: URI
+                            title: !input custom_button_arriving_text
+                            uri: !input custom_button_arriving_url
 
   - if:
       - condition: template
