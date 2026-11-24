@@ -364,6 +364,7 @@ trigger:
   platform: state
   entity_id: !input persons
   for: !input duration
+  to: null
 
 condition:
   - condition: template
